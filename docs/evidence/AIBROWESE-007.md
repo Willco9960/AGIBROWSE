@@ -41,3 +41,9 @@ Local cached build used `-BuildDirectory ./build/windows-cef-normalized -CacheDi
 ## Explicit remaining work
 
 No task-008 WSS/mTLS enrollment/client authentication, task-009 native approval/full origin-grant lifecycle/egress revocation, target/action dispatch, POSIX private socket pair, cross-platform containment or independent security audit is implemented or accepted by this evidence. The broker is still a trusted transport component under the accepted policy. The host admission and zero-grant start are the foundation for those subsequent tasks, not substitutes for their gates.
+
+## Coordinator acceptance — clean Windows CI verified
+
+Accepted after direct artifact inspection. Published implementation `e22c64626d25b646985efc21a79f354f95a235db` passed [Windows CI run 37076718675](https://github.com/Willco9960/AGIBROWSE/actions/runs/37076718675), job 111068158893. Pinned SDK retrieval and native build passed. Native CTest passed 193 checks in 1.63 seconds. Normal lifecycle passed in 2.481 seconds; actual renderer security lifecycle passed in 1.943 seconds with eight forged messages rejected, two restricted RID0 renderer tokens, host exit0, zero orphan processes and no forced cleanup.
+
+Artifact11256863429 was downloaded; its SHA256 matched GitHub digest `b1220b093484fe97ecdaac55fb398c2c4a5677b416dc731b31052f578c574f0e`. [Sanitized CI acceptance receipt](AIBROWESE-007-ci-acceptance.json) preserves the source/run/artifact identities and actual results. Raw synthetic fixture artifacts stay ignored under `build/ci-37076718675`; they are not production diagnostic exports. Source acceptance applies to this implementation commit. This evidence-only follow-up changes no native source or tests. Full M02 acceptance still requires008–010.
