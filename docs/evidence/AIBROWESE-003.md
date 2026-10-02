@@ -57,3 +57,18 @@ Doubtful assumption: the inherited Codex shell environment is case-normalized fo
 Logs: `build/cef-research/build.log`, `build/cef-research/build-msvc.log`, and `build/windows-cef-msvc/CMakeFiles/CMakeConfigureLog.yaml`. The latter contains the exact MSBuild environment exception. Official native CMake is at `build/cmake/cmake-4.2.0-windows-x86_64/bin/cmake.exe`; build.ps1 accepts `-CMakeExecutable`.
 
 The CEF bootstrap script was executed against the previously verified archive and succeeded; PowerShell syntax checks passed. Native host, sandbox token/lifecycle checks and clean Windows runner are still PENDING. Acceptance remains false; no browser runtime process has been launched. Parent review corrections ensure late leftover processes fail the test and cleanup targets run-owned PID/creation identities.
+
+## Authorized retry with child environment normalization
+
+User explicitly authorized a new targeted repair cycle. `tools/cef/build.ps1` now launches native CMake through `ProcessStartInfo`, clears only the child environment, repopulates from an ordinal case-insensitive dictionary and canonicalizes PATH. It verifies zero duplicate names and exactly one PATH before launch. No user/machine environment is changed and environment values are not printed.
+
+The first normalized configure PASSED (exit0) in fresh `build/windows-cef-normalized`, with official native CMake4.2.0, VS2022/MSVCv143 and SDK26100. Exact command: `./tools/cef/build.ps1 -CacheDirectory build/cef-research -BuildDirectory build/windows-cef-normalized -CMakeExecutable build/cmake/cmake-4.2.0-windows-x86_64/bin/cmake.exe`. Configure evidence: `build/windows-cef-normalized/configure.log`. Native/CEF-wrapper compilation started; result and runtime proof are pending at this increment. Acceptance remains false.
+
+## Verified native build and local runtime (authorized normalized retry)
+
+- Native configure and complete Release build PASSED (both exit0), official native CMake4.2.0, VS2022 MSVC19.44.35229.0, Windows SDK10.0.26100.0. Build directory `build/windows-cef-normalized`. CEF wrapper static library, client DLL and separate broker all built. The launcher SHA256 matched the pinned upstream `Release/bootstrap.exe` byte-for-byte.
+- First lifecycle preflight under the restricted tool account could not enumerate Win32_Process (WMI AccessDenied); it failed before launching the browser. The same unchanged test was rerun with precisely scoped escalated user context and PASSED.
+- Local fixture JavaScript executed and emitted `fixture_ready`. Browser PID10936 and renderer PIDs22112/452 were observed. Both renderer primary tokens were restricted, integrity RID0 (untrusted, below low). Views window creation and browser creation were logged, WM_CLOSE completed, browser/window destruction and CefShutdown completed, host exit0, orphan list empty and forcedCleanup=false. Duration2.143s.
+- Committed-review evidence copies (not committed by task003): `docs/evidence/AIBROWESE-003-lifecycle.json` and `docs/evidence/AIBROWESE-003-lifecycle.jsonl`. Full raw run: `build/cef-lifecycle/a2e98beb17c44f0d8f0b8c1956714b9f/`.
+
+Remaining acceptance gate: the clean hosted Windows runner has NOT run. `.github/workflows/windows-cef.yml` exists, but no Git remote is configured. Local build/runtime proof does not certify a clean runner. Acceptance remains false pending that actual run. No task004 advancement is justified yet.

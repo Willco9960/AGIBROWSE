@@ -10,6 +10,51 @@ $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $build = [IO.Path]::GetFullPath($BuildDirectory)
 $cef = & (Join-Path $PSScriptRoot 'bootstrap.ps1') -CacheDirectory $CacheDirectory
+New-Item -ItemType Directory -Force -Path $build | Out-Null
+function Invoke-NormalizedCMake {
+    param([string[]]$Arguments, [string]$LogName)
+    $environment = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in [Environment]::GetEnvironmentVariables('Process').GetEnumerator()) {
+        $key = [string]$entry.Key
+        if (-not $environment.ContainsKey($key)) { $environment[$key] = [string]$entry.Value }
+    }
+    # Preserve the effective PATH, including Codex's tool locations, under one
+    # canonical name. Only the child environment is changed.
+    $environment['PATH'] = [Environment]::GetEnvironmentVariable('PATH', 'Process')
+    $start = [Diagnostics.ProcessStartInfo]::new()
+    $start.FileName = (Get-Command $CMakeExecutable -ErrorAction Stop).Source
+    $start.WorkingDirectory = $root
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
+    $start.Environment.Clear()
+    foreach ($entry in $environment.GetEnumerator()) {
+        $name = if ($entry.Key -ieq 'PATH') { 'PATH' } else { $entry.Key }
+        $start.Environment.Add($name, $entry.Value)
+    }
+    $duplicates = @($start.Environment.Keys | Group-Object { $_.ToUpperInvariant() } | Where-Object Count -gt 1)
+    $pathCount = @($start.Environment.Keys | Where-Object { $_ -ieq 'PATH' }).Count
+    if ($duplicates.Count -or $pathCount -ne 1) { throw 'Child environment normalization failed' }
+    Write-Host 'Verified child environment: duplicate names=0; PATH entries=1'
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $start
+    try {
+        if (-not $process.Start()) { throw 'CMake process did not start' }
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $output = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
+        $log = Join-Path $build $LogName
+        Set-Content -LiteralPath $log -Value $output -Encoding utf8
+        Write-Host "CMake exit $($process.ExitCode); log: $log"
+        if ($process.ExitCode -ne 0) {
+            Write-Host (($output -split "`n" | Select-Object -Last 30) -join "`n")
+            throw "CMake failed with exit $($process.ExitCode): $log"
+        }
+    } finally { $process.Dispose() }
+}
 $savedEnvironment = @{}
 try {
     $generatorArguments = @('-A', 'x64', '-T', 'v143')
@@ -31,10 +76,8 @@ try {
         if (-not (Test-Path -LiteralPath $compiler)) { throw 'MSVC x64 compiler was not found after vcvars64' }
         $generatorArguments = @('-DCMAKE_BUILD_TYPE=Release', "-DCMAKE_CXX_COMPILER=$compiler")
     }
-    & $CMakeExecutable -S $root -B $build -G $Generator @generatorArguments '-DAGI_BROWSE_WITH_CEF=ON' "-DCEF_ROOT=$cef"
-    if ($LASTEXITCODE -ne 0) { throw 'CEF CMake configure failed' }
-    & $CMakeExecutable --build $build --config Release --parallel 4
-    if ($LASTEXITCODE -ne 0) { throw 'CEF build failed' }
+    Invoke-NormalizedCMake -Arguments (@('-S', $root, '-B', $build, '-G', $Generator) + $generatorArguments + @('-DAGI_BROWSE_WITH_CEF=ON', "-DCEF_ROOT=$cef")) -LogName 'configure.log'
+    Invoke-NormalizedCMake -Arguments @('--build', $build, '--config', 'Release', '--parallel', '4') -LogName 'build.log'
 } finally {
     foreach ($key in $savedEnvironment.Keys) {
         [Environment]::SetEnvironmentVariable($key, $savedEnvironment[$key], 'Process')
