@@ -1,6 +1,6 @@
-# AIBROWESE-003: resumable checkpoint
+# AIBROWESE-003 evidence
 
-Status: IN PROGRESS. Acceptance: false. Saved 2026-10-02 before dependency changes.
+Status: ACCEPTED. Acceptance: true. Clean hosted Windows build and lifecycle verified 2026-10-02; see final acceptance below. Earlier checkpoints preserve the historical work and pending states.
 
 ## Verified context
 
@@ -116,3 +116,15 @@ Primary image prerequisite verification: the official Windows2022 inventory docu
 Local validation: updated parser passed. Copied the existing verified172788468-byte archive into a fresh ignored cache and ran `./tools/cef/bootstrap.ps1 -CacheDirectory build/cef-ci-7zip-test`. Size/SHA256/SHA1 passed; actual local7-Zip24.09 decompressed in5s, produced a443525120-byte tar, extracted the SDK in1s and recorded SDK ready. `Release/bootstrap.exe`, `Release/libcef.dll` and `include/cef_version.h` SHA256 values matched the previously tested tar-extracted SDK byte-for-byte. Exact local log: `AIBROWESE-003-bootstrap-7zip.log`. No new download or native build/runtime repetition was needed.
 
 The third repair is locally validated and awaits coordinator publication and the actual hosted Windows job. If this third hosted repair fails, stop; no fourth repair is authorized, and the remaining extractor/process-launch assumption must be named. Acceptance remains false until hosted build and lifecycle both pass.
+
+## Final acceptance: clean hosted Windows build and lifecycle verified
+
+Acceptance: true. Latest source head `62019d863c8f958181b2ff6b62b89dfaddd7fd59` passed run https://github.com/Willco9960/AGIBROWSE/actions/runs/37060320215/job/111015090899 on a fresh Windows2022 runner,20:24:03–20:27:42UTC. The actual PR checkout merge commit is recorded in `AIBROWESE-003-ci-acceptance.json`. The implementation source `2f2e042977282455e20a920c9f351d408046ba59` also passed the preceding run37059976596; the latest source includes its documentation update.
+
+Acceptance was checked against the artifact contents and native logs, not inferred solely from the green job. Pinned SDK retrieval/checksums passed; native configure and complete Release build both returned0 using MSVC19.44.35229.0 and SDK10.0.26100.0. The build verified the unmodified upstream bootstrap launcher hash and recorded the client DLL and LPAC ACL creation.
+
+The hosted lifecycle receipt passed in2.0858676s with host exit0. Renderer PIDs1032 and6728 both had restricted tokens at integrity RID0 (untrusted). Logs recorded native window/browser creation, fixture JavaScript readiness, browser/window destruction, message-loop exit and completed CefShutdown. Orphan processes were empty, forcedCleanup=false and failure=null. This satisfies task003's clean Windows build and sandboxed local fixture open/close gate alongside the earlier Windows11 local proof.
+
+Uploaded artifact11251050042 was downloaded and its ZIP SHA256 matched GitHub's digest `0b6ce249fdd266a3e64d00982df2ba5fd2e4b19e4e9003207da86bfd1402d86e`. The concise sanitized receipt, exact run/source/artifact identities, lifecycle events and renderer restrictions are preserved in `AIBROWESE-003-ci-acceptance.json`; browser profiles, process command lines and credentials are excluded. Raw downloaded logs/artifact remain ignored under `build/ci-37060320215/`.
+
+Task003 is accepted. Complete browser workflows and human-speed performance remain future roadmap acceptance targets; this gate verifies the native CEF foundation. No code changes or additional repairs were performed for this final verification.
