@@ -43,7 +43,7 @@ For a manual local launch:
 ./build/windows-cef-normalized/browser/Release/agi-browse-host.exe --url=https://example.com
 ```
 
-The `.github/workflows/windows-cef.yml` recipe builds and runs the lifecycle test on Windows2022. It has not run on a hosted runner because no Git remote is configured. See [task003 evidence](evidence/AIBROWESE-003.md) and the [local runtime result](evidence/AIBROWESE-003-lifecycle.json); clean-runner acceptance remains pending.
+The `.github/workflows/windows-cef.yml` workflow builds and runs the lifecycle test on Windows2022. Its first hosted attempt was cancelled after25 minutes inside the original silent SDK bootstrap, before CMake started. The updated bootstrap uses bounded native Windows curl/tar processes, verifies the same pinned checksums and logs download, checksum and extraction phases. CI preserves those logs and runs once per PR update; the overall limit remains25 minutes. The fresh local retrieval passed, but the updated hosted run still needs to pass. See [task003 evidence](evidence/AIBROWESE-003.md) and the [local runtime result](evidence/AIBROWESE-003-lifecycle.json); clean-runner acceptance remains pending.
 
 ## Repository conventions
 

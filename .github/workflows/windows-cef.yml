@@ -1,27 +1,38 @@
 name: Windows CEF build and lifecycle
 on:
   workflow_dispatch:
-  push:
-    paths: ['CMakeLists.txt', 'apps/browser/**', 'tools/cef/**', 'tests/fixtures/cef-lifecycle.html', '.github/workflows/windows-cef.yml']
   pull_request:
     paths: ['CMakeLists.txt', 'apps/browser/**', 'tools/cef/**', 'tests/fixtures/cef-lifecycle.html', '.github/workflows/windows-cef.yml']
 permissions:
   contents: read
+concurrency:
+  group: windows-cef-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   windows-cef:
     runs-on: windows-2022
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Retrieve and verify pinned CEF SDK
+        shell: pwsh
+        timeout-minutes: 13
+        run: ./tools/cef/bootstrap.ps1 | Out-Null
       - name: Build pinned CEF and native browser
         shell: pwsh
+        timeout-minutes: 10
         run: ./tools/cef/build.ps1
       - name: Exercise Views, renderer sandbox and complete shutdown
         shell: pwsh
+        timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1
       - name: Preserve lifecycle evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-cef-lifecycle
-          path: build/cef-lifecycle
+          path: |
+            build/cef-lifecycle
+            build/cef-sdk/bootstrap.log
+            build/windows-cef/configure.log
+            build/windows-cef/build.log

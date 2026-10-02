@@ -72,3 +72,17 @@ The first normalized configure PASSED (exit0) in fresh `build/windows-cef-normal
 - Committed-review evidence copies (not committed by task003): `docs/evidence/AIBROWESE-003-lifecycle.json` and `docs/evidence/AIBROWESE-003-lifecycle.jsonl`. Full raw run: `build/cef-lifecycle/a2e98beb17c44f0d8f0b8c1956714b9f/`.
 
 Remaining acceptance gate: the clean hosted Windows runner has NOT run. `.github/workflows/windows-cef.yml` exists, but no Git remote is configured. Local build/runtime proof does not certify a clean runner. Acceptance remains false pending that actual run. No task004 advancement is justified yet.
+
+## Hosted CI cancellation diagnosis and bounded bootstrap fix (2026-10-02)
+
+Actual hosted job: https://github.com/Willco9960/AGIBROWSE/actions/runs/37020033186/job/110880450675, head `d195180306eca43ca5609113ce04a737149891c6`. Job logs retrieved through authenticated GitHub API; credentials remained in memory and were not printed or stored. Full raw logs and job metadata: ignored `build/ci-37020033186/job.log` and `job.json`. Selected exact runner lines are preserved in `AIBROWESE-003-ci-cancelled.log`.
+
+The build step started `2026-10-02T14:27:55.8758622Z`; its next output was cancellation at `14:52:52.4955508Z`. No `Verified child environment` appeared, which the build script emits immediately before CMake. Therefore the observed stall was inside the original SDK bootstrap, before compiler configuration. That bootstrap had an unbounded Invoke-WebRequest and silent checksum/extraction steps. The original logs cannot distinguish transfer from extraction or establish a specific upstream network cause. Runtime was skipped and no lifecycle artifact existed. The corresponding PR run37020127953 was also cancelled at the same head (coordinator verified).
+
+Scoped fix: the exact pinned archive now downloads through native `%SystemRoot%/System32/curl.exe` with20s connection timeout,300s attempt timeout,32KiB/s minimum transfer guard over45s, one retry and600s retry budget. A parent process watchdog caps total retrieval at630s. Native System32tar extraction is bounded to90s. Timestamped phases and10s progress heartbeats are printed and retained in the SDK cache's `bootstrap.log`. Archive size, SHA256 and upstream SHA1 remain mandatory; the sandbox bootstrap and native application code are unchanged.
+
+The workflow now separates SDK retrieval, native build and lifecycle steps, preserves SDK/configure/build logs even on failure, and uses PR-only plus manual dispatch with concurrency cancellation to avoid duplicate push/PR jobs. The job timeout remains25 minutes; it was not raised.
+
+Validation: PowerShell parser passed; existing validated-cache bootstrap passed. A fresh actual download using `./tools/cef/bootstrap.ps1 -CacheDirectory build/cef-ci-bootstrap-test` passed:172788468 bytes, native curl18s, both checksums verified, native tar12s, SDK ready. Exact timestamped local log is preserved as `AIBROWESE-003-bootstrap.log`. The previously resolved tar command was System32tar, matching the final explicit path. Native compilation/lifecycle were not repeated because their implementation and pinned SDK were unchanged.
+
+Next action: coordinator publishes this scoped fix and waits for an actual fresh hosted Windows job. Git origin and draft PR https://github.com/Willco9960/AGIBROWSE/pull/1 now exist; earlier no-remote notes above describe the historical checkpoint only. Updated CI has not passed yet. Acceptance remains false until its clean native build and sandbox/lifecycle result pass.
