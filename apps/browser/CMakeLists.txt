@@ -33,7 +33,7 @@ add_library(agi-browse-host SHARED src/cef_main.cpp)
 SET_LIBRARY_TARGET_PROPERTIES(agi-browse-host)
 target_compile_features(agi-browse-host PRIVATE cxx_std_20)
 target_include_directories(agi-browse-host PRIVATE "${CEF_ROOT}")
-target_link_libraries(agi-browse-host PRIVATE libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+target_link_libraries(agi-browse-host PRIVATE libcef_lib libcef_dll_wrapper agi-private-ipc ${CEF_STANDARD_LIBS})
 set_target_properties(agi-browse-host PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/browser/$<CONFIG>"
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

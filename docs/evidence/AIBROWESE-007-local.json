@@ -1,0 +1,34 @@
+{
+  "task": "AIBROWESE-007",
+  "verifiedUtc": "2026-10-02T23:12:00.4862991Z",
+  "passed": true,
+  "durationSeconds": 1.9953811,
+  "hostExitCode": 0,
+  "rendererTokens": [
+    {
+      "processId": 15192,
+      "restricted": true,
+      "integrityRid": 0
+    },
+    {
+      "processId": 29792,
+      "restricted": true,
+      "integrityRid": 0
+    }
+  ],
+  "orphanCount": 0,
+  "forcedCleanup": false,
+  "failure": null,
+  "nativeCheckCount": 193,
+  "nativeDurationSeconds": 1.67,
+  "nativePassed": true,
+  "binarySha256": {
+    "browser/Release/agi-browse-host.exe": "42151BEE2597EA056289C59026B49C27F84110332A80F9ABC4B0F0FBF7C380AC",
+    "browser/Release/agi-browse-host.dll": "7EF898A88E9B61CD5BED7DCA7D9F71F86C58B0F57E89B24BBF7ADD0E157A3204",
+    "browser/Release/agi-browse-broker.exe": "004EDB532E6EE7F48F9484FD3515C720AE21F6797416A5A127B2F4D3EBB44DF5",
+    "lib/ipc/Release/agi-ipc-tests.exe": "0D7DE386A312E662E9E6BF81DE25E214713F1A5951337F0D6316A6C97E003697"
+  },
+  "cefVersion": "154.0.33+ga03e714+chromium-154.0.8037.94",
+  "ciStatus": "parent exact-head gate pending",
+  "sourceRun": "c8520f1f783d495fa0b4741ceae344f5"
+}

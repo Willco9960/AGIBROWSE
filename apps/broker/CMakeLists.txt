@@ -1,2 +1,8 @@
 add_executable(agi-browse-broker src/main.cpp)
-target_compile_features(agi-browse-broker PRIVATE cxx_std_17)
+target_link_libraries(agi-browse-broker PRIVATE agi-private-ipc)
+set_target_properties(agi-browse-broker PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(AGI_BROWSE_WITH_CEF)
+  add_dependencies(agi-browse-broker agi-browse-host)
+  add_custom_command(TARGET agi-browse-broker POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:agi-browse-broker>" "${CMAKE_BINARY_DIR}/browser/$<CONFIG>/agi-browse-broker.exe" VERBATIM)
+endif()

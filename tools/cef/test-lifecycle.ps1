@@ -3,11 +3,13 @@ param(
     [string]$BuildDirectory = (Join-Path $PSScriptRoot '../../build/windows-cef'),
     [string]$EvidenceDirectory = (Join-Path $PSScriptRoot '../../build/cef-lifecycle'),
     [int]$TimeoutSeconds = 45,
-    [string]$FixtureUrl = ''
+    [string]$FixtureUrl = '',
+    [switch]$SecurityProbe
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $exe = [IO.Path]::GetFullPath((Join-Path $BuildDirectory 'browser/Release/agi-browse-host.exe'))
+$brokerExe = Join-Path (Split-Path -Parent $exe) 'agi-browse-broker.exe'
 $evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
 New-Item -ItemType Directory -Force -Path $evidence | Out-Null
 $run = Join-Path $evidence ([Guid]::NewGuid().ToString('N'))
@@ -56,8 +58,8 @@ namespace CefLifecycle {
 }
 
 function Get-OwnedProcesses {
-    @(Get-CimInstance Win32_Process -Filter "Name='agi-browse-host.exe'" |
-        Where-Object { $_.ExecutablePath -eq $exe })
+    @(Get-CimInstance Win32_Process -Filter "Name='agi-browse-host.exe' OR Name='agi-browse-broker.exe'" |
+        Where-Object { $_.ExecutablePath -eq $exe -or $_.ExecutablePath -eq $brokerExe })
 }
 function Get-RunProcesses {
     $candidates = Get-OwnedProcesses
@@ -78,9 +80,11 @@ $success = $false
 $cleanupRequired = $false
 $failure = $null
 $started = Get-Date
-$hostProcess = Start-Process -FilePath $exe -ArgumentList @(
+$arguments = @(
     "--url=$url", "--profile-dir=`"$profile`"", "--lifecycle-log=`"$log`"", '--require-fixture'
-) -PassThru -WindowStyle Hidden
+)
+if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
+$hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle Hidden
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
@@ -96,6 +100,14 @@ try {
         if (-not $ready) { Start-Sleep -Milliseconds 250 }
     } until ($ready -or (Get-Date) -gt $deadline)
     if (-not $ready) { throw 'Local fixture did not execute renderer JavaScript before timeout' }
+    if ($SecurityProbe) {
+        do {
+            $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+            $probeReady = @($events | Where-Object event -eq renderer_application_escape_blocked).Count -gt 0
+            if (-not $probeReady) { Start-Sleep -Milliseconds 100 }
+        } until ($probeReady -or (Get-Date) -gt $deadline)
+        if (-not $probeReady) { throw 'Real renderer application escape/private-handle probe did not pass' }
+    }
     # Probe only after JavaScript ran: before lockdown a newly created process
     # may still carry its temporary startup token.
     foreach ($process in (Get-RunProcesses)) {
@@ -129,8 +141,15 @@ try {
     if ($remaining.Count) { throw 'CEF subprocesses remained after host exit' }
     $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
     foreach ($required in @('sandbox_bootstrap_verified', 'window_created', 'browser_created', 'fixture_ready',
+                            'private_broker_challenge_verified', 'private_broker_stopped',
                             'browser_closed', 'window_destroyed', 'message_loop_exited', 'shutdown_complete')) {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
+    }
+    if ($SecurityProbe) {
+        foreach ($required in @('renderer_application_escape_blocked','renderer_private_handles_absent','page_native_api_absent')) {
+            if (-not ($events | Where-Object event -eq $required)) { throw "Missing security event: $required" }
+        }
+        if (@($events | Where-Object event -eq renderer_privileged_message_rejected).Count -lt 8) { throw 'Renderer negative messages were not all rejected' }
     }
     $success = $true
 } catch {

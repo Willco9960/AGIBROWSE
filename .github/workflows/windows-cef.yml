@@ -2,7 +2,7 @@ name: Windows CEF build and lifecycle
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['CMakeLists.txt', 'apps/browser/**', 'tools/cef/**', 'tests/fixtures/cef-lifecycle.html', '.github/workflows/windows-cef.yml']
+    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'tests/security/**', 'tools/cef/**', 'tests/fixtures/cef-lifecycle.html', '.github/workflows/windows-cef.yml']
 permissions:
   contents: read
 concurrency:
@@ -26,6 +26,14 @@ jobs:
         shell: pwsh
         timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1
+      - name: Native private IPC adversarial cases
+        shell: pwsh
+        timeout-minutes: 2
+        run: ctest --test-dir build/windows-cef -C Release --output-on-failure
+      - name: Real renderer application boundary attacks
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1 -SecurityProbe -EvidenceDirectory build/cef-security
       - name: Preserve lifecycle evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -33,6 +41,8 @@ jobs:
           name: windows-cef-lifecycle
           path: |
             build/cef-lifecycle
+            build/cef-security
+            build/windows-cef/Testing
             build/cef-sdk/bootstrap.log
             build/windows-cef/configure.log
             build/windows-cef/build.log
