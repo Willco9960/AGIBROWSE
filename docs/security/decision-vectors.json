@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "status": "design_only",
+  "operations": ["observe", "wait", "click", "hover", "focus", "fill", "fill_secret", "select", "set_checked", "press", "scroll", "navigate", "open_tab", "back", "forward", "reload", "focus_tab", "close_tab", "upload", "dialog", "drag"],
+  "grant_example": {
+    "version": 1, "grant_id": "g1", "client_id": "c1", "session_id": "s1", "profile_id": "agent",
+    "tab_ids": ["t1"], "contexts": [{"kind": "origin", "origin": "https://example.test", "frame": "top"}],
+    "operations": ["observe", "wait"], "mode": "observe", "generation": 1, "expires_after_ms": 300000
+  },
+  "invalid_grant_overrides": [
+    {"case": "unknown property", "override": {"approved_by_model": true}},
+    {"case": "wildcard origin", "override": {"contexts": [{"kind": "origin", "origin": "https://*.example.test", "frame": "top"}]}},
+    {"case": "origin path", "override": {"contexts": [{"kind": "origin", "origin": "https://example.test/private", "frame": "top"}]}},
+    {"case": "opaque origin", "override": {"contexts": [{"kind": "origin", "origin": "null", "frame": "top"}]}},
+    {"case": "unknown frame policy", "override": {"contexts": [{"kind": "origin", "origin": "https://example.test", "frame": "all"}]}},
+    {"case": "blank is not an origin", "override": {"contexts": [{"kind": "origin", "origin": "about:blank", "frame": "top"}]}},
+    {"case": "blank cannot have an origin field", "override": {"contexts": [{"kind": "host_blank", "frame": "top", "origin": "https://example.test"}]}},
+    {"case": "observe cannot mutate", "override": {"operations": ["click"]}},
+    {"case": "unknown operation", "override": {"mode": "control", "operations": ["execute_js"]}},
+    {"case": "empty tabs", "override": {"tab_ids": []}},
+    {"case": "wildcard profile", "override": {"profile_id": "*"}},
+    {"case": "string generation", "override": {"generation": "1"}},
+    {"case": "unbounded lifetime", "override": {"expires_after_ms": 28800001}},
+    {"case": "duplicate scope", "override": {"tab_ids": ["t1", "t1"]}}
+  ],
+  "cases": [
+    {"id":"SEC-001","category":"malicious_page","owners":["007","066"],"fixture":"Renderer sends copied broker tag and requests inherited IPC handle; host resolves real sender.","expected":"deny","reason":"SENDER_INVALID","status":"planned_runtime"},
+    {"id":"SEC-002","category":"rogue_client","owners":["008","066"],"fixture":"Unpaired same-user client probes IPv4/IPv6 listener, missing/forged cert, wrong server pin, non-loopback bind.","expected":"disconnect","reason":"PAIRING_REQUIRED","status":"planned_runtime"},
+    {"id":"SEC-003","category":"rogue_client","owners":["008","068"],"fixture":"Website WebSocket with Origin evil.test or null, spoofed Host, loopback via DNS rebinding; native absent Origin still lacks valid cert.","expected":"disconnect","reason":"TRANSPORT_INVALID","status":"planned_runtime"},
+    {"id":"SEC-004","category":"rogue_client","owners":["008","009"],"fixture":"Reuse consumed/expired enrollment challenge, substitute public key, rotate unknown key, use revoked client on existing connection.","expected":"deny","reason":"CREDENTIAL_INVALID","status":"planned_runtime"},
+    {"id":"SEC-005","category":"cross_profile","owners":["009","066"],"fixture":"Client for agent/t1 requests human-profile tab inventory, observe, wait, cursor, receipt or mutation; also substitute another client's IDs.","expected":"deny","reason":"SCOPE_MISMATCH","status":"planned_runtime"},
+    {"id":"SEC-006","category":"confused_deputy","owners":["009","068"],"fixture":"Paired client requests control, wildcard scope, approve/JS/CDP operation or passes model-approved annotation; host grants none.","expected":"deny","reason":"OPERATION_DENIED","status":"planned_runtime"},
+    {"id":"SEC-007","category":"malicious_page","owners":["019","026"],"fixture":"Authorized top frame embeds ungranted cross-origin, opaque sandbox, srcdoc or renderer-created about:blank; forged host_blank marker.","expected":"deny","reason":"FRAME_SCOPE","status":"planned_runtime"},
+    {"id":"SEC-008","category":"confused_deputy","owners":["009","026"],"fixture":"Subdomain suffix, userinfo, nondefault port, downgrade, Unicode lookalike, control/backslash or legacy numeric IP URL attempts match exact grant.","expected":"deny","reason":"ORIGIN_DENIED","status":"planned_runtime"},
+    {"id":"SEC-009","category":"malicious_page","owners":["019","026"],"fixture":"Granted navigation POST redirects 307/308 to ungranted origin; link/form/history/script/frame destination changes between validation and dispatch.","expected":"block_destination","reason":"ORIGIN_DENIED","status":"planned_runtime"},
+    {"id":"SEC-010","category":"confused_deputy","owners":["019","026"],"fixture":"Replace node/detach frame/change document after observation; substitute option ref, drag endpoint or native approval dialog as page dialog.","expected":"deny","reason":"TARGET_STALE_OR_INVALID","status":"planned_runtime"},
+    {"id":"SEC-011","category":"confused_deputy","owners":["009","026"],"fixture":"Queue action G then revoke/narrow/expire G before dispatch; regrant G+1 must not revive action.","expected":"rejected_not_sent","reason":"GRANT_REVOKED","status":"planned_runtime"},
+    {"id":"SEC-012","category":"confused_deputy","owners":["015","026"],"fixture":"Queue action then native human input; concurrently request lease from second agent; synthetic page input cannot reacquire native authority.","expected":"rejected_not_sent","reason":"CONTROL_REVOKED","status":"planned_runtime"},
+    {"id":"SEC-013","category":"confused_deputy","owners":["009","026"],"fixture":"Commit effect then revoke; known engine completion remains sent; lose channel/crash around handoff to exercise both sent and uncertain dispatch evidence.","expected":"preserve_sent_or_unknown","reason":"OUTCOME_UNKNOWN","status":"planned_runtime"},
+    {"id":"SEC-014","category":"cross_profile","owners":["009","069"],"fixture":"Cache snapshot/delta/event and enqueue read at G; revoke and await purge barrier; replay old cursor/receipt/search after G+1, including slow consumer.","expected":"purge_and_deny_content","reason":"GRANT_REVOKED","status":"planned_runtime"},
+    {"id":"SEC-015","category":"confused_deputy","owners":["026","067"],"fixture":"Retry identical request ID recovers receipt; change payload rejects reuse; transient same-client resume retains only valid grants/acked state, gap needs snapshot; explicit disconnect needs new approval; uncertain effects never replay.","expected":"recover_or_reject_without_dispatch","reason":"REQUEST_CONFLICT_OR_UNKNOWN","status":"planned_runtime"},
+    {"id":"SEC-016","category":"confused_deputy","owners":["044","068"],"fixture":"Expired/revoked/cross-session/cross-origin file_ref, arbitrary path, replaced selected file or symlink swap; observe file-access counter remains zero.","expected":"deny_before_resolution","reason":"RESOURCE_SCOPE","status":"planned_runtime"},
+    {"id":"SEC-017","category":"confused_deputy","owners":["050","068"],"fixture":"secret_ref wrong origin/profile/target, stolen ref, storage unavailable, missing use approval; no secret lookup before checks.","expected":"deny_before_resolution","reason":"RESOURCE_SCOPE","status":"planned_runtime"},
+    {"id":"SEC-018","category":"malicious_page","owners":["010","050","069"],"fixture":"Sentinel password/marked/reflected secret/path in names, URLs, dialog, errors, deltas, receipts, replay, recordings, telemetry and crash export.","expected":"redact_all_exported_channels","reason":"SENSITIVE_STATE","status":"planned_runtime"},
+    {"id":"SEC-019","category":"malicious_page","owners":["068","066"],"fixture":"Fake system prompt or local-model output asks for new grants, secret fetch, privileged tool or forged strategy/ref; separately document harm using permitted clicks.","expected":"deny_elevation_document_residual","reason":"MODEL_HAS_NO_AUTHORITY","status":"planned_runtime"},
+    {"id":"SEC-020","category":"rogue_client","owners":["007","067"],"fixture":"Fuzz IPC/WSS command/event/replay/schema with duplicate keys, unknown tags, wrong sender/destination, stale sequence, nesting/length overflow and queue flooding.","expected":"bounded_reject_or_disconnect","reason":"MESSAGE_INVALID","status":"planned_runtime"},
+    {"id":"SEC-021","category":"cross_profile","owners":["009","069"],"fixture":"Delete profile, expire retention, disconnect or restart; all clients lose affected grants/refs and managed caches/recordings disappear without claiming client erasure.","expected":"revoke_and_delete_managed_records","reason":"LIFETIME_ENDED","status":"planned_runtime"},
+    {"id":"SEC-022","category":"confused_deputy","owners":["068"],"fixture":"Later generic strategy targets ambiguous paper environment or live account/funding/order flow; no business risk caps inferred for verified paper account.","expected":"deny_live_or_ambiguous_transition","reason":"LIVE_FINANCE_NOT_AUTHORIZED","status":"planned_runtime"},
+    {"id":"SEC-023","category":"confused_deputy","owners":["009","019","026"],"fixture":"Explicit current observe grant returns permitted content; host_blank navigates to granted origin; approved open_tab adds only newly created tab.","expected":"allow_with_current_grant","reason":"AUTHORIZED","status":"planned_runtime"},
+    {"id":"SEC-024","category":"confused_deputy","owners":["044","050","026"],"fixture":"Valid origin/control grant lacks native resource approval; return NEEDS_APPROVAL before access, native approves then fresh observation/new request succeeds once.","expected":"approval_then_fresh_request","reason":"NATIVE_APPROVAL_REQUIRED","status":"planned_runtime"}
+  ]
+}

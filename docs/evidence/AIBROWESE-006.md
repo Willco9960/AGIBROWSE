@@ -1,0 +1,11 @@
+# AIBROWESE-006 security design evidence
+
+Status: design accepted by coordinator review, 2026-10-02. No runtime security gate is claimed.
+
+[Security policy](../security/policy.md) specifies attacker/principal boundaries, deny-default profile/tab/exact-origin/frame/operation grants, pairing and narrow IPC constraints, host-only native approval, URL/redirect/blank-context handling, dispatch and revocation delivery barriers, human takeover, file/secret references, redaction/retention, and prompt-injection residual risk. [Decision vectors](../security/decision-vectors.json) map 24 concrete cases to all four required attack families and tasks 007–010/015/019/026/044/050/066–069. All runtime cases are explicitly planned.
+
+Run `node --test tests/security/policy-contract.test.mjs` from the checkout. [Design checks](../../tests/security/policy-contract.test.mjs) validate operation parity with the unchanged five-tool manifest, a valid grant plus synthetic blank context and 14 invalid grant examples, unique case IDs/owner coverage/status, and local policy/evidence links. They do not execute the host, TLS, IPC, URL interception, revocation race or adversarial page tests. Node URL use in the example checker is not a claimed authoritative production URL parser.
+
+Verification result: 4/4 design checks passed (Node test runner, 2026-10-02, 66 ms). The accepted task-003 restricted-renderer lifecycle proof remains distinct from future task-007 application IPC/escape testing and task-008/009 client authorization. No M02 acceptance, independent penetration test, provider token/cost measurement or runtime attack prevention is asserted. Parent explicitly selected the security architecture lane; provider identity/usage remain unavailable here.
+
+Task-006 acceptance mapping: attacker-test mapping is the linked JSON case matrix and coverage check; explicit grant/revocation rules are the policy's Grants and decisions and Revocation, takeover and delivery timelines sections. Coordinator reviews this contract before task 007 implements it. Future owner tasks must attach real executable attack evidence before changing any case from planned. Public tool manifest, runtime browser, TLS/IPC code, package dependencies and task board are unchanged.

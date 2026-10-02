@@ -31,7 +31,7 @@ The GUI and engine stay in the host; the broker runs as a separate C++ executabl
 | Human → agent | Native input revokes affected leases and cancels undispatched work; no two agents mutate one tab. Native UI alone approves sensitive actions. |
 | Release → installation | Authenticated artifacts and sandbox preservation; signing/rotation/recovery decisions belong to task 076. |
 
-Task 006 defines attacker/capability policy, pairing/certificate/IPC mechanisms, revocation races and negative vectors. This document fixes enforcement locations, not cryptographic choices.
+Task 006 specifies the [security policy and planned negative vectors](security/policy.md), including pairing/certificate/IPC constraints and revocation races. Its implementation contract requires coordinator acceptance; runtime enforcement remains with the assigned tasks. This document fixes enforcement locations.
 
 ## Data and control flow
 
