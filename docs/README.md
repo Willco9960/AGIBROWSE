@@ -6,7 +6,7 @@ AGI-BROWSE is an early local browser with an optional working Windows CEF Views 
 
 - CMake 3.21 or newer and a C++17 compiler for scaffold checks. The Windows CEF build requires native Windows CMake (not the MSYS build), VS2022 MSVC v143 x64/x86, a Windows SDK and C++20. Verified locally: official Kitware CMake4.2.0, MSVC19.44.35229.0 and SDK10.0.26100.0. ATL and Spectre components are not required.
 - Node.js 20.11+ and npm for TypeScript package checks (`import.meta.dirname` is used by the package script).
-- PowerShell 7+ for the Windows CEF scripts; PowerShell 7+ or Bash for the documented `&&` command chaining.
+- PowerShell 7+ for the Windows CEF build scripts and preinstalled Windows 7-Zip at `%ProgramFiles%/7-Zip/7z.exe` for SDK extraction; PowerShell 7+ or Bash for the documented `&&` command chaining.
 - Python 3.10+ for the Python SDK wheel. The Windows CEF SDK is downloaded and checksum verified by `tools/cef/bootstrap.ps1`; its exact version and archive hashes are in `tools/cef/cef.lock.json`.
 - For the Python wheel, initialize an ignored local build environment once with a standard Python install that includes `venv`: `C:\path\to\python.exe -m venv build/sdk-python-venv` on Windows or `python3 -m venv build/sdk-python-venv` on POSIX, then `build/sdk-python-venv/Scripts/python.exe -m pip install setuptools==80.9.0` on Windows (`build/sdk-python-venv/bin/python -m pip install setuptools==80.9.0` on POSIX).
 
@@ -18,7 +18,7 @@ Run from the repository root. Each command builds or packages one named package;
 2. TypeScript MCP bridge: `npm ci --ignore-scripts && npm run build:bridge`
 3. TypeScript SDK: `npm ci --ignore-scripts && npm run build:sdk-ts`
 4. Python SDK wheel: `build/sdk-python-venv/Scripts/python.exe -m pip wheel --cache-dir build/pip-cache --no-deps --no-build-isolation --wheel-dir dist/sdk-python packages/sdk-python`
-5. Reference packages: `npm run package:schema`, `npm run package:fixtures` and `npm run package:docs` copy their inputs under `build/packages/`. The schema remains planning input; the fixture package contains its status document; the docs package includes task evidence. The CEF lifecycle test loads `tests/fixtures/cef-lifecycle.html` directly.
+5. Reference packages: `npm run package:schema`, `npm run package:fixtures` and `npm run package:docs` copy their inputs under `build/packages/`. The schema remains planning input; the fixture package contains seeded browser pages and expected outcomes; the docs package includes task evidence. See [fixture commands](../tests/fixtures/README.md) and [runner commands](runner-guide.md).
 
 Run `npm ci --ignore-scripts` once before either TypeScript package build. `package-lock.json` pins the exact TypeScript compiler version and integrity hash.
 
@@ -43,7 +43,7 @@ For a manual local launch:
 ./build/windows-cef-normalized/browser/Release/agi-browse-host.exe --url=https://example.com
 ```
 
-The `.github/workflows/windows-cef.yml` workflow builds and runs the lifecycle test on Windows2022. Its first hosted attempt was cancelled after25 minutes inside the original silent SDK bootstrap, before CMake started. The updated bootstrap uses bounded native Windows curl/tar processes, verifies the same pinned checksums and logs download, checksum and extraction phases. CI preserves those logs and runs once per PR update; the overall limit remains25 minutes. The fresh local retrieval passed, but the updated hosted run still needs to pass. See [task003 evidence](evidence/AIBROWESE-003.md) and the [local runtime result](evidence/AIBROWESE-003-lifecycle.json); clean-runner acceptance remains pending.
+The `.github/workflows/windows-cef.yml` workflow builds and runs the lifecycle test on Windows2022. The clean hosted run passed at source `62019d8`: native build, restricted renderers, normal shutdown and zero orphan processes. Bootstrap uses bounded native Windows curl and two-phase preinstalled 7-Zip extraction with mandatory pinned checksums. CI preserves evidence; the overall limit remains25 minutes. See [task003 evidence](evidence/AIBROWESE-003.md) and the [verified CI receipt](evidence/AIBROWESE-003-ci-acceptance.json).
 
 ## Repository conventions
 
@@ -55,4 +55,4 @@ The `.github/workflows/windows-cef.yml` workflow builds and runs the lifecycle t
 
 ## Current status
 
-The optional Windows CEF host has passed a native build and local lifecycle test. Task003 still requires an actual clean Windows runner pass. Detailed protocol choices remain with their assigned tasks; no public MCP tools or SDK operations are available yet.
+The Windows CEF host has passed local and clean hosted builds and sandbox lifecycle tests. Tasks001–005 and milestoneM01 are accepted: seeded fixtures passed14/14 browser assertions for each of two seeds, and routing checks passed12/12 tests. Detailed protocol choices remain with their assigned tasks; human navigation controls, public MCP tools, SDK operations and the two-tier agent runtime are not available yet.
