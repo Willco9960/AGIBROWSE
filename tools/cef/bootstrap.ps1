@@ -40,15 +40,21 @@ function Invoke-BoundedProcess {
                 if ($Phase -eq 'download') {
                     $bytes = if (Test-Path -LiteralPath ($archive + '.partial')) { (Get-Item -LiteralPath ($archive + '.partial')).Length } else { 0 }
                     $progress += "; archiveBytes=$bytes/$($pin.size)"
+                } elseif ($Phase -eq 'decompression') {
+                    $bytes = if (Test-Path -LiteralPath $tarArchive) { (Get-Item -LiteralPath $tarArchive).Length } else { 0 }
+                    $progress += "; tarBytes=$bytes"
                 } elseif ($Phase -eq 'extraction') {
                     $files = if (Test-Path -LiteralPath $sdk) { @(Get-ChildItem -LiteralPath $sdk -File -Recurse -ErrorAction SilentlyContinue) } else { @() }
                     $bytes = [long]($files | Measure-Object -Property Length -Sum).Sum
+                    $progress += "; extractedFiles=$($files.Count); extractedBytes=$bytes"
+                }
+                if ($Phase -eq 'decompression' -or $Phase -eq 'extraction') {
                     $cpu = 'unavailable'
                     try {
                         $process.Refresh()
                         $cpu = [Math]::Round($process.TotalProcessorTime.TotalSeconds, 1)
                     } catch { }
-                    $progress += "; extractedFiles=$($files.Count); extractedBytes=$bytes; processCpuSeconds=$cpu"
+                    $progress += "; processCpuSeconds=$cpu"
                 }
                 Write-BootstrapProgress $progress
                 $nextProgressSeconds = $timer.Elapsed.TotalSeconds + 10
@@ -101,10 +107,19 @@ Write-BootstrapProgress 'archive checksums verified'
 $sdk = Join-Path $cache ($pin.archive -replace '\.tar\.bz2$', '')
 $marker = Join-Path $sdk 'agi-browse-pin.sha256'
 if (-not (Test-Path -LiteralPath $marker)) {
-    Write-BootstrapProgress 'extraction start: processLimit=300s'
-    $tar = Join-Path $env:SystemRoot 'System32/tar.exe'
-    if (-not (Test-Path -LiteralPath $tar)) { throw 'Native Windows tar.exe is required for CEF extraction' }
-    Invoke-BoundedProcess -Executable $tar -Arguments @('-xf', $archive, '-C', $cache) -TimeoutSeconds 300 -Phase 'extraction'
+    $sevenZip = Join-Path $env:ProgramFiles '7-Zip/7z.exe'
+    if (-not (Test-Path -LiteralPath $sevenZip)) { throw 'Preinstalled Windows 7-Zip is required for CEF extraction' }
+    $version = (Get-Item -LiteralPath $sevenZip).VersionInfo.FileVersion
+    Write-BootstrapProgress "extractor=$sevenZip; version=$version"
+    $tarArchive = $archive -replace '\.bz2$', ''
+    Write-BootstrapProgress 'decompression start: bzip2 to tar; processLimit=180s'
+    Invoke-BoundedProcess -Executable $sevenZip -Arguments @('x', '-y', '-aoa', '-bso0', '-bsp0', '-bse1', "-o$cache", $archive) -TimeoutSeconds 180 -Phase 'decompression'
+    if (-not (Test-Path -LiteralPath $tarArchive) -or (Get-Item -LiteralPath $tarArchive).Length -le 0) {
+        throw '7-Zip did not produce the expected intermediate tar archive'
+    }
+    Write-BootstrapProgress "tar ready: bytes=$((Get-Item -LiteralPath $tarArchive).Length)"
+    Write-BootstrapProgress 'extraction start: tar to SDK; processLimit=120s'
+    Invoke-BoundedProcess -Executable $sevenZip -Arguments @('x', '-y', '-aoa', '-bso0', '-bsp0', '-bse1', "-o$cache", $tarArchive) -TimeoutSeconds 120 -Phase 'extraction'
     foreach ($required in @('Release/bootstrap.exe', 'Release/libcef.dll', 'Release/libcef.lib',
                             'include/cef_version.h', 'Resources/icudtl.dat', 'LICENSE.txt')) {
         if (-not (Test-Path -LiteralPath (Join-Path $sdk $required))) { throw "Missing SDK file: $required" }
