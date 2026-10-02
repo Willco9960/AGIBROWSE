@@ -68,6 +68,8 @@ Identical live-session request-ID retries recover recorded receipts; changed-pay
 
 ## Handoff and acceptance
 
+The user-authorized [two-tier agent contract](contracts/two-tier-agent.md) and [ADR-002](decisions/002-two-tier-agent-runtime.md) add an external smartLLM strategy tier with pluggable local typed decisions and deterministic execution. Architecture is accepted; runtime integration remains unimplemented and follows task 003 onward. Laya checkpoint adoption is conditional on pinned artifact/license review and held-out domain/calibration evidence. Native permissions, human control and unknown-outcome semantics remain authoritative. General browser workflows stay the goal; later virtual trading grants no live-finance authority.
+
 [Module map](module-map.json) assigns one primary owner to every task, plus collaborators. Reserved paths guide task 002; they do not call for placeholder implementations. Task 031 makes schemas/ the canonical implementation source for bridge/SDK contracts.
 
 | Gates | Required evidence |
