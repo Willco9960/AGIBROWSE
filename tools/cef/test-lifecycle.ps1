@@ -2,7 +2,8 @@
 param(
     [string]$BuildDirectory = (Join-Path $PSScriptRoot '../../build/windows-cef'),
     [string]$EvidenceDirectory = (Join-Path $PSScriptRoot '../../build/cef-lifecycle'),
-    [int]$TimeoutSeconds = 45
+    [int]$TimeoutSeconds = 45,
+    [string]$FixtureUrl = ''
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -14,6 +15,7 @@ New-Item -ItemType Directory -Path $run | Out-Null
 $log = Join-Path $run 'lifecycle.jsonl'
 $profile = Join-Path $run 'profile'
 $url = ([Uri](Join-Path $root 'tests/fixtures/cef-lifecycle.html')).AbsoluteUri
+if ($FixtureUrl) { $url = $FixtureUrl }
 
 if (-not ('CefLifecycle.Native' -as [type])) {
 Add-Type -TypeDefinition @'
