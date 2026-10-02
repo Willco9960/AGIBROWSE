@@ -1,11 +1,11 @@
 {
   "task": "AIBROWESE-001",
-  "checked_at_utc": "2026-10-02T02:33:11.0065451Z",
+  "checked_at_utc": "2026-10-02T02:47:23.0040128Z",
   "status": "passed",
   "task_count": 90,
   "module_count": 38,
   "milestone_count": 18,
-  "local_links_checked": 17,
+  "local_links_checked": 14,
   "checks": [
     "90 unique ordered IDs and source titles",
     "one valid primary owner and valid collaborators per task",

@@ -1,0 +1,13 @@
+{
+  "name": "agi-browse-workspace",
+  "private": true,
+  "workspaces": ["packages/mcp-bridge", "packages/sdk-typescript"],
+  "scripts": {
+    "build:types": "tsc -b packages/mcp-bridge/tsconfig.json packages/sdk-typescript/tsconfig.json",
+    "build:bridge": "npm --workspace @agi-browse/mcp-bridge run build",
+    "build:sdk-ts": "npm --workspace @agi-browse/sdk-typescript run build",
+    "package:schema": "node tools/package-scaffold.mjs schema",
+    "package:fixtures": "node tools/package-scaffold.mjs fixtures",
+    "package:docs": "node tools/package-scaffold.mjs docs"
+  }
+}

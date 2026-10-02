@@ -1,1 +1,8 @@
 .kanbots/
+build/
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
