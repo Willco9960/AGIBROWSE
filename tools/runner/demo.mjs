@@ -1,0 +1,14 @@
+import { readFile, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { sha256,loadManifest } from './runner.mjs';
+import { main } from './cli.mjs';
+const dir=await mkdtemp(join(tmpdir(),'aibrowese-runner-'));
+const manifest=await loadManifest(),task=manifest.assignments[3];
+const proof='docs/evidence/AIBROWESE-004.md';
+const completion={taskId:task.taskId,status:'verified',source:'coordinator-reviewed-004-foundation',reviewer:'coordinator review recorded in foundation evidence',verifiedAt:new Date().toISOString(),evidence:[{path:proof,sha256:sha256(await readFile(proof)),description:'004 previously verified server and two real CEF seed runs'}],criteria:task.acceptanceCriteria.map(criterion=>({criterion,passed:true,evidence:[0]}))};
+const route={model:'gpt-6.1-sol',reasoning:'medium',mode:'standard'};
+const request={taskId:'AIBROWESE-005',config:{...route,availableRoutes:[route],trustedAdapter:{path:'tools/runner/demo-adapter.mjs',sha256:sha256(await readFile('tools/runner/demo-adapter.mjs'))}},completions:{'AIBROWESE-004':completion},auditPath:join(dir,'audit.jsonl')};
+const path=join(dir,'request.json'); await writeFile(path,JSON.stringify(request));
+await main(['preflight',path]); await main(['run',path]);
+console.log(`Audit: ${request.auditPath}\nExpected: exit 2; active 005 route consumed, missing executor receipts cannot become Done.`);

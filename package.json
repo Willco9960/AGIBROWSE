@@ -1,7 +1,10 @@
 {
   "name": "agi-browse-workspace",
   "private": true,
-  "workspaces": ["packages/mcp-bridge", "packages/sdk-typescript"],
+  "workspaces": [
+    "packages/mcp-bridge",
+    "packages/sdk-typescript"
+  ],
   "scripts": {
     "build:types": "tsc -b packages/mcp-bridge/tsconfig.json packages/sdk-typescript/tsconfig.json",
     "build:bridge": "npm --workspace @agi-browse/mcp-bridge run build",
@@ -11,6 +14,10 @@
     "fixtures:serve": "node tools/fixtures/server.mjs",
     "test:fixtures": "node --test tools/fixtures/server.test.mjs",
     "test:fixtures:browser": "node tools/fixtures/test-browser.mjs",
-    "package:docs": "node tools/package-scaffold.mjs docs"
+    "package:docs": "node tools/package-scaffold.mjs docs",
+    "runner:preflight": "node tools/runner/cli.mjs preflight",
+    "runner:run": "node tools/runner/cli.mjs run",
+    "runner:demo": "node tools/runner/demo.mjs",
+    "test:runner": "node --test tools/runner/runner.test.mjs"
   }
 }
