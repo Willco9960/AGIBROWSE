@@ -1,0 +1,1255 @@
+{
+  "format_version": 1,
+  "task": "AIBROWESE-001",
+  "status": "documentation contract; runtime unimplemented",
+  "source_package": "outputs/AIBROWESE-KanbanThing",
+  "source_sha256": [
+    {
+      "sha256": "996D3837C412DD6E9F0886A577C485B064ECE95A97CA1690ED422D7D4058BAEC",
+      "path": "approved-roadmap.md"
+    },
+    {
+      "sha256": "1C900A3C3B3FA5F4C06620C957A781C3CF7B5376E41B0EC04CBACBF386324F0F",
+      "path": "execution-policy.md"
+    },
+    {
+      "sha256": "E0FA7CA41828721AD9A28ED96C2884CB6A45499F8054FD0EA43FCC563980A2F4",
+      "path": "agent-tools.json"
+    }
+  ],
+  "scope": {
+    "first": "Windows 11 x64",
+    "before_1_0": [
+      "macOS 14+ arm64",
+      "Ubuntu 24.04 x64 (X11 and Wayland)"
+    ]
+  },
+  "scaffolding_contract": {
+    "native_language": "C++",
+    "native_build": "CMake",
+    "browser": "apps/browser (CEF Views + pinned upstream CEF)",
+    "broker": "apps/broker (separate executable; no GUI/renderer dependency)",
+    "bridge_language": "TypeScript",
+    "sdk_languages": [
+      "TypeScript",
+      "Python"
+    ],
+    "schemas": "schemas is canonical after task031; docs/contracts/agent-tools.reference.json is the exact planning input reference",
+    "path_semantics": "Repository-relative reserved ownership paths; not existing packages. Root workspace/build/license files belong to repository; governance templates under .github collaborate with docs.",
+    "approval_state": "Separate C++/CMake broker accepted by coordinator on 2026-10-01; approved process/security invariants are unchanged."
+  },
+  "modules": [
+    {
+      "id": "docs",
+      "path": "docs",
+      "process": "documentation",
+      "responsibility": "Architecture, protocol/contributor/user references and governance.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "repository",
+      "path": "cmake",
+      "process": "build tooling",
+      "responsibility": "Native CMake/workspace scaffolding, contributor commands, project license and third-party notice separation.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "engine",
+      "path": "apps/browser/src/engine",
+      "process": "browser host",
+      "responsibility": "Pinned CEF lifecycle, internal CDP attachment and engine/document/frame/node identity.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "fixtures",
+      "path": "tests/fixtures",
+      "process": "test harness",
+      "responsibility": "Deterministic multi-origin forms/navigation/dynamic fixtures.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "execution-runner",
+      "path": "tools/task-runner",
+      "process": "development tooling",
+      "responsibility": "Enforce exact model/reasoning routing, attempts, usage and cost evidence.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "security",
+      "path": "apps/browser/src/security",
+      "process": "browser host",
+      "responsibility": "Host capability authority, IPC validation, scope/revocation, certificates and origin/network policy.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "broker-transport",
+      "path": "apps/broker/src/transport",
+      "process": "broker",
+      "responsibility": "Authenticated paired loopback WSS, certificate/credential checks and browser-origin rejection.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "redaction",
+      "path": "apps/browser/src/redaction",
+      "process": "browser host",
+      "responsibility": "Filter sensitive state/errors before publication, traces and diagnostics.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "shell",
+      "path": "apps/browser/src/shell",
+      "process": "browser host",
+      "responsibility": "CEF Views tab/window chrome, secondary surfaces, saved-navigation UI, themes, keyboard/a11y, onboarding/errors and platform menus.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "profiles",
+      "path": "apps/browser/src/profiles",
+      "process": "browser host",
+      "responsibility": "Isolated storage, bookmarks/history, private lifecycle, crash recovery and suspension.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "control",
+      "path": "apps/browser/src/control",
+      "process": "browser host",
+      "responsibility": "Exclusive agent leases, human-priority takeover and queued command cancellation.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "semantics",
+      "path": "apps/browser/src/semantics",
+      "process": "browser host",
+      "responsibility": "Accessibility normalization, constrained DOM enrichment, coalescing and extraction scheduling.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "broker-projections",
+      "path": "apps/broker/src/projections",
+      "process": "broker",
+      "responsibility": "Permission-filtered bounded projections, coverage, token budgeting and revision-bound pagination.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "schemas",
+      "path": "schemas",
+      "process": "shared contract definitions",
+      "responsibility": "Canonical versioned state/action/session/response schemas and compatibility vectors; no runtime authority.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "broker-state",
+      "path": "apps/broker/src/state",
+      "process": "broker",
+      "responsibility": "Subscription/replay/event history, resumable streams and bounded backpressure.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "sync-tests",
+      "path": "tests/state",
+      "process": "test harness",
+      "responsibility": "Generated reducer/convergence, replay, navigation and malformed-state vectors.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "dispatch",
+      "path": "apps/browser/src/dispatch",
+      "process": "browser host",
+      "responsibility": "Authoritative guarded command dispatch, deduplication, input/form/navigation actions and receipts.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "dispatch-tests",
+      "path": "tests/dispatch",
+      "process": "test harness",
+      "responsibility": "Stale-target/control races and crash-after-dispatch unknown outcomes.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "mcp-bridge",
+      "path": "packages/mcp-bridge",
+      "process": "TypeScript bridge",
+      "responsibility": "Five-tool stdio/loopback Streamable HTTP adapters and explicit application sessions.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "sdk-typescript",
+      "path": "packages/sdk-typescript",
+      "process": "external native client",
+      "responsibility": "Typed native WSS access, live reducer, reconnect, context selection/compaction and recovery.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "sdk-python",
+      "path": "packages/sdk-python",
+      "process": "external native client",
+      "responsibility": "Equivalent Python native connection, reduction, cancellation/reconnect/pagination and typed errors.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "agent-skill",
+      "path": "skills/aibrowese-native",
+      "process": "agent instruction package",
+      "responsibility": "Observe/act/verify/handoff/recovery/disconnect instructions without embedded credentials.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "examples",
+      "path": "examples",
+      "process": "integration examples",
+      "responsibility": "Clean-environment MCP, TS and Python fixture workflows.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "diagnostics",
+      "path": "apps/broker/src/diagnostics",
+      "process": "broker",
+      "responsibility": "Redacted bounded recording/replay and local measured usage exports; never model accounting by inference.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "packaging-windows",
+      "path": "packaging/windows",
+      "process": "distribution tooling",
+      "responsibility": "Signed per-user MSIX alpha, channels and updates preserving sandbox/credential protections.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "acceptance-tests",
+      "path": "tests/acceptance",
+      "process": "test harness",
+      "responsibility": "End-to-end, compatibility/parity/soak/beta/RC journeys with real OS/human evidence.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "downloads",
+      "path": "apps/browser/src/downloads",
+      "process": "browser host",
+      "responsibility": "Approved destination, progress/cancellation/interruption/collision handling; no silent execution.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "files",
+      "path": "apps/browser/src/files",
+      "process": "browser host",
+      "responsibility": "Native selection and scoped opaque upload file references; no arbitrary agent paths.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "devtools",
+      "path": "apps/browser/src/devtools",
+      "process": "browser host",
+      "responsibility": "Human DevTools coexistence and semantic-state inspector/highlighting.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "secrets",
+      "path": "apps/browser/src/secrets",
+      "process": "browser host",
+      "responsibility": "Origin/scope-bound opaque secret references and platform-protected credential backends.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "platform",
+      "path": "apps/browser/src/platform",
+      "process": "browser host",
+      "responsibility": "Print/PDF, clipboard/dialogs, media/native integration and macOS/Linux shell adapters.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "benchmarks",
+      "path": "benchmarks",
+      "process": "measurement tooling",
+      "responsibility": "Frozen-corpus whole-workflow token/runtime methodology, efficiency gate, reference hardware and reproducible demos.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "security-tests",
+      "path": "tests/security",
+      "process": "independent review/test harness",
+      "responsibility": "Implemented-boundary review, parser fuzzing, malicious-page/exfiltration and retention/log-hygiene checks.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "release-tooling",
+      "path": "tools/release",
+      "process": "release tooling",
+      "responsibility": "Dependency/license/SBOM/provenance checks, upstream maintenance drills and final same-candidate release verification/publication.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "updates",
+      "path": "apps/browser/src/updates",
+      "process": "native update contract",
+      "responsibility": "Update trust/channel/rotation/recovery policy and native updater boundary; task076 owns the detailed design.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "packaging-macos",
+      "path": "packaging/macos",
+      "process": "distribution tooling",
+      "responsibility": "Signed/notarized macOS packaging and authenticated updates.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "packaging-linux",
+      "path": "packaging/linux",
+      "process": "distribution tooling",
+      "responsibility": "Signed deb repository packaging/rotation and install/update/remove.",
+      "status": "reserved; unimplemented"
+    },
+    {
+      "id": "broker-sessions",
+      "path": "apps/broker/src/sessions",
+      "process": "broker",
+      "responsibility": "Client-session lifecycle and host-approved scope reflection for connect/disconnect/revocation; implements parts of tasks009/032/034/035.",
+      "status": "reserved; unimplemented"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "AIBROWESE-001",
+      "title": "Record the system architecture and boundaries",
+      "milestone": "M01",
+      "owner_module": "docs",
+      "collaborator_modules": [
+        "schemas"
+      ]
+    },
+    {
+      "id": "AIBROWESE-002",
+      "title": "Scaffold the repository and contributor commands",
+      "milestone": "M01",
+      "owner_module": "repository",
+      "collaborator_modules": [
+        "engine",
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python",
+        "schemas",
+        "fixtures",
+        "docs",
+        "broker-transport",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-003",
+      "title": "Build the Windows CEF application skeleton",
+      "milestone": "M01",
+      "owner_module": "engine",
+      "collaborator_modules": [
+        "shell",
+        "security",
+        "repository"
+      ]
+    },
+    {
+      "id": "AIBROWESE-004",
+      "title": "Establish deterministic browser fixtures",
+      "milestone": "M01",
+      "owner_module": "fixtures",
+      "collaborator_modules": [
+        "engine",
+        "semantics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-005",
+      "title": "Enforce task model routing and usage records",
+      "milestone": "M01",
+      "owner_module": "execution-runner",
+      "collaborator_modules": []
+    },
+    {
+      "id": "AIBROWESE-006",
+      "title": "Define the threat model and capability policy",
+      "milestone": "M02",
+      "owner_module": "security",
+      "collaborator_modules": [
+        "broker-transport",
+        "control",
+        "redaction",
+        "files",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-007",
+      "title": "Establish sandbox and privileged IPC boundaries",
+      "milestone": "M02",
+      "owner_module": "security",
+      "collaborator_modules": [
+        "engine",
+        "broker-transport"
+      ]
+    },
+    {
+      "id": "AIBROWESE-008",
+      "title": "Implement authenticated loopback transport",
+      "milestone": "M02",
+      "owner_module": "broker-transport",
+      "collaborator_modules": [
+        "security"
+      ]
+    },
+    {
+      "id": "AIBROWESE-009",
+      "title": "Enforce scoped sessions and revocation",
+      "milestone": "M02",
+      "owner_module": "security",
+      "collaborator_modules": [
+        "broker-projections",
+        "broker-state",
+        "control",
+        "broker-sessions"
+      ]
+    },
+    {
+      "id": "AIBROWESE-010",
+      "title": "Redact sensitive state before publication",
+      "milestone": "M02",
+      "owner_module": "redaction",
+      "collaborator_modules": [
+        "semantics",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-011",
+      "title": "Implement tab and window lifecycle",
+      "milestone": "M03",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "engine",
+        "profiles",
+        "control"
+      ]
+    },
+    {
+      "id": "AIBROWESE-012",
+      "title": "Build navigation controls and basic layouts",
+      "milestone": "M03",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "engine"
+      ]
+    },
+    {
+      "id": "AIBROWESE-013",
+      "title": "Separate browsing profiles and storage",
+      "milestone": "M03",
+      "owner_module": "profiles",
+      "collaborator_modules": [
+        "security"
+      ]
+    },
+    {
+      "id": "AIBROWESE-014",
+      "title": "Handle certificates and website permissions",
+      "milestone": "M03",
+      "owner_module": "security",
+      "collaborator_modules": [
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-015",
+      "title": "Implement human-priority control arbitration",
+      "milestone": "M03",
+      "owner_module": "control",
+      "collaborator_modules": [
+        "shell",
+        "dispatch",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-016",
+      "title": "Integrate internal CDP observation",
+      "milestone": "M04",
+      "owner_module": "engine",
+      "collaborator_modules": [
+        "semantics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-017",
+      "title": "Normalize accessibility semantics",
+      "milestone": "M04",
+      "owner_module": "semantics",
+      "collaborator_modules": [
+        "fixtures"
+      ]
+    },
+    {
+      "id": "AIBROWESE-018",
+      "title": "Add constrained DOM enrichment",
+      "milestone": "M04",
+      "owner_module": "semantics",
+      "collaborator_modules": [
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-019",
+      "title": "Track frames, shadow roots, and node identity",
+      "milestone": "M04",
+      "owner_module": "engine",
+      "collaborator_modules": [
+        "security",
+        "semantics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-020",
+      "title": "Implement bounded semantic projections",
+      "milestone": "M04",
+      "owner_module": "broker-projections",
+      "collaborator_modules": [
+        "semantics",
+        "redaction",
+        "schemas"
+      ]
+    },
+    {
+      "id": "AIBROWESE-021",
+      "title": "Formalize state, revision, and delta contracts",
+      "milestone": "M05",
+      "owner_module": "schemas",
+      "collaborator_modules": [
+        "broker-state",
+        "broker-projections",
+        "sdk-typescript",
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-022",
+      "title": "Capture and coalesce semantic changes",
+      "milestone": "M05",
+      "owner_module": "semantics",
+      "collaborator_modules": [
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-023",
+      "title": "Implement resumable state reconstruction",
+      "milestone": "M05",
+      "owner_module": "broker-state",
+      "collaborator_modules": [
+        "schemas",
+        "sdk-typescript",
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-024",
+      "title": "Bound subscriptions and backpressure",
+      "milestone": "M05",
+      "owner_module": "broker-state",
+      "collaborator_modules": [
+        "broker-transport",
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-025",
+      "title": "Property-test the synchronization reducer",
+      "milestone": "M05",
+      "owner_module": "sync-tests",
+      "collaborator_modules": [
+        "broker-state",
+        "sdk-typescript",
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-026",
+      "title": "Implement guarded dispatch and request deduplication",
+      "milestone": "M06",
+      "owner_module": "dispatch",
+      "collaborator_modules": [
+        "control",
+        "security",
+        "schemas",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-027",
+      "title": "Implement pointer and focus actions",
+      "milestone": "M06",
+      "owner_module": "dispatch",
+      "collaborator_modules": [
+        "engine"
+      ]
+    },
+    {
+      "id": "AIBROWESE-028",
+      "title": "Implement text and form actions",
+      "milestone": "M06",
+      "owner_module": "dispatch",
+      "collaborator_modules": [
+        "engine",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-029",
+      "title": "Implement navigation and tab actions",
+      "milestone": "M06",
+      "owner_module": "dispatch",
+      "collaborator_modules": [
+        "profiles",
+        "security"
+      ]
+    },
+    {
+      "id": "AIBROWESE-030",
+      "title": "Test dispatch races and uncertain outcomes",
+      "milestone": "M06",
+      "owner_module": "dispatch-tests",
+      "collaborator_modules": [
+        "dispatch",
+        "control"
+      ]
+    },
+    {
+      "id": "AIBROWESE-031",
+      "title": "Publish versioned protocol schemas",
+      "milestone": "M07",
+      "owner_module": "schemas",
+      "collaborator_modules": [
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-032",
+      "title": "Implement the stdio MCP bridge",
+      "milestone": "M07",
+      "owner_module": "mcp-bridge",
+      "collaborator_modules": [
+        "schemas",
+        "sdk-typescript",
+        "broker-sessions"
+      ]
+    },
+    {
+      "id": "AIBROWESE-033",
+      "title": "Add authenticated loopback Streamable HTTP",
+      "milestone": "M07",
+      "owner_module": "mcp-bridge",
+      "collaborator_modules": [
+        "security",
+        "sdk-typescript"
+      ]
+    },
+    {
+      "id": "AIBROWESE-034",
+      "title": "Build the TypeScript SDK",
+      "milestone": "M07",
+      "owner_module": "sdk-typescript",
+      "collaborator_modules": [
+        "schemas",
+        "broker-state",
+        "broker-sessions"
+      ]
+    },
+    {
+      "id": "AIBROWESE-035",
+      "title": "Build the Python SDK",
+      "milestone": "M07",
+      "owner_module": "sdk-python",
+      "collaborator_modules": [
+        "schemas",
+        "broker-state",
+        "broker-sessions"
+      ]
+    },
+    {
+      "id": "AIBROWESE-036",
+      "title": "Write the native-browser agent skill",
+      "milestone": "M08",
+      "owner_module": "agent-skill",
+      "collaborator_modules": [
+        "mcp-bridge",
+        "docs"
+      ]
+    },
+    {
+      "id": "AIBROWESE-037",
+      "title": "Add minimal integration examples",
+      "milestone": "M08",
+      "owner_module": "examples",
+      "collaborator_modules": [
+        "fixtures",
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-038",
+      "title": "Add redacted session recording and replay",
+      "milestone": "M08",
+      "owner_module": "diagnostics",
+      "collaborator_modules": [
+        "redaction",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-039",
+      "title": "Package the signed Windows alpha",
+      "milestone": "M08",
+      "owner_module": "packaging-windows",
+      "collaborator_modules": [
+        "engine",
+        "security",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-040",
+      "title": "Pass the Windows alpha acceptance suite",
+      "milestone": "M08",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "fixtures",
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python",
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-041",
+      "title": "Implement bookmarks and browsing history",
+      "milestone": "M09",
+      "owner_module": "profiles",
+      "collaborator_modules": [
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-042",
+      "title": "Build bookmark and history interfaces",
+      "milestone": "M09",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "profiles"
+      ]
+    },
+    {
+      "id": "AIBROWESE-043",
+      "title": "Implement download lifecycle management",
+      "milestone": "M09",
+      "owner_module": "downloads",
+      "collaborator_modules": [
+        "security",
+        "files"
+      ]
+    },
+    {
+      "id": "AIBROWESE-044",
+      "title": "Implement approved upload references",
+      "milestone": "M09",
+      "owner_module": "files",
+      "collaborator_modules": [
+        "security",
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-045",
+      "title": "Handle dialogs, popups, and authentication windows",
+      "milestone": "M09",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "engine",
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-046",
+      "title": "Integrate DevTools alongside automation",
+      "milestone": "M10",
+      "owner_module": "devtools",
+      "collaborator_modules": [
+        "engine"
+      ]
+    },
+    {
+      "id": "AIBROWESE-047",
+      "title": "Build the semantic-state inspector",
+      "milestone": "M10",
+      "owner_module": "devtools",
+      "collaborator_modules": [
+        "semantics",
+        "broker-projections",
+        "redaction"
+      ]
+    },
+    {
+      "id": "AIBROWESE-048",
+      "title": "Implement private browsing lifecycle",
+      "milestone": "M10",
+      "owner_module": "profiles",
+      "collaborator_modules": [
+        "security",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-049",
+      "title": "Implement crash recovery and tab suspension",
+      "milestone": "M10",
+      "owner_module": "profiles",
+      "collaborator_modules": [
+        "control",
+        "engine",
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-050",
+      "title": "Integrate approved secret references",
+      "milestone": "M10",
+      "owner_module": "secrets",
+      "collaborator_modules": [
+        "security",
+        "redaction",
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-051",
+      "title": "Complete visual states and themes",
+      "milestone": "M11",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "platform"
+      ]
+    },
+    {
+      "id": "AIBROWESE-052",
+      "title": "Complete keyboard and command navigation",
+      "milestone": "M11",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "control"
+      ]
+    },
+    {
+      "id": "AIBROWESE-053",
+      "title": "Validate accessibility and text input",
+      "milestone": "M11",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "platform"
+      ]
+    },
+    {
+      "id": "AIBROWESE-054",
+      "title": "Build onboarding and permission management",
+      "milestone": "M11",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "security",
+        "broker-transport"
+      ]
+    },
+    {
+      "id": "AIBROWESE-055",
+      "title": "Complete errors and recovery messages",
+      "milestone": "M11",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "schemas",
+        "control"
+      ]
+    },
+    {
+      "id": "AIBROWESE-056",
+      "title": "Integrate printing and PDF workflows",
+      "milestone": "M12",
+      "owner_module": "platform",
+      "collaborator_modules": [
+        "shell",
+        "semantics"
+      ]
+    },
+    {
+      "id": "AIBROWESE-057",
+      "title": "Integrate clipboard and native file dialogs",
+      "milestone": "M12",
+      "owner_module": "platform",
+      "collaborator_modules": [
+        "files",
+        "security"
+      ]
+    },
+    {
+      "id": "AIBROWESE-058",
+      "title": "Validate media and communication features",
+      "milestone": "M12",
+      "owner_module": "platform",
+      "collaborator_modules": [
+        "security",
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-059",
+      "title": "Support local developer networking",
+      "milestone": "M12",
+      "owner_module": "security",
+      "collaborator_modules": [
+        "profiles",
+        "platform"
+      ]
+    },
+    {
+      "id": "AIBROWESE-060",
+      "title": "Publish and test the compatibility matrix",
+      "milestone": "M12",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "fixtures",
+        "semantics",
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-061",
+      "title": "Build comparative token benchmarks",
+      "milestone": "M13",
+      "owner_module": "benchmarks",
+      "collaborator_modules": [
+        "sdk-typescript",
+        "sdk-python",
+        "broker-projections"
+      ]
+    },
+    {
+      "id": "AIBROWESE-062",
+      "title": "Optimize projection and update scheduling",
+      "milestone": "M13",
+      "owner_module": "semantics",
+      "collaborator_modules": [
+        "broker-projections",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-063",
+      "title": "Implement context compaction and recovery",
+      "milestone": "M13",
+      "owner_module": "sdk-typescript",
+      "collaborator_modules": [
+        "sdk-python"
+      ]
+    },
+    {
+      "id": "AIBROWESE-064",
+      "title": "Add private-by-default usage reporting",
+      "milestone": "M13",
+      "owner_module": "diagnostics",
+      "collaborator_modules": [
+        "redaction",
+        "execution-runner",
+        "shell"
+      ]
+    },
+    {
+      "id": "AIBROWESE-065",
+      "title": "Pass the efficiency acceptance gate",
+      "milestone": "M13",
+      "owner_module": "benchmarks",
+      "collaborator_modules": [
+        "acceptance-tests"
+      ]
+    },
+    {
+      "id": "AIBROWESE-066",
+      "title": "Review the completed security boundaries",
+      "milestone": "M14",
+      "owner_module": "security-tests",
+      "collaborator_modules": [
+        "security",
+        "broker-transport",
+        "control",
+        "secrets",
+        "updates"
+      ]
+    },
+    {
+      "id": "AIBROWESE-067",
+      "title": "Fuzz protocol and state parsers",
+      "milestone": "M14",
+      "owner_module": "security-tests",
+      "collaborator_modules": [
+        "schemas",
+        "broker-state",
+        "dispatch"
+      ]
+    },
+    {
+      "id": "AIBROWESE-068",
+      "title": "Test malicious-page influence and exfiltration paths",
+      "milestone": "M14",
+      "owner_module": "security-tests",
+      "collaborator_modules": [
+        "fixtures",
+        "security",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-069",
+      "title": "Verify retention, deletion, and log hygiene",
+      "milestone": "M14",
+      "owner_module": "security-tests",
+      "collaborator_modules": [
+        "profiles",
+        "diagnostics",
+        "redaction"
+      ]
+    },
+    {
+      "id": "AIBROWESE-070",
+      "title": "Verify build provenance and dependency integrity",
+      "milestone": "M14",
+      "owner_module": "release-tooling",
+      "collaborator_modules": [
+        "repository",
+        "engine",
+        "packaging-windows",
+        "packaging-macos",
+        "packaging-linux"
+      ]
+    },
+    {
+      "id": "AIBROWESE-071",
+      "title": "Port the native shell to macOS",
+      "milestone": "M15",
+      "owner_module": "platform",
+      "collaborator_modules": [
+        "shell",
+        "engine",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-072",
+      "title": "Port the native shell to Linux",
+      "milestone": "M15",
+      "owner_module": "platform",
+      "collaborator_modules": [
+        "shell",
+        "engine",
+        "secrets"
+      ]
+    },
+    {
+      "id": "AIBROWESE-073",
+      "title": "Implement platform credential backends",
+      "milestone": "M15",
+      "owner_module": "secrets",
+      "collaborator_modules": [
+        "security",
+        "platform"
+      ]
+    },
+    {
+      "id": "AIBROWESE-074",
+      "title": "Adapt native menus and platform conventions",
+      "milestone": "M15",
+      "owner_module": "shell",
+      "collaborator_modules": [
+        "platform"
+      ]
+    },
+    {
+      "id": "AIBROWESE-075",
+      "title": "Run the cross-platform contract suite",
+      "milestone": "M15",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python",
+        "control",
+        "security"
+      ]
+    },
+    {
+      "id": "AIBROWESE-076",
+      "title": "Define update trust and recovery policy",
+      "milestone": "M16",
+      "owner_module": "updates",
+      "collaborator_modules": [
+        "security",
+        "packaging-windows",
+        "packaging-macos",
+        "packaging-linux"
+      ]
+    },
+    {
+      "id": "AIBROWESE-077",
+      "title": "Implement Windows release updates",
+      "milestone": "M16",
+      "owner_module": "packaging-windows",
+      "collaborator_modules": [
+        "updates",
+        "release-tooling"
+      ]
+    },
+    {
+      "id": "AIBROWESE-078",
+      "title": "Package and update the macOS release",
+      "milestone": "M16",
+      "owner_module": "packaging-macos",
+      "collaborator_modules": [
+        "updates",
+        "release-tooling"
+      ]
+    },
+    {
+      "id": "AIBROWESE-079",
+      "title": "Package and update the Linux release",
+      "milestone": "M16",
+      "owner_module": "packaging-linux",
+      "collaborator_modules": [
+        "updates",
+        "release-tooling"
+      ]
+    },
+    {
+      "id": "AIBROWESE-080",
+      "title": "Automate upstream security maintenance checks",
+      "milestone": "M16",
+      "owner_module": "release-tooling",
+      "collaborator_modules": [
+        "engine",
+        "updates",
+        "repository"
+      ]
+    },
+    {
+      "id": "AIBROWESE-081",
+      "title": "Run extended browser and broker soak tests",
+      "milestone": "M17",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "engine",
+        "broker-state",
+        "profiles"
+      ]
+    },
+    {
+      "id": "AIBROWESE-082",
+      "title": "Validate performance on reference hardware",
+      "milestone": "M17",
+      "owner_module": "benchmarks",
+      "collaborator_modules": [
+        "acceptance-tests"
+      ]
+    },
+    {
+      "id": "AIBROWESE-083",
+      "title": "Run structured beta usability sessions",
+      "milestone": "M17",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "shell",
+        "docs"
+      ]
+    },
+    {
+      "id": "AIBROWESE-084",
+      "title": "Resolve beta interaction and recovery defects",
+      "milestone": "M17",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "shell",
+        "control",
+        "profiles",
+        "dispatch",
+        "broker-state"
+      ]
+    },
+    {
+      "id": "AIBROWESE-085",
+      "title": "Execute the release-candidate checklist",
+      "milestone": "M17",
+      "owner_module": "acceptance-tests",
+      "collaborator_modules": [
+        "release-tooling",
+        "updates",
+        "profiles"
+      ]
+    },
+    {
+      "id": "AIBROWESE-086",
+      "title": "Publish the user and agent quickstarts",
+      "milestone": "M18",
+      "owner_module": "docs",
+      "collaborator_modules": [
+        "examples",
+        "agent-skill"
+      ]
+    },
+    {
+      "id": "AIBROWESE-087",
+      "title": "Publish protocol and contributor references",
+      "milestone": "M18",
+      "owner_module": "docs",
+      "collaborator_modules": [
+        "schemas",
+        "repository"
+      ]
+    },
+    {
+      "id": "AIBROWESE-088",
+      "title": "Prepare reproducible demonstrations and benchmark reports",
+      "milestone": "M18",
+      "owner_module": "benchmarks",
+      "collaborator_modules": [
+        "acceptance-tests"
+      ]
+    },
+    {
+      "id": "AIBROWESE-089",
+      "title": "Establish repository governance and maintenance procedures",
+      "milestone": "M18",
+      "owner_module": "docs",
+      "collaborator_modules": [
+        "release-tooling",
+        "repository"
+      ]
+    },
+    {
+      "id": "AIBROWESE-090",
+      "title": "Verify and publish the polished 1.0 release",
+      "milestone": "M18",
+      "owner_module": "release-tooling",
+      "collaborator_modules": [
+        "acceptance-tests",
+        "docs",
+        "schemas",
+        "mcp-bridge",
+        "sdk-typescript",
+        "sdk-python",
+        "packaging-windows",
+        "packaging-macos",
+        "packaging-linux"
+      ]
+    }
+  ]
+}
+
