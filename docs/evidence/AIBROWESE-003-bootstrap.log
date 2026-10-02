@@ -1,0 +1,13 @@
+2026-10-02T19:52:57.8630828Z CEF bootstrap: start version=154.0.33+ga03e714+chromium-154.0.8037.94; cache=C:\Users\conne\Documents\Codex\2026-09-25\new-chat\work\agi-browse-dev\build\cef-ci-bootstrap-test
+2026-10-02T19:52:57.8728723Z CEF bootstrap: download start: connect=20s; attempt=300s; retry=1; retryBudget=600s; idleRate=32768B/s for45s
+2026-10-02T19:52:58.9312865Z CEF bootstrap: download running: elapsed=1s; archiveBytes=10006528/172788468
+2026-10-02T19:53:08.9925996Z CEF bootstrap: download running: elapsed=11s; archiveBytes=100216832/172788468
+2026-10-02T19:53:16.0106778Z CEF bootstrap: download completed in 18s
+2026-10-02T19:53:16.0170625Z CEF bootstrap: download SHA256 verification start
+2026-10-02T19:53:16.1929154Z CEF bootstrap: archive size/SHA256/upstreamSHA1 verification start
+2026-10-02T19:53:16.6406041Z CEF bootstrap: archive checksums verified
+2026-10-02T19:53:16.6488769Z CEF bootstrap: extraction start: processLimit=90s
+2026-10-02T19:53:17.6716343Z CEF bootstrap: extraction running: elapsed=1s; archiveBytes=0/172788468
+2026-10-02T19:53:27.7816657Z CEF bootstrap: extraction running: elapsed=11s; archiveBytes=0/172788468
+2026-10-02T19:53:28.4993452Z CEF bootstrap: extraction completed in 12s
+2026-10-02T19:53:28.5151486Z CEF bootstrap: SDK ready

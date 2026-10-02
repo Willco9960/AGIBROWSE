@@ -86,3 +86,19 @@ The workflow now separates SDK retrieval, native build and lifecycle steps, pres
 Validation: PowerShell parser passed; existing validated-cache bootstrap passed. A fresh actual download using `./tools/cef/bootstrap.ps1 -CacheDirectory build/cef-ci-bootstrap-test` passed:172788468 bytes, native curl18s, both checksums verified, native tar12s, SDK ready. Exact timestamped local log is preserved as `AIBROWESE-003-bootstrap.log`. The previously resolved tar command was System32tar, matching the final explicit path. Native compilation/lifecycle were not repeated because their implementation and pinned SDK were unchanged.
 
 Next action: coordinator publishes this scoped fix and waits for an actual fresh hosted Windows job. Git origin and draft PR https://github.com/Willco9960/AGIBROWSE/pull/1 now exist; earlier no-remote notes above describe the historical checkpoint only. Updated CI has not passed yet. Acceptance remains false until its clean native build and sandbox/lifecycle result pass.
+
+## First hosted repair failure: extraction watchdog, not download
+
+Run https://github.com/Willco9960/AGIBROWSE/actions/runs/37057286911 failed in SDK retrieval. Exact job logs and uploaded bootstrap artifact were downloaded and inspected before proposing another fix. Artifact11248884518 uploaded successfully (no build or runtime receipt exists).
+
+Hosted download completed in11s at19:56:06.514Z, and archive size/SHA256/upstreamSHA1 verification passed at19:56:07.303Z. Extraction began19:56:07.310Z. Ten-second heartbeats continued through81s; the parent watchdog terminated System32tar at90s and recorded `extraction exceeded its 90s process limit` at19:57:37.857Z. Therefore this failure is the extraction time budget, with no evidence of CDN restriction or bad archive. The old extraction heartbeat measured elapsed time only, so actual file growth/CPU progress was not captured.
+
+The exact hosted bootstrap artifact is preserved as `AIBROWESE-003-ci-extraction-timeout.log`; its job identity and conclusion are in `AIBROWESE-003-ci-extraction-timeout.json`. Full raw job log/artifact remain under ignored `build/ci-37057286911/`. Build and runtime were skipped. Acceptance remains false. A second scoped extraction repair is being coordinated; no timeout, checksum or sandbox change has been applied at this checkpoint.
+
+## Second scoped hosted repair: extraction budget and actual progress
+
+Coordinator approved retaining native System32tar and allowing300s for extraction. Ten-second extraction heartbeats now report extracted file count, total written bytes and process CPU seconds. These are informational, so buffered writes or active CPU work do not produce an invented no-growth failure. The hard extraction deadline still stops a hung process.
+
+The total download watchdog is reduced to330s, with150s per curl attempt, one retry and300s retry budget. This follows the observed11s hosted download and permits330s download +300s extraction plus checksums/setup inside the unchanged13-minute SDK step. The overall job limit remains25 minutes. Archive pin/size/SHA256/SHA1 and native sandbox/runtime code are unchanged; no alternate CDN or extractor was introduced.
+
+Validation: updated PowerShell parser passed and existing validated-cache bootstrap passed with mandatory checksums. The173MB download and native compile/runtime were not repeated because this repair changes timing/diagnostics only; an actual clean hosted run remains required. This is the second hosted repair proposal following one failed hosted repair run. Parent owns publication and observes the next run; acceptance remains false.
