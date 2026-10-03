@@ -19,5 +19,3 @@ Native file-picker/dialog enrollment is code-reviewed and available in the real 
 Non-Windows secure storage/TLS parity, application tools/grants, authenticated rotation and an independent security audit remain their assigned gates. No commit/push/board mutation was performed by the task engineer.
 
 Clean Windows2022 CI [37081273015](https://github.com/Willco9960/AGIBROWSE/actions/runs/37081273015) passed on exact implementation commit ae7fd96333072c9a59c7ce7754a5aaa22072c70b:193 IPC checks1.51s,60 transport checks58.41s,7 cache vectors, healthy lifecycle2.8972737s, renderer-security2.1880251s, expired-store1.6110278s and corrupt-store1.4705344s. All renderers restricted at integrityRID0; host exited0, no orphan processes or forced cleanup. Coordinator downloaded artifact11259361958 and matched SHA256 c26036451e668a1c9abdca928e38e672eb6c80cd790e947d56fc0d2463583768 to GitHub's digest before inspecting receipts. [Sanitized acceptance receipt](AIBROWESE-008-ci-acceptance.json) records the tested source separately from this evidence-only follow-up.
-
-

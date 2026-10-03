@@ -77,7 +77,7 @@ class BrowserClient final : public CefClient,
       *shortcut=true;if(!pairing_authority)return true;
       for(const auto& client:pairing_authority->Clients()) {
         std::wstring text=L"Revoke this client certificate?\nSHA256: ";text.append(client.client.begin(),client.client.end());
-        if(MessageBoxW(owner,text.c_str(),L"AGI-BROWSE native revocation",MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)==IDYES)try{pairing_authority->Revoke(client.client);}catch(...){broker_channel.Stop();MessageBoxW(owner,L"Revocation persistence failed. Agent transport stopped; startup will fail closed if a recovery marker remains.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);}
+        if(MessageBoxW(owner,text.c_str(),L"AGI-BROWSE native revocation",MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)==IDYES)try{pairing_authority->Revoke(client.client);}catch(...){broker_channel.Stop();MessageBoxW(owner,L"Session permissions revoked; agent transport stopped. If the protected revocation marker could not be saved, old pairing may remain on disk. Recover and re-pair locally before restarting transport.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);}
       }return true;
     }
 #endif

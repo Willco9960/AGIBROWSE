@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -56,6 +57,11 @@ public:
   Credential Complete(Pending &pending, const std::string &signature,
                       uint64_t now);
   bool Paired(const std::string &client, uint64_t generation) const;
+  // Callbacks are trusted, bounded, nonreentrant; lock order is pairing -> host
+  // binding -> scope. Revoke and admission cannot pass each other.
+  bool WithPairedClient(const std::string& client, const std::function<bool(const Credential&)>& callback) const;
+  using RevocationCallback = std::function<void(const std::string&)>;
+  void RegisterNativeRevocationCallback(const std::shared_ptr<RevocationCallback>& callback);
   void Revoke(const std::string &client);
   Identity server() const { return server_; }
   std::string ca() const { return CertPem(authority_.cert); }
@@ -68,6 +74,7 @@ private:
   std::map<std::string, Credential> clients_;
   uint64_t generation_ = 1;
   std::map<std::string, Pending> pending_;
+  std::vector<std::weak_ptr<RevocationCallback>> revocation_callbacks_;
   void Save();
 };
 // Only a native host gesture calls this. File selection/signing stays local.

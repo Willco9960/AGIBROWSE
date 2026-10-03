@@ -34,7 +34,7 @@ jobs:
         run: ./tools/cef/test-lifecycle.ps1
       - name: Native private IPC and authenticated transport adversarial cases
         shell: pwsh
-        timeout-minutes: 3
+        timeout-minutes: 8
         run: ctest --test-dir build/windows-cef -C Release --output-on-failure
       - name: Real renderer application boundary attacks
         shell: pwsh

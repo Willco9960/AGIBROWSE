@@ -12,11 +12,14 @@ class NativeTransportAuthority {
   virtual ~NativeTransportAuthority() = default;
   virtual Message Configuration() = 0;
   virtual bool ValidateIdentity(const std::string& client,const std::string& certificate_hash,const std::string& session) = 0;
+  virtual bool DisconnectSession(const std::string& client,const std::string& session) = 0;
+  virtual void InvalidateSessions() = 0;
 };
 class BrokerTransport {
  public:
   virtual ~BrokerTransport() = default;
-  virtual bool Start(const Message& configuration,std::function<bool(const std::string&,const std::string&,const std::string&)> authorize) = 0;
+  virtual bool Start(const Message& configuration,std::function<bool(const std::string&,const std::string&,const std::string&)> authorize,
+                     std::function<void(const std::string&,const std::string&)> disconnect = {}) = 0;
   virtual void Stop() = 0;
   virtual unsigned short port() const = 0;
 };

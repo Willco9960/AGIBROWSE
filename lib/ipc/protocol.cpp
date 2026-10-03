@@ -27,6 +27,7 @@ void String(std::vector<uint8_t>& b, uint8_t tag, const std::string& s) {
   Field(b, tag, 3, std::vector<uint8_t>(s.begin(), s.end()));
 }
 }
+bool IsIdentifier(const std::string& identifier) { return Id(identifier); }
 bool IsOperation(const std::string& op) {
   static const std::array<const char*, 21> names = {"observe", "wait", "click", "hover", "focus", "fill", "fill_secret", "select", "set_checked", "press", "scroll", "navigate", "open_tab", "back", "forward", "reload", "focus_tab", "close_tab", "upload", "dialog", "drag"};
   return std::any_of(names.begin(), names.end(), [&](auto n) { return op == n; });
@@ -45,8 +46,9 @@ std::vector<uint8_t> Encode(const Message& m) {
     Number(b, 3, m.sequence, 8); Number(b, 4, m.generation, 8); Number(b, 13, m.result, 1);
   } else if(m.kind==Kind::transport_config) {
     Number(b,14,m.channel_generation,8);String(b,15,m.server_key);String(b,16,m.server_cert);String(b,17,m.ca_cert);
-  } else if(m.kind==Kind::identity_check) {
-    Number(b,3,m.sequence,8);Number(b,14,m.channel_generation,8);String(b,5,m.client);String(b,6,m.session);String(b,18,m.certificate_hash);
+  } else if(m.kind==Kind::identity_check || m.kind==Kind::session_closed) {
+    Number(b,3,m.sequence,8);Number(b,14,m.channel_generation,8);String(b,5,m.client);String(b,6,m.session);
+    if(m.kind==Kind::identity_check)String(b,18,m.certificate_hash);
   } else if(m.kind==Kind::identity_result) {
     Number(b,3,m.sequence,8);Number(b,14,m.channel_generation,8);Number(b,13,m.result,1);
   } else if(m.kind==Kind::transport_ready) {
@@ -65,7 +67,7 @@ bool Decode(const std::vector<uint8_t>& b, Message& out) {
     if (tag == 1 || tag == 2 || tag == 13) {
       if (type != 1 || n != 1) return false;
       if (tag == 1) { if(b[p]!=1&&b[p]!=2)return false;m.version=b[p]; }
-      if (tag == 2) { if (b[p] < 1 || b[p] > 9) return false; m.kind = static_cast<Kind>(b[p]); }
+      if (tag == 2) { if (b[p] < 1 || b[p] > 10) return false; m.kind = static_cast<Kind>(b[p]); }
       if (tag == 13) { if (b[p] < 1 || b[p] > 2) return false; m.result = b[p]; }
     } else if(tag==19) {
       if(type!=2||n!=8||Get(b,p,8)==0||Get(b,p,8)>65535)return false;m.port=Get(b,p,8);
@@ -93,9 +95,11 @@ bool Decode(const std::vector<uint8_t>& b, Message& out) {
   if (m.kind == Kind::result) required |= (1u<<3)|(1u<<4)|(1u<<13);
   if(m.kind==Kind::transport_config)required|=(1u<<14)|(1u<<15)|(1u<<16)|(1u<<17);
   if(m.kind==Kind::identity_check)required|=(1u<<3)|(1u<<5)|(1u<<6)|(1u<<14)|(1u<<18);
+  if(m.kind==Kind::session_closed)required|=(1u<<3)|(1u<<5)|(1u<<6)|(1u<<14);
   if(m.kind==Kind::identity_result)required|=(1u<<3)|(1u<<13)|(1u<<14);
   if(m.kind==Kind::transport_ready)required|=(1u<<14)|(1u<<19);
   if((uint8_t(m.kind)<=5&&(m.version!=1||b.size()>kMaxMessage))||(uint8_t(m.kind)>5&&m.version!=2))return false;
+  if(m.kind!=Kind::transport_config&&b.size()>kMaxMessage)return false;
   if (seen != required) return false;
   out = std::move(m); return true;
 }

@@ -6,7 +6,7 @@
 namespace agi::ipc {
 constexpr size_t kMaxMessage = 2048;
 constexpr size_t kMaxTransportConfig = 16384;
-enum class Kind : uint8_t { challenge = 1, proof = 2, intent = 3, result = 4, stop = 5, transport_config = 6, identity_check = 7, identity_result = 8, transport_ready = 9 };
+enum class Kind : uint8_t { challenge = 1, proof = 2, intent = 3, result = 4, stop = 5, transport_config = 6, identity_check = 7, identity_result = 8, transport_ready = 9, session_closed = 10 };
 // Closed flat TLV: each tag occurs exactly once, has an exact type/length.
 struct Message {
   Kind kind = Kind::stop;
@@ -21,6 +21,7 @@ struct Message {
 bool Decode(const std::vector<uint8_t>& bytes, Message& out);
 std::vector<uint8_t> Encode(const Message& message);
 bool IsOperation(const std::string& operation);
+bool IsIdentifier(const std::string& identifier);
 struct Destination { std::string profile, tab, frame, document; };
 // Internal native authority only. Never deserialized from the broker wire.
 struct Grant {

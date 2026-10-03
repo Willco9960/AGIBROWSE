@@ -456,15 +456,38 @@ std::vector<Credential> PairingAuthority::Clients() const {
     result.push_back(c);
   return result;
 }
+bool PairingAuthority::WithPairedClient(const std::string& client,
+    const std::function<bool(const Credential&)>& callback) const {
+  std::lock_guard lock(mutex_); const auto found = clients_.find(client);
+  return found != clients_.end() && ValidCertificate(ReadCertificate(found->second.cert)) &&
+         callback && callback(found->second);
+}
+void PairingAuthority::RegisterNativeRevocationCallback(const std::shared_ptr<RevocationCallback>& callback) {
+  std::lock_guard lock(mutex_);
+  std::erase_if(revocation_callbacks_,[](const auto& weak) { return weak.expired(); });
+  Check(callback && *callback && revocation_callbacks_.size() < 64);
+  revocation_callbacks_.push_back(callback);
+}
 void PairingAuthority::Revoke(const std::string &client) {
   std::lock_guard lock(mutex_);
   if (clients_.count(client)) {
+    // Revoke in-memory scopes before any potentially failing disk operation.
+    std::exception_ptr callback_failure;
+    for(auto i = revocation_callbacks_.begin(); i != revocation_callbacks_.end();) {
+      if(auto callback = i->lock()) {
+        try { (*callback)(client); } catch(...) { callback_failure = std::current_exception(); }
+        ++i;
+      }
+      else i = revocation_callbacks_.erase(i);
+    }
     Check(generation_ < UINT64_MAX);
-    ProtectFile(path_ + L".revoking", client);
+    try { ProtectFile(path_ + L".revoking", client); }
+    catch(...) { clients_.erase(client); ++generation_; throw; }
     clients_.erase(client);
     ++generation_;
     Save();
     Check(DeleteFileW((path_ + L".revoking").c_str()) == TRUE);
+    if(callback_failure)std::rethrow_exception(callback_failure);
   }
 }
 bool NativeEnroll(void *owner, PairingAuthority &authority) {

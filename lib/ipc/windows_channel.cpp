@@ -133,13 +133,19 @@ bool HostChannel::Start(const std::wstring& broker,std::shared_ptr<NativeTranspo
 void HostChannel::Serve() {
   Boundary boundary(generation_);  // intentionally zero grants in production
   uint64_t identity_sequence=0;
+  try {
   while(!stopping_) {
     Message intent; auto result=ReadMessage(input_,process_,intent,250);
     if(result==ReadResult::timeout) continue;
     if(result!=ReadResult::ok) break;
-    if(intent.kind==Kind::identity_check) {
+    if(intent.kind==Kind::identity_check || intent.kind==Kind::session_closed) {
       if(!transport_authority_||intent.channel_generation!=generation_||identity_sequence==UINT64_MAX||intent.sequence!=identity_sequence+1)break;
       identity_sequence=intent.sequence;
+      if(intent.kind==Kind::session_closed) {
+        // One-way close has no reply to strand in the next identity exchange.
+        if(!transport_authority_->DisconnectSession(intent.client,intent.session))break;
+        continue;
+      }
       Message reply;reply.version=2;reply.kind=Kind::identity_result;reply.channel_generation=generation_;reply.sequence=intent.sequence;
       reply.result=transport_authority_->ValidateIdentity(intent.client,intent.certificate_hash,intent.session)?1:2;
       if(!WriteMessage(output_,reply))break;
@@ -150,11 +156,13 @@ void HostChannel::Serve() {
     reply.result=static_cast<uint8_t>(boundary.Admit(intent,GetTickCount64()));
     if(!WriteMessage(output_,reply)) break;
   }
-  boundary.Invalidate(); live_=false;
+  } catch(...) { /* Native authority/crypto failure closes this private peer. */ }
+  boundary.Invalidate(); if(transport_authority_)transport_authority_->InvalidateSessions(); live_=false;
   // Trust loss kills the launched broker, preventing retained channel authority.
   if(!stopping_ && job_) TerminateJobObject(job_,70);
 }
 void HostChannel::Stop() {
+  if(transport_authority_)transport_authority_->InvalidateSessions();
   stopping_=true;
   if(worker_.joinable()) worker_.join();
   if(process_ && WaitForSingleObject(process_,0)==WAIT_TIMEOUT) {
@@ -188,6 +196,14 @@ int RunPrivateBroker(BrokerTransport* transport) {
       Message reply;auto result=ReadMessage(input,parent,reply,1000);
       if(result==ReadResult::ok&&reply.kind==Kind::stop){transport_stopping=true;return false;}
       return result==ReadResult::ok&&reply.kind==Kind::identity_result&&reply.sequence==sequence&&reply.channel_generation==epoch&&reply.result==1;
+    },[&,epoch](const std::string& client,const std::string& session){
+      std::lock_guard lock(channel_mutex);
+      if(transport_stopping)return;
+      Message closed;closed.version=2;closed.kind=Kind::session_closed;closed.channel_generation=epoch;
+      closed.client=client;closed.session=session;
+      if(sequence==UINT64_MAX){transport_stopping=true;return;}
+      closed.sequence=++sequence;
+      if(!WriteMessage(output,closed))transport_stopping=true;
     }))return 77;
     SecureZeroMemory(configuration.server_key.data(),configuration.server_key.size());
     Message ready;ready.version=2;ready.kind=Kind::transport_ready;ready.channel_generation=epoch;ready.port=transport->port();if(!ready.port||!WriteMessage(output,ready)){transport->Stop();return 78;}

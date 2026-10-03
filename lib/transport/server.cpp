@@ -1,4 +1,5 @@
 #include "server.h"
+#include <algorithm>
 #include <atomic>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -67,34 +68,50 @@ ipc::Message HostTransportAuthority::Configuration() {
   m.ca_cert = authority_->ca();
   return m;
 }
+HostTransportAuthority::HostTransportAuthority(std::shared_ptr<PairingAuthority> authority,
+    ipc::ScopedAuthority::OriginValidator validator) : authority_(std::move(authority)),
+    scopes_(std::make_shared<ipc::ScopedAuthority>(std::move(validator), MonotonicMs)) {
+  const std::weak_ptr<ipc::ScopedAuthority> weak = scopes_;
+  revocation_callback_ = std::make_shared<PairingAuthority::RevocationCallback>([weak](const std::string& client) {
+    if(auto scope = weak.lock())scope->RevokeNativeClient(client);
+  });
+  authority_->RegisterNativeRevocationCallback(revocation_callback_);
+}
 bool HostTransportAuthority::ValidateIdentity(const std::string &client,
                                               const std::string &hash,
                                               const std::string &session) {
-  if (session.size() != 64)
+  if (session.size() != 64 || !std::all_of(session.begin(),session.end(),[](char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); }))
     return false;
-  bool paired = false;
-  for (const auto &c : authority_->Clients())
-    if (c.client == client && authority_->Paired(client, c.generation) &&
-        CertificateHash(ReadCertificate(c.cert)) == hash) {
-      paired = true;
-      break;
+  return authority_->WithPairedClient(client, [&](const Credential& credential) {
+    if(CertificateHash(ReadCertificate(credential.cert)) != hash)return false;
+    std::lock_guard lock(mutex_); const auto now = MonotonicMs();
+    if(!live_)return false;
+    for(auto i = sessions_.begin(); i != sessions_.end();) {
+      // Keep a bounded grace window for a known socket's expiry-close callback.
+      if(now - (std::min)(now,i->second.deadline) >= 10000)i = sessions_.erase(i);
+      else ++i;
     }
-  if (!paired)
-    return false;
-  std::lock_guard lock(mutex_);
-  auto now = MonotonicMs();
-  for (auto i = sessions_.begin(); i != sessions_.end();)
-    if (i->second.deadline <= now)
-      i = sessions_.erase(i);
-    else
-      ++i;
-  auto found = sessions_.find(session);
-  if (found != sessions_.end())
-    return found->second.client == client && found->second.certificate == hash;
-  if (sessions_.size() >= 64)
-    return false;
-  sessions_.emplace(session, Binding{client, hash, now + 60000});
-  return true;
+    const auto found = sessions_.find(session);
+    if(found != sessions_.end())return found->second.live && now < found->second.deadline &&
+        found->second.client == client && found->second.certificate == hash &&
+        found->second.credential_generation == credential.generation &&
+        scopes_->IsBoundAuthenticatedSession(client,session);
+    const auto active = std::count_if(sessions_.begin(),sessions_.end(),[&](const auto& entry) {
+      return entry.second.live && now < entry.second.deadline &&
+             scopes_->IsBoundAuthenticatedSession(entry.second.client,entry.first);
+    });
+    if(active >= 64 || sessions_.size() >= 4096 || !scopes_->BindAuthenticatedSession(client,session,now + 60000))return false;
+    sessions_.emplace(session,Binding{client,hash,now + 60000,credential.generation}); return true;
+  });
+}
+bool HostTransportAuthority::DisconnectSession(const std::string& client,const std::string& session) {
+  std::lock_guard lock(mutex_); const auto found = sessions_.find(session);
+  if(!live_ || found == sessions_.end() || found->second.client != client)return false;
+  found->second.live = false; scopes_->DisconnectAuthenticatedSession(client,session); return true;
+}
+void HostTransportAuthority::InvalidateSessions() {
+  std::lock_guard lock(mutex_); live_ = false; scopes_->Invalidate(); sessions_.clear();
 }
 size_t LiveTransportSessionsForTest() { return live_sessions.load(); }
 struct LoopbackServer::State : std::enable_shared_from_this<State> {
@@ -105,6 +122,7 @@ struct LoopbackServer::State : std::enable_shared_from_this<State> {
   std::function<bool(const std::string &, const std::string &,
                      const std::string &)>
       authorize;
+  std::function<void(const std::string&,const std::string&)> disconnect;
   struct Session;
   std::set<std::shared_ptr<Session>> sessions;
   uint64_t rate_window = 0;
@@ -121,7 +139,7 @@ struct LoopbackServer::State::Session : std::enable_shared_from_this<Session> {
   std::string client, hash, id;
   uint64_t started = 0, rate_window = 0;
   unsigned messages = 0;
-  bool stopped = false, authenticated = false;
+  bool stopped = false, authenticated = false, bound = false;
   Session(std::shared_ptr<State> o, tcp::socket socket)
       : owner(std::move(o)), ws(std::move(socket), owner->tls),
         lifetime(owner->io) {
@@ -134,6 +152,7 @@ struct LoopbackServer::State::Session : std::enable_shared_from_this<Session> {
     if (stopped)
       return;
     stopped = true;
+    if(bound && owner->disconnect)owner->disconnect(client,id);
     Error ec;
     lifetime.cancel();
     beast::get_lowest_layer(ws).socket().cancel(ec);
@@ -157,8 +176,9 @@ struct LoopbackServer::State::Session : std::enable_shared_from_this<Session> {
         [self = shared_from_this()](Error ec) { self->TlsReady(ec); });
   }
   bool Live() {
-    return authenticated && owner->authorize(client, hash, id) &&
-           MonotonicMs() - started < 60000;
+    if(!authenticated || MonotonicMs() - started >= 60000)return false;
+    const bool allowed = owner->authorize(client, hash, id);
+    bound = bound || allowed; return allowed;
   }
   void TlsReady(Error ec) {
     if (ec || stopped ||
@@ -305,7 +325,7 @@ bool LoopbackServer::Start(
     const ipc::Message &config,
     std::function<bool(const std::string &, const std::string &,
                        const std::string &)>
-        authorize) {
+        authorize, std::function<void(const std::string&,const std::string&)> disconnect) {
   if (state_ || !authorize)
     return false;
   try {
@@ -315,6 +335,7 @@ bool LoopbackServer::Start(
     Require(ValidCertificate(identity.cert));
     Context(state->tls, identity, config.ca_cert, true);
     state->authorize = std::move(authorize);
+    state->disconnect = std::move(disconnect);
     state->acceptor.open(tcp::v4());
     state->acceptor.bind({net::ip::make_address("127.0.0.1"), 0});
     state->acceptor.listen(8);
