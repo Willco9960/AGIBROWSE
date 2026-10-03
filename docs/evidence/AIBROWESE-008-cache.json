@@ -1,0 +1,36 @@
+[
+  {
+    "name": "complete pinned native cache validates",
+    "passed": true
+  },
+  {
+    "name": "archive byte corruption rejects before extraction/network",
+    "passed": true,
+    "reason": "cache checksum mismatch"
+  },
+  {
+    "name": "missing archive never retrieves in validate-only mode",
+    "passed": true,
+    "reason": "archive absent"
+  },
+  {
+    "name": "partial static install has no accepted receipt",
+    "passed": true,
+    "reason": "complete build receipt absent"
+  },
+  {
+    "name": "receipt cannot bless missing SSL crypto or headers",
+    "passed": true,
+    "reason": "partial install"
+  },
+  {
+    "name": "stale build flags cannot reuse native libraries",
+    "passed": true,
+    "reason": "cache identity mismatch"
+  },
+  {
+    "name": "manifest cannot bless mismatched crypto library digest",
+    "passed": true,
+    "reason": "cache bytes mismatch"
+  }
+]

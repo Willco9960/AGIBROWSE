@@ -10,5 +10,9 @@ Official source: https://github.com/chromiumembedded/cef/tree/a03e7146331fc5bd72
 
 ## Development tools
 
+- OpenSSL 3.5.9 LTS supplies TLS/X.509/signatures in the native transport, under Apache License 2.0. Exact official archive/hash pin: `tools/transport/dependencies.lock.json`. The CEF build copies upstream `LICENSE.txt` to `OpenSSL-LICENSE.txt` beside the launcher; CA/key data is never packaged.
+- Boost 1.92.0 Beast/Asio headers supply native HTTP/WebSocket/network framing, under Boost Software License 1.0. Exact archive/hash pin: `tools/transport/dependencies.lock.json`. The CEF build copies upstream `LICENSE_1_0.txt` to `Boost-LICENSE.txt` beside the launcher.
+- Strawberry Perl 5.42.3.1 portable is a checksum-pinned build-only Windows interpreter for the upstream OpenSSL build. Perl is licensed under the Artistic License or GNU General Public License; its distribution retains individual dependency notices. The interpreter/compiler bundle is not shipped with the browser.
+
 - TypeScript 6.0.3 is a development-only compiler dependency, licensed under the Apache License 2.0. Its upstream license text is distributed with the npm package at `node_modules/typescript/LICENSE.txt` after dependency installation. It is not bundled into the runtime packages by this scaffold.
 - setuptools 80.9.0 is a development-only PEP 517 build backend, licensed under the MIT License. Its license text is distributed with the pinned Python package in `build/sdk-python-venv/Lib/site-packages/setuptools-80.9.0.dist-info/licenses/LICENSE`. It is not bundled into the runtime package by this scaffold.

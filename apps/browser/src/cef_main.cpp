@@ -5,10 +5,14 @@
 #include <map>
 #include <array>
 #include "lib/ipc/windows_channel.h"
+#ifdef AGI_TRANSPORT
+#include "lib/transport/server.h"
+#endif
 
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
+#include "include/cef_keyboard_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_frame.h"
 #include "include/cef_frame_handler.h"
@@ -31,6 +35,9 @@ bool load_failed = false;
 bool renderer_security_test = false;
 bool renderer_security_passed = false;
 agi::ipc::HostChannel broker_channel;
+#ifdef AGI_TRANSPORT
+std::shared_ptr<agi::transport::PairingAuthority> pairing_authority;
+#endif
 
 void Record(const char* event, unsigned long long value = 0) {
   if (lifecycle_log) {
@@ -43,12 +50,39 @@ class BrowserClient final : public CefClient,
                             public CefLifeSpanHandler,
                             public CefDisplayHandler,
                             public CefLoadHandler,
+                            public CefKeyboardHandler,
                             public CefFrameHandler {
  public:
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefFrameHandler> GetFrameHandler() override { return this; }
+  CefRefPtr<CefKeyboardHandler> GetKeyboardHandler() override { return this; }
+  bool OnPreKeyEvent(CefRefPtr<CefBrowser> browser,const CefKeyEvent& event,CefEventHandle os_event,bool* shortcut) override {
+    CEF_REQUIRE_UI_THREAD();
+#ifdef AGI_TRANSPORT
+    if(!os_event||os_event->message!=WM_KEYDOWN||os_event->wParam!=event.windows_key_code||event.type!=KEYEVENT_RAWKEYDOWN||(event.modifiers&(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))!=(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))return false;
+    auto owner=browser->GetHost()->GetWindowHandle();
+    if(event.windows_key_code=='P') {
+      *shortcut=true;if(pairing_authority&&broker_channel.live())agi::transport::NativeEnroll(owner,*pairing_authority);
+      else MessageBoxW(owner,L"Agent transport unavailable. The protected pairing store may be expired, corrupt, or awaiting revocation recovery. Human browsing remains available. Re-pair from a fresh native installation after recovery; keys are never trusted automatically.",L"AGI-BROWSE transport unavailable",MB_OK|MB_ICONWARNING);
+      return true;
+    }
+    if(event.windows_key_code=='I') {
+      *shortcut=true;if(!pairing_authority||!broker_channel.live())return true;
+      std::wstring text=L"Endpoint: wss://127.0.0.1:"+std::to_wstring(broker_channel.transport_port())+L"/transport/v1\nServer SHA256: ";auto pin=agi::transport::Pin(pairing_authority->server().cert);text.append(pin.begin(),pin.end());text+=L"\n\nCtrl+Shift+P: local enrollment\nCtrl+Shift+R: revoke a paired client\nPairing currently grants zero tabs or website access.";
+      MessageBoxW(owner,text.c_str(),L"AGI-BROWSE native transport identity",MB_OK);return true;
+    }
+    if(event.windows_key_code=='R') {
+      *shortcut=true;if(!pairing_authority)return true;
+      for(const auto& client:pairing_authority->Clients()) {
+        std::wstring text=L"Revoke this client certificate?\nSHA256: ";text.append(client.client.begin(),client.client.end());
+        if(MessageBoxW(owner,text.c_str(),L"AGI-BROWSE native revocation",MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)==IDYES)try{pairing_authority->Revoke(client.client);}catch(...){broker_channel.Stop();MessageBoxW(owner,L"Revocation persistence failed. Agent transport stopped; startup will fail closed if a recovery marker remains.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);}
+      }return true;
+    }
+#endif
+    return false;
+  }
   void OnFrameAttached(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame> frame,bool reattached) override {
     CEF_REQUIRE_UI_THREAD();
     frames_[{browser->GetIdentifier(),frame->GetIdentifier().ToString()}]=frame;
@@ -290,10 +324,20 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   if(!executable_length || executable_length>=32768) return 70;
   std::wstring broker_path(executable);
   broker_path=broker_path.substr(0,broker_path.find_last_of(L"\\/"))+L"\\agi-browse-broker.exe";
+#ifdef AGI_TRANSPORT
+  std::shared_ptr<agi::ipc::NativeTransportAuthority> transport_authority;
+  try {
+    auto profile=args->GetSwitchValue("profile-dir").ToWString();
+    if(profile.empty()) {wchar_t local[32768]{};auto n=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);if(!n||n>=32768)throw std::runtime_error("protected storage unavailable");profile=std::wstring(local)+L"\\AGI-BROWSE";}
+    pairing_authority=std::make_shared<agi::transport::PairingAuthority>(profile+L"\\Transport\\authority.dpapi");transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);
+  } catch(...) {Record("agent_transport_unavailable");}
+  if(transport_authority&&!broker_channel.Start(broker_path,transport_authority)) {
+#else
   if(!broker_channel.Start(broker_path)) {
+#endif
     Record("private_broker_start_failed");if(lifecycle_log){std::fclose(lifecycle_log);lifecycle_log=nullptr;}return 70;
   }
-  Record("private_broker_challenge_verified",broker_channel.process_id());
+  if(broker_channel.live())Record("private_broker_challenge_verified",broker_channel.process_id());
   CefSettings settings;
   settings.no_sandbox = false;
   // CEF requires an absolute cache root. The caller's isolated profile is used

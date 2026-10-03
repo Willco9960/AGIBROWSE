@@ -1,0 +1,71 @@
+Start testing: Oct 02 19:47 Eastern Daylight Time
+----------------------------------------------------------
+1/2 Testing: private-ipc-negative
+1/2 Test: private-ipc-negative
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/ipc/Release/agi-ipc-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/ipc
+"private-ipc-negative" start time: Oct 02 19:47 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS 193 native IPC security checks
+<end of output>
+Test time =   1.84 sec
+----------------------------------------------------------
+Test Passed.
+"private-ipc-negative" end time: Oct 02 19:47 Eastern Daylight Time
+"private-ipc-negative" time elapsed: 00:00:01
+----------------------------------------------------------
+
+2/2 Testing: authenticated-loopback-transport
+2/2 Test: authenticated-loopback-transport
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/transport/Release/agi-transport-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/transport
+"authenticated-loopback-transport" start time: Oct 02 19:47 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS host-issued identity registered
+PASS actual current-user DPAPI key roundtrip
+PASS persisted key not plaintext PEM
+PASS restart preserves server pin and explicit pairing
+PASS enrollment expiry at300000ms
+PASS failed enrollment proof bounded
+PASS failed enrollment proof bounded
+PASS failed enrollment proof bounded
+PASS failed enrollment proof bounded
+PASS failed enrollment proof bounded
+PASS five proof failures consume challenge
+PASS enrollment replay rejected
+PASS copied challenge cannot reenroll after revoke
+PASS proof bound to CSR public key
+PASS CSR trailing data rejected
+PASS CSR bytes bound
+PASS closed IPCv2 transport config roundtrip
+PASS IPCv1 cannot introduce transport config
+PASS duplicate IPCv2 tag rejected
+PASS actual native TLS listener starts
+PASS listener literal loopback assertion
+PASS actual TLS1.3 mTLS WSS valid pairing zero grants
+PASS wrong server SPKI pin rejected
+PASS no client certificate rejected
+PASS arbitrary self-issued certificate rejected
+PASS Origin null rejected before upgrade
+PASS browser Origin rejected before upgrade
+PASS empty Origin header rejected before upgrade
+PASS DNS alias Host rejected
+PASS unexpected Host rejected
+PASS query secrets and alternate target rejected
+PASS WebSocket message size rejected
+PASS nested JSON and scope data rejected
+PASS revoked credential rejected on fresh connection
+PASS revocation persists across host restart
+PASS pairing creates no IPC application grants
+PASS transport native checks=36
+<end of output>
+Test time =  33.65 sec
+----------------------------------------------------------
+Test Passed.
+"authenticated-loopback-transport" end time: Oct 02 19:47 Eastern Daylight Time
+"authenticated-loopback-transport" time elapsed: 00:00:33
+----------------------------------------------------------
+
+End testing: Oct 02 19:47 Eastern Daylight Time

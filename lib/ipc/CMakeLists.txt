@@ -3,6 +3,7 @@ target_include_directories(agi-private-ipc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
 target_compile_features(agi-private-ipc PUBLIC cxx_std_20)
 set_target_properties(agi-private-ipc PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 if(WIN32)
+  target_compile_definitions(agi-private-ipc PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX)
   target_sources(agi-private-ipc PRIVATE windows_channel.cpp)
   target_link_libraries(agi-private-ipc PUBLIC bcrypt)
 endif()

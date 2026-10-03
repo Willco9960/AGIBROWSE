@@ -2,6 +2,8 @@
 
 Implemented boundary, 2026-10-02. This document defines the task-007 internal binary protocol, not a public tool or the task-008 WSS protocol. [Policy](policy.md) remains the authority. [Local evidence](../evidence/AIBROWESE-007.md) records the actual pinned Windows tests.
 
+Task 008 preserves this version-1 protocol and adds a coordinator-reviewed closed **version-2 transport configuration/identity/ready** lane over the same inherited endpoint. Its [exact tag sets, bounds and generation separation](loopback-transport.md#private-channel-extension) permit only transport identity; they carry no serialized grant. Legacy version 1 and new version 2 shapes cannot be mixed. Production still installs zero application grants.
+
 ## Endpoint and process admission
 
 The host launches the sibling `agi-browse-broker.exe` with two anonymous pipes. `CreateProcessW` uses `STARTUPINFOEXW` and `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` containing exactly the broker input pipe, output pipe and a SYNCHRONIZE-only handle to the launching host. Standard input/output carry those pipe handles; standard error carries the lifetime handle, never diagnostics. No pipe name, handle number, pairing credential or challenge is supplied in an argument. There is no listener, named-pipe admission endpoint or fallback.

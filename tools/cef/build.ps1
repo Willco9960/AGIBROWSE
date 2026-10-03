@@ -8,6 +8,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+& (Join-Path $root 'tools/transport/bootstrap.ps1') | Out-Null
 $build = [IO.Path]::GetFullPath($BuildDirectory)
 $cef = & (Join-Path $PSScriptRoot 'bootstrap.ps1') -CacheDirectory $CacheDirectory
 New-Item -ItemType Directory -Force -Path $build | Out-Null

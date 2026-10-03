@@ -1,0 +1,94 @@
+[
+  {
+    "case": "healthy",
+    "passed": true,
+    "startedUtc": "2026-10-02T23:59:53.069165Z",
+    "durationSeconds": 2.412675,
+    "hostExitCode": 0,
+    "forcedCleanup": false,
+    "orphanProcessCount": 0,
+    "rendererTokens": [
+      {
+        "processId": 29740,
+        "restricted": true,
+        "integrityRid": 0
+      },
+      {
+        "processId": 1356,
+        "restricted": true,
+        "integrityRid": 0
+      }
+    ],
+    "failure": null,
+    "sourceReceipt": "build\\task008-lifecycle\\9125dfcb6ac64e92bcb0f04bff72ee90\\result.json"
+  },
+  {
+    "case": "renderer",
+    "passed": true,
+    "startedUtc": "2026-10-02T23:59:55.5592975Z",
+    "durationSeconds": 2.274347,
+    "hostExitCode": 0,
+    "forcedCleanup": false,
+    "orphanProcessCount": 0,
+    "rendererTokens": [
+      {
+        "processId": 28480,
+        "restricted": true,
+        "integrityRid": 0
+      },
+      {
+        "processId": 5856,
+        "restricted": true,
+        "integrityRid": 0
+      }
+    ],
+    "failure": null,
+    "sourceReceipt": "build\\task008-renderer\\476c3baaa44d4d45b3ceb9bd00eca74e\\result.json"
+  },
+  {
+    "case": "expired",
+    "passed": true,
+    "startedUtc": "2026-10-03T00:02:40.0706623Z",
+    "durationSeconds": 1.7331885,
+    "hostExitCode": 0,
+    "forcedCleanup": false,
+    "orphanProcessCount": 0,
+    "rendererTokens": [
+      {
+        "processId": 30392,
+        "restricted": true,
+        "integrityRid": 0
+      },
+      {
+        "processId": 26176,
+        "restricted": true,
+        "integrityRid": 0
+      }
+    ],
+    "failure": null,
+    "sourceReceipt": "build\\task008-fallback\\1bcaa48e74d64dc49aff67a6d9e7ce9c\\result.json"
+  },
+  {
+    "case": "corrupt",
+    "passed": true,
+    "startedUtc": "2026-10-03T00:02:41.8799759Z",
+    "durationSeconds": 1.6433013,
+    "hostExitCode": 0,
+    "forcedCleanup": false,
+    "orphanProcessCount": 0,
+    "rendererTokens": [
+      {
+        "processId": 27532,
+        "restricted": true,
+        "integrityRid": 0
+      },
+      {
+        "processId": 24192,
+        "restricted": true,
+        "integrityRid": 0
+      }
+    ],
+    "failure": null,
+    "sourceReceipt": "build\\task008-fallback\\efa0d801a42e462a940d631ec212a972\\result.json"
+  }
+]

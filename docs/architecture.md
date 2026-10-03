@@ -50,7 +50,7 @@ flowchart LR
   Host -->|receipt + events| Broker
 ```
 
-1. Native pairing grants explicit profile/tab/origin/operation scope; connect defaults to isolated agent profile and observe mode. Credentials stay outside model context.
+1. Native pairing authenticates client identity; separate native approval grants explicit profile/tab/origin/operation scope. Connect defaults to isolated agent profile and observe mode with zero grants. Credentials stay outside model context.
 2. Host combines accessibility and constrained DOM enrichment, assigns opaque identity and redacts before broker handoff. Backend DOM identifiers are never public references.
 3. Broker sends projection snapshots and ordered atomic deltas. SDK applies and acknowledges them; DOM mutations alone never trigger model calls.
 4. Commands carry session/request/tab/observation identity. Host revalidates authority, document, target, actionability, origin/redirect policy and lease at dispatch, then emits an honest receipt.

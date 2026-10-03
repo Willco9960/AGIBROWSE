@@ -34,6 +34,13 @@ SET_LIBRARY_TARGET_PROPERTIES(agi-browse-host)
 target_compile_features(agi-browse-host PRIVATE cxx_std_20)
 target_include_directories(agi-browse-host PRIVATE "${CEF_ROOT}")
 target_link_libraries(agi-browse-host PRIVATE libcef_lib libcef_dll_wrapper agi-private-ipc ${CEF_STANDARD_LIBS})
+if(AGI_BROWSE_WITH_TRANSPORT)
+  target_link_libraries(agi-browse-host PRIVATE agi-transport)
+  target_compile_definitions(agi-browse-host PRIVATE AGI_TRANSPORT)
+  add_custom_command(TARGET agi-browse-host POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${AGI_TRANSPORT_DEPS}/openssl-3.5.9/LICENSE.txt" "$<TARGET_FILE_DIR:agi-browse-host>/OpenSSL-LICENSE.txt"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${AGI_TRANSPORT_DEPS}/boost_1_92_0/LICENSE_1_0.txt" "$<TARGET_FILE_DIR:agi-browse-host>/Boost-LICENSE.txt" VERBATIM)
+endif()
 set_target_properties(agi-browse-host PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/browser/$<CONFIG>"
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

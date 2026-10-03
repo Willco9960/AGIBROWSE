@@ -2,6 +2,7 @@
 #include <bcrypt.h>
 #include <array>
 #include <chrono>
+#include <mutex>
 namespace agi::ipc {
 namespace {
 void Close(HANDLE& h) { if(h && h!=INVALID_HANDLE_VALUE) CloseHandle(h); h=nullptr; }
@@ -21,11 +22,11 @@ ReadResult ReadExact(HANDLE pipe, HANDLE peer, uint8_t* bytes, size_t size, uint
   }
   return ReadResult::ok;
 }
-ReadResult ReadMessage(HANDLE pipe,HANDLE peer,Message& message,uint32_t timeout) {
+ReadResult ReadMessage(HANDLE pipe,HANDLE peer,Message& message,uint32_t timeout,bool transport_config=false) {
   uint8_t length[4]; const auto deadline=GetTickCount64()+timeout;
   auto result=ReadExact(pipe,peer,length,4,deadline); if(result!=ReadResult::ok) return result;
   uint32_t size=0; for(int i=0;i<4;++i) size|=uint32_t(length[i])<<(8*i);
-  if(size>kMaxMessage || size<14) return ReadResult::invalid;
+  if(size>(transport_config?kMaxTransportConfig:kMaxMessage) || size<14) return ReadResult::invalid;
   std::vector<uint8_t> bytes(size);
   result=ReadExact(pipe,peer,bytes.data(),bytes.size(),deadline);
   // A partial frame must never be treated as a harmless idle timeout.
@@ -33,7 +34,7 @@ ReadResult ReadMessage(HANDLE pipe,HANDLE peer,Message& message,uint32_t timeout
   return Decode(bytes,message)?ReadResult::ok:ReadResult::invalid;
 }
 bool WriteMessage(HANDLE pipe,const Message& message) {
-  auto bytes=Encode(message); if(bytes.size()>kMaxMessage) return false;
+  auto bytes=Encode(message); if(bytes.size()>(message.kind==Kind::transport_config?kMaxTransportConfig:kMaxMessage)) return false;
   std::vector<uint8_t> frame;
   for(int i=0;i<4;++i) frame.push_back(static_cast<uint8_t>(bytes.size()>>(8*i)));
   frame.insert(frame.end(),bytes.begin(),bytes.end());
@@ -67,9 +68,9 @@ std::vector<std::pair<uintptr_t,std::wstring>> HostChannel::EndpointDiagnosticsF
   }
   return result;
 }
-bool HostChannel::Start(const std::wstring& broker) {
+bool HostChannel::Start(const std::wstring& broker,std::shared_ptr<NativeTransportAuthority> authority) {
   if(process_ || broker.empty()) return false;
-  generation_=0;
+  generation_=0;transport_port_=0;transport_authority_=std::move(authority);
   SECURITY_ATTRIBUTES security{sizeof(security),nullptr,TRUE};
   HANDLE child_read=nullptr,child_write=nullptr,parent=nullptr,thread=nullptr;
   bool success=false;
@@ -109,6 +110,14 @@ bool HostChannel::Start(const std::wstring& broker) {
     if(ReadMessage(input_,process_,proof,3000)!=ReadResult::ok || proof.kind!=Kind::proof || proof.generation!=generation_) break;
     uint8_t difference=0; for(size_t i=0;i<32;++i) difference|=proof.challenge[i]^challenge.challenge[i];
     if(difference) break;
+    if(transport_authority_) {
+      auto configuration=transport_authority_->Configuration();configuration.channel_generation=generation_;
+      if(configuration.kind!=Kind::transport_config||configuration.version!=2||!WriteMessage(output_,configuration))break;
+      SecureZeroMemory(configuration.server_key.data(),configuration.server_key.size());
+      Message ready;
+      if(ReadMessage(input_,process_,ready,3000)!=ReadResult::ok||ready.kind!=Kind::transport_ready||ready.channel_generation!=generation_)break;
+      transport_port_=static_cast<unsigned short>(ready.port);
+    }
     success=true;
   } while(false);
   if(initialized) DeleteProcThreadAttributeList(attributes);
@@ -123,10 +132,20 @@ bool HostChannel::Start(const std::wstring& broker) {
 }
 void HostChannel::Serve() {
   Boundary boundary(generation_);  // intentionally zero grants in production
+  uint64_t identity_sequence=0;
   while(!stopping_) {
     Message intent; auto result=ReadMessage(input_,process_,intent,250);
     if(result==ReadResult::timeout) continue;
-    if(result!=ReadResult::ok || intent.kind!=Kind::intent) break;
+    if(result!=ReadResult::ok) break;
+    if(intent.kind==Kind::identity_check) {
+      if(!transport_authority_||intent.channel_generation!=generation_||identity_sequence==UINT64_MAX||intent.sequence!=identity_sequence+1)break;
+      identity_sequence=intent.sequence;
+      Message reply;reply.version=2;reply.kind=Kind::identity_result;reply.channel_generation=generation_;reply.sequence=intent.sequence;
+      reply.result=transport_authority_->ValidateIdentity(intent.client,intent.certificate_hash,intent.session)?1:2;
+      if(!WriteMessage(output_,reply))break;
+      continue;
+    }
+    if(intent.kind!=Kind::intent)break;
     Message reply; reply.kind=Kind::result; reply.sequence=intent.sequence; reply.generation=generation_;
     reply.result=static_cast<uint8_t>(boundary.Admit(intent,GetTickCount64()));
     if(!WriteMessage(output_,reply)) break;
@@ -145,8 +164,9 @@ void HostChannel::Stop() {
     WaitForSingleObject(process_,1000);
   }
   live_=false; Close(input_); Close(output_); Close(process_); Close(job_);
+  transport_port_=0;
 }
-int RunPrivateBroker() {
+int RunPrivateBroker(BrokerTransport* transport) {
   HANDLE input=GetStdHandle(STD_INPUT_HANDLE),output=GetStdHandle(STD_OUTPUT_HANDLE),parent=GetStdHandle(STD_ERROR_HANDLE);
   if(!Valid(input)||!Valid(output)||!Valid(parent) || GetFileType(input)!=FILE_TYPE_PIPE || GetFileType(output)!=FILE_TYPE_PIPE || WaitForSingleObject(parent,0)!=WAIT_TIMEOUT) return 71;
   // Broker must never propagate any privileged endpoint/lifetime handle.
@@ -154,11 +174,33 @@ int RunPrivateBroker() {
   Message challenge; if(ReadMessage(input,parent,challenge,3000)!=ReadResult::ok || challenge.kind!=Kind::challenge) return 72;
   Message proof=challenge; proof.kind=Kind::proof;
   if(!WriteMessage(output,proof)) return 73;
+  std::mutex channel_mutex;
+  uint64_t sequence=0;
+  std::atomic<bool> transport_stopping{false};
+  if(transport) {
+    Message configuration;
+    if(ReadMessage(input,parent,configuration,3000,true)!=ReadResult::ok||configuration.kind!=Kind::transport_config||configuration.channel_generation!=challenge.generation)return 76;
+    const auto epoch=challenge.generation;
+    if(!transport->Start(configuration,[&,epoch](const std::string& client,const std::string& hash,const std::string& session){
+      std::lock_guard lock(channel_mutex);if(sequence==UINT64_MAX)return false;
+      Message check;check.kind=Kind::identity_check;check.version=2;check.sequence=++sequence;check.channel_generation=epoch;check.client=client;check.certificate_hash=hash;check.session=session;
+      if(!WriteMessage(output,check))return false;
+      Message reply;auto result=ReadMessage(input,parent,reply,1000);
+      if(result==ReadResult::ok&&reply.kind==Kind::stop){transport_stopping=true;return false;}
+      return result==ReadResult::ok&&reply.kind==Kind::identity_result&&reply.sequence==sequence&&reply.channel_generation==epoch&&reply.result==1;
+    }))return 77;
+    SecureZeroMemory(configuration.server_key.data(),configuration.server_key.size());
+    Message ready;ready.version=2;ready.kind=Kind::transport_ready;ready.channel_generation=epoch;ready.port=transport->port();if(!ready.port||!WriteMessage(output,ready)){transport->Stop();return 78;}
+  }
   // 008 supplies paired WSS, 009 supplies host-owned scope sessions. Until then
   // there is no intake and no action dispatch; only authenticated lifetime.
   for(;;) {
-    Message m; auto result=ReadMessage(input,parent,m,250);
+    if(transport_stopping){if(transport)transport->Stop();return 0;}
+    Message m;ReadResult result;
+    {std::lock_guard lock(channel_mutex);result=ReadMessage(input,parent,m,25);}
+    if(transport)Sleep(2);
     if(result==ReadResult::timeout) continue;
+    if(transport)transport->Stop();
     if(result!=ReadResult::ok) return 74;
     if(m.kind==Kind::stop) return 0;
     return 75;

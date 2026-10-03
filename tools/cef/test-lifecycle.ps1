@@ -4,7 +4,8 @@ param(
     [string]$EvidenceDirectory = (Join-Path $PSScriptRoot '../../build/cef-lifecycle'),
     [int]$TimeoutSeconds = 45,
     [string]$FixtureUrl = '',
-    [switch]$SecurityProbe
+    [switch]$SecurityProbe,
+    [ValidateSet('healthy','expired','corrupt')][string]$TransportStoreFixture = 'healthy'
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -16,6 +17,12 @@ $run = Join-Path $evidence ([Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $run | Out-Null
 $log = Join-Path $run 'lifecycle.jsonl'
 $profile = Join-Path $run 'profile'
+if($TransportStoreFixture -ne 'healthy') {
+    if($SecurityProbe){throw 'Renderer channel probe requires healthy transport; fallback test cannot claim private channel proof'}
+    $fixtureTool=[IO.Path]::GetFullPath((Join-Path $BuildDirectory 'lib/transport/Release/agi-transport-tests.exe'))
+    & $fixtureTool --transport-store-fixture $TransportStoreFixture (Join-Path $profile 'Transport/authority.dpapi')
+    if($LASTEXITCODE){throw 'Protected transport store fixture creation failed'}
+}
 $url = ([Uri](Join-Path $root 'tests/fixtures/cef-lifecycle.html')).AbsoluteUri
 if ($FixtureUrl) { $url = $FixtureUrl }
 
@@ -140,9 +147,13 @@ try {
     } until (-not $remaining.Count -or (Get-Date) -gt $deadline)
     if ($remaining.Count) { throw 'CEF subprocesses remained after host exit' }
     $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
-    foreach ($required in @('sandbox_bootstrap_verified', 'window_created', 'browser_created', 'fixture_ready',
-                            'private_broker_challenge_verified', 'private_broker_stopped',
-                            'browser_closed', 'window_destroyed', 'message_loop_exited', 'shutdown_complete')) {
+    $requiredEvents=@('sandbox_bootstrap_verified','window_created','browser_created','fixture_ready','browser_closed','window_destroyed','message_loop_exited','shutdown_complete')
+    if($TransportStoreFixture -eq 'healthy'){$requiredEvents+=@('private_broker_challenge_verified','private_broker_stopped')}
+    else {
+        $requiredEvents+='agent_transport_unavailable'
+        if($events | Where-Object event -eq private_broker_challenge_verified){throw 'Unavailable transport incorrectly claimed a verified channel'}
+    }
+    foreach ($required in $requiredEvents) {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
     }
     if ($SecurityProbe) {
@@ -168,6 +179,7 @@ try {
         observedProcesses = @($processes.Values); rendererTokens = @($rendererTokens.Values)
         orphanProcesses = @($remaining | Select-Object ProcessId, ParentProcessId, CommandLine)
         forcedCleanup = $cleanupRequired; failure = $failure
+        transportStoreFixture = $TransportStoreFixture
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'result.json') -Encoding utf8
     $hostProcess.Dispose()
 }

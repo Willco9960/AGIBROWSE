@@ -5,7 +5,8 @@
 #include <vector>
 namespace agi::ipc {
 constexpr size_t kMaxMessage = 2048;
-enum class Kind : uint8_t { challenge = 1, proof = 2, intent = 3, result = 4, stop = 5 };
+constexpr size_t kMaxTransportConfig = 16384;
+enum class Kind : uint8_t { challenge = 1, proof = 2, intent = 3, result = 4, stop = 5, transport_config = 6, identity_check = 7, identity_result = 8, transport_ready = 9 };
 // Closed flat TLV: each tag occurs exactly once, has an exact type/length.
 struct Message {
   Kind kind = Kind::stop;
@@ -13,6 +14,9 @@ struct Message {
   std::string client, session, profile, tab, frame, document, operation;
   std::vector<uint8_t> challenge;
   uint8_t result = 0;
+  uint8_t version = 1;
+  std::string server_key, server_cert, ca_cert, certificate_hash;
+  uint64_t port = 0;
 };
 bool Decode(const std::vector<uint8_t>& bytes, Message& out);
 std::vector<uint8_t> Encode(const Message& message);
