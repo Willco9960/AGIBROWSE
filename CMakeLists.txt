@@ -8,5 +8,6 @@ option(AGI_BROWSE_WITH_TRANSPORT "Build authenticated Windows loopback TLS trans
 if(AGI_BROWSE_WITH_TRANSPORT)
   add_subdirectory(lib/transport)
 endif()
+add_subdirectory(lib/privacy)
 add_subdirectory(apps/browser)
 add_subdirectory(apps/broker)

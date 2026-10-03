@@ -5,6 +5,8 @@
 #include <map>
 #include <array>
 #include "lib/ipc/windows_channel.h"
+#include "lib/privacy/publication.h"
+#include "include/cef_jsdialog_handler.h"
 #ifdef AGI_TRANSPORT
 #include "lib/transport/server.h"
 #endif
@@ -34,16 +36,17 @@ bool fixture_ready = false;
 bool load_failed = false;
 bool renderer_security_test = false;
 bool renderer_security_passed = false;
+bool privacy_test = false;
+bool privacy_test_passed = false;
+bool privacy_dialog_seen = false;
 agi::ipc::HostChannel broker_channel;
 #ifdef AGI_TRANSPORT
 std::shared_ptr<agi::transport::PairingAuthority> pairing_authority;
 #endif
 
-void Record(const char* event, unsigned long long value = 0) {
-  if (lifecycle_log) {
-    std::fprintf(lifecycle_log, "{\"event\":\"%s\",\"value\":%llu}\n", event, value);
-    std::fflush(lifecycle_log);
-  }
+using agi::privacy::Event;
+void Record(Event event, unsigned long long value = 0) {
+  agi::privacy::WriteDiagnostic(lifecycle_log, event, value);
 }
 
 class BrowserClient final : public CefClient,
@@ -51,6 +54,7 @@ class BrowserClient final : public CefClient,
                             public CefDisplayHandler,
                             public CefLoadHandler,
                             public CefKeyboardHandler,
+                            public CefJSDialogHandler,
                             public CefFrameHandler {
  public:
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
@@ -58,6 +62,23 @@ class BrowserClient final : public CefClient,
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefFrameHandler> GetFrameHandler() override { return this; }
   CefRefPtr<CefKeyboardHandler> GetKeyboardHandler() override { return this; }
+  CefRefPtr<CefJSDialogHandler> GetJSDialogHandler() override { return this; }
+  bool OnConsoleMessage(CefRefPtr<CefBrowser>, cef_log_severity_t,
+                        const CefString&, const CefString&, int) override {
+    CEF_REQUIRE_UI_THREAD();
+    // Entire untrusted message/source/line omitted before CEF's fallback logger.
+    if (!console_seen_) { console_seen_ = true; Record(Event::page_console_suppressed); }
+    return true;
+  }
+  bool OnJSDialog(CefRefPtr<CefBrowser>, const CefString&, JSDialogType,
+                  const CefString&, const CefString&,
+                  CefRefPtr<CefJSDialogCallback> callback, bool&) override {
+    CEF_REQUIRE_UI_THREAD();
+    // Harness-only bounded dismissal. Normal human website dialogs are intact.
+    if (!privacy_test || privacy_dialog_seen) return false;
+    privacy_dialog_seen = true; Record(Event::privacy_dialog_suppressed);
+    callback->Continue(true, CefString()); return true;
+  }
   bool OnPreKeyEvent(CefRefPtr<CefBrowser> browser,const CefKeyEvent& event,CefEventHandle os_event,bool* shortcut) override {
     CEF_REQUIRE_UI_THREAD();
 #ifdef AGI_TRANSPORT
@@ -104,29 +125,34 @@ class BrowserClient final : public CefClient,
     // identity; wrapper memory addresses do not.
     auto current=browser->GetFrameByIdentifier(frame->GetIdentifier());
     if(source!=PID_RENDERER || found==frames_.end() || !found->second->IsValid() || !frame->IsValid() || !current || !current->IsValid() || current->GetBrowser()->GetIdentifier()!=browser->GetIdentifier() || found->second->GetIdentifier()!=current->GetIdentifier()) {
-      Record("renderer_identity_rejected");return true;
+      Record(Event::renderer_identity_rejected);return true;
     }
     auto args=message->GetArgumentList();
+    if(privacy_test && frame->IsMain() && message->GetName()=="agi.test.privacy.result.v1" &&
+       args->GetSize()==1 && args->GetType(0)==VTYPE_BOOL && args->GetBool(0) &&
+       console_seen_ && privacy_dialog_seen) {
+      privacy_test_passed=true;Record(Event::privacy_fixture_paths_exercised);return true;
+    }
     // The renderer lane never calls the broker decoder/admission/dispatch.
     // Only host-requested diagnostics have a closed non-authorizing response.
     if(renderer_security_test && message->GetName()=="agi.test.result.v1" && args->GetSize()==2 && args->GetType(0)==VTYPE_BOOL && args->GetType(1)==VTYPE_BOOL && args->GetBool(0) && args->GetBool(1) && denied_[key]==8) {
-      renderer_security_passed=true;Record("renderer_application_escape_blocked");Record("renderer_private_handles_absent");Record("page_native_api_absent");return true;
+      renderer_security_passed=true;Record(Event::renderer_application_escape_blocked);Record(Event::renderer_private_handles_absent);Record(Event::page_native_api_absent);return true;
     }
     // A future semantic lane is unavailable until its closed schema exists.
     auto& denied=denied_[key];
-    if(denied<8) { ++denied;Record("renderer_privileged_message_rejected"); }
+    if(denied<8) { ++denied;Record(Event::renderer_privileged_message_rejected); }
     return true;
   }
 
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
     CEF_REQUIRE_UI_THREAD();
     ++browser_count_;
-    Record("browser_created", browser->GetIdentifier());
+    Record(Event::browser_created, browser->GetIdentifier());
   }
 
   void OnBeforeClose(CefRefPtr<CefBrowser> browser) override {
     CEF_REQUIRE_UI_THREAD();
-    Record("browser_closed", browser->GetIdentifier());
+    Record(Event::browser_closed, browser->GetIdentifier());
     if (--browser_count_ == 0) {
       CefQuitMessageLoop();
     }
@@ -136,11 +162,13 @@ class BrowserClient final : public CefClient,
     CEF_REQUIRE_UI_THREAD();
     if (title == "AGI-BROWSE fixture ready") {
       fixture_ready = true;
-      Record("fixture_ready");
+      Record(Event::fixture_ready);
     }
     auto view = CefBrowserView::GetForBrowser(browser);
     if (view && view->GetWindow()) {
       view->GetWindow()->SetTitle(title);
+      if(privacy_test && title!="Privacy fixture loading" && title!="AGI-BROWSE fixture ready" &&
+         view->GetWindow()->GetTitle()==title) Record(Event::privacy_human_title_preserved);
     }
   }
 
@@ -149,10 +177,11 @@ class BrowserClient final : public CefClient,
                  int http_status_code) override {
     CEF_REQUIRE_UI_THREAD();
     if (frame->IsMain()) {
-      Record("main_frame_loaded", http_status_code);
+      Record(Event::main_frame_loaded, http_status_code);
+      if(privacy_test) frame->SendProcessMessage(PID_RENDERER,CefProcessMessage::Create("agi.test.privacy.probe.v1"));
       if(renderer_security_test) {
         const auto endpoints=broker_channel.EndpointDiagnosticsForTest();
-        if(endpoints.size()!=2) { load_failed=true;Record("private_endpoint_diagnostics_failed");return; }
+        if(endpoints.size()!=2) { load_failed=true;Record(Event::private_endpoint_diagnostics_failed);return; }
         auto probe=CefProcessMessage::Create("agi.test.probe.v1");
         auto values=probe->GetArgumentList();
         for(size_t i=0;i<endpoints.size();++i) {
@@ -172,12 +201,13 @@ class BrowserClient final : public CefClient,
     CEF_REQUIRE_UI_THREAD();
     if (frame->IsMain() && error_code != ERR_ABORTED) {
       load_failed = true;
-      Record("main_frame_load_failed");
+      Record(Event::main_frame_load_failed);
     }
   }
 
  private:
   int browser_count_ = 0;
+  bool console_seen_ = false;
   std::map<std::pair<int,std::string>,CefRefPtr<CefFrame>> frames_;
   std::map<std::pair<int,std::string>,unsigned> denied_;
   IMPLEMENT_REFCOUNTING(BrowserClient);
@@ -192,11 +222,11 @@ class WindowDelegate final : public CefWindowDelegate {
     window->SetTitle("AGI-BROWSE");
     window->Show();
     view_->RequestFocus();
-    Record("window_created", reinterpret_cast<unsigned long long>(window->GetWindowHandle()));
+    Record(Event::window_created, reinterpret_cast<unsigned long long>(window->GetWindowHandle()));
   }
 
   void OnWindowDestroyed(CefRefPtr<CefWindow> window) override {
-    Record("window_destroyed");
+    Record(Event::window_destroyed);
     view_ = nullptr;
   }
 
@@ -219,6 +249,21 @@ class RendererApp final : public CefApp,public CefRenderProcessHandler {
   CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override { return this; }
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame> frame,CefProcessId source,CefRefPtr<CefProcessMessage> message) override {
     CEF_REQUIRE_RENDERER_THREAD();
+    if(source==PID_BROWSER && message->GetName()=="agi.test.privacy.probe.v1" && message->GetArgumentList()->GetSize()==0) {
+      auto context=frame->GetV8Context();bool proof=false;
+      if(context && context->Enter()) {
+        CefRefPtr<CefV8Value> value;CefRefPtr<CefV8Exception> exception;
+        proof=context->Eval("Array.isArray(globalThis.privacyProof) && globalThis.privacyProof.length === 6 && globalThis.privacyProof.every(x => x === true)","agi-privacy-probe",0,value,exception) && value && value->IsBool() && value->GetBoolValue();
+        context->Exit();
+      }
+      // The supported proof result carries only a closed boolean. The separate
+      // forged canary below exercises the rejected unknown renderer lane.
+      auto forged=CefProcessMessage::Create("agi.renderer.unsupported.privacy.v1");
+      forged->GetArgumentList()->SetString(0,"SENTINEL_PASSWORD_010 PRIVATE_MARKED_NAME_010");
+      frame->SendProcessMessage(PID_BROWSER,forged);
+      auto result=CefProcessMessage::Create("agi.test.privacy.result.v1");
+      result->GetArgumentList()->SetBool(0,proof);frame->SendProcessMessage(PID_BROWSER,result);return true;
+    }
     if(source!=PID_BROWSER || message->GetName()!="agi.test.probe.v1")return false;
     auto args=message->GetArgumentList();if(args->GetSize()!=4)return true;
     bool absent=true;
@@ -252,10 +297,20 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
  public:
   explicit BrowserApp(std::string url) : url_(std::move(url)) {}
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override { return this; }
+  void OnBeforeCommandLineProcessing(const CefString& process_type,
+                                    CefRefPtr<CefCommandLine> command_line) override {
+    if(process_type.empty()) {
+      // Chromium's logging destination is independent of CEF's minimum level.
+      // Disable the destination before Chrome initializes it, preventing both
+      // default debug.log and inherited enable-logging=handle/log-file flags.
+      // Source: pinned chrome/common/logging_chrome.cc GetLoggingDest.
+      command_line->AppendSwitch("disable-logging");
+    }
+  }
 
   void OnContextInitialized() override {
     CEF_REQUIRE_UI_THREAD();
-    Record("context_initialized");
+    Record(Event::context_initialized);
     CefBrowserSettings settings;
     auto view = CefBrowserView::CreateBrowserView(new BrowserClient, url_, settings,
                                                  nullptr, nullptr, nullptr);
@@ -270,8 +325,14 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
 bool UnsafeSwitches(CefRefPtr<CefCommandLine> args) {
   for (const auto* flag : {"no-sandbox", "disable-sandbox", "disable-gpu-sandbox",
                            "disable-web-security", "single-process", "in-process-gpu",
-                           "remote-debugging-port", "remote-debugging-pipe"}) {
+                           "remote-debugging-port", "remote-debugging-pipe",
+                           "enable-logging", "log-file", "log-severity", "v", "vmodule",
+                           "log-net-log", "net-log-capture-mode", "trace-startup",
+                           "trace-startup-file", "trace-to-console", "enable-crash-reporter",
+                           "crash-dumps-dir", "js-flags"}) {
     if (args->HasSwitch(flag)) {
+      if (std::string_view(flag)=="log-severity" && args->HasSwitch("type") &&
+          args->GetSwitchValue("log-severity")=="disable") continue;
       return true;
     }
   }
@@ -300,6 +361,8 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
 
   auto args = CefCommandLine::CreateCommandLine();
   args->InitFromString(::GetCommandLineW());
+  // Browser invocation is checked before CEF initializes logging. Engine child
+  // commands inherit CEF's own log-severity switch from the trusted parent.
   if (UnsafeSwitches(args)) {
     return 64;
   }
@@ -317,8 +380,9 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
       return 66;
     }
   }
-  Record("sandbox_bootstrap_verified", ::GetCurrentProcessId());
+  Record(Event::sandbox_bootstrap_verified, ::GetCurrentProcessId());
   renderer_security_test=args->HasSwitch("ipc-renderer-test");
+  privacy_test=args->HasSwitch("privacy-renderer-test");
   wchar_t executable[32768]{};
   const DWORD executable_length=GetModuleFileNameW(nullptr,executable,32768);
   if(!executable_length || executable_length>=32768) return 70;
@@ -330,16 +394,20 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
     auto profile=args->GetSwitchValue("profile-dir").ToWString();
     if(profile.empty()) {wchar_t local[32768]{};auto n=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);if(!n||n>=32768)throw std::runtime_error("protected storage unavailable");profile=std::wstring(local)+L"\\AGI-BROWSE";}
     pairing_authority=std::make_shared<agi::transport::PairingAuthority>(profile+L"\\Transport\\authority.dpapi");transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);
-  } catch(...) {Record("agent_transport_unavailable");}
+  } catch(...) {Record(Event::agent_transport_unavailable);}
   if(transport_authority&&!broker_channel.Start(broker_path,transport_authority)) {
 #else
   if(!broker_channel.Start(broker_path)) {
 #endif
-    Record("private_broker_start_failed");if(lifecycle_log){std::fclose(lifecycle_log);lifecycle_log=nullptr;}return 70;
+    Record(Event::private_broker_start_failed);if(lifecycle_log){std::fclose(lifecycle_log);lifecycle_log=nullptr;}return 70;
   }
-  if(broker_channel.live())Record("private_broker_challenge_verified",broker_channel.process_id());
+  if(broker_channel.live())Record(Event::private_broker_challenge_verified,broker_channel.process_id());
   CefSettings settings;
   settings.no_sandbox = false;
+  // Pinned cef_types.h: DISABLE prevents file logging; FATAL still writes
+  // stderr. This does not promise suppression of crash/OS dumps or fatal data.
+  settings.log_severity = LOGSEVERITY_DISABLE;
+  settings.command_line_args_disabled = true;
   // CEF requires an absolute cache root. The caller's isolated profile is used
   // for tests; the normal default is under the user's LocalAppData directory.
   std::wstring profile = args->GetSwitchValue("profile-dir").ToWString();
@@ -360,19 +428,19 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   auto app = CefRefPtr<BrowserApp>(new BrowserApp(url));
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
     broker_channel.Stop();
-    Record("initialization_failed");
+    Record(Event::initialization_failed);
     if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
     const int code = CefGetExitCode();
     return code == 0 ? 68 : code;
   }
-  Record("initialized");
+  Record(Event::initialized);
   CefRunMessageLoop();
-  Record("message_loop_exited");
+  Record(Event::message_loop_exited);
   CefShutdown();
   broker_channel.Stop();
-  Record("private_broker_stopped");
-  Record("shutdown_complete");
+  Record(Event::private_broker_stopped);
+  Record(Event::shutdown_complete);
   app = nullptr;
   if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
-  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) ? 69 : 0;
+  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) ? 69 : 0;
 }

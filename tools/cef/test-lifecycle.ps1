@@ -5,6 +5,7 @@ param(
     [int]$TimeoutSeconds = 45,
     [string]$FixtureUrl = '',
     [switch]$SecurityProbe,
+    [switch]$PrivacyProbe,
     [ValidateSet('healthy','expired','corrupt')][string]$TransportStoreFixture = 'healthy'
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,8 @@ New-Item -ItemType Directory -Force -Path $evidence | Out-Null
 $run = Join-Path $evidence ([Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $run | Out-Null
 $log = Join-Path $run 'lifecycle.jsonl'
+$stdout = Join-Path $run 'stdout.txt'
+$stderr = Join-Path $run 'stderr.txt'
 $profile = Join-Path $run 'profile'
 if($TransportStoreFixture -ne 'healthy') {
     if($SecurityProbe){throw 'Renderer channel probe requires healthy transport; fallback test cannot claim private channel proof'}
@@ -25,6 +28,7 @@ if($TransportStoreFixture -ne 'healthy') {
 }
 $url = ([Uri](Join-Path $root 'tests/fixtures/cef-lifecycle.html')).AbsoluteUri
 if ($FixtureUrl) { $url = $FixtureUrl }
+if ($PrivacyProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/privacy.html')).AbsoluteUri }
 
 if (-not ('CefLifecycle.Native' -as [type])) {
 Add-Type -TypeDefinition @'
@@ -91,7 +95,8 @@ $arguments = @(
     "--url=$url", "--profile-dir=`"$profile`"", "--lifecycle-log=`"$log`"", '--require-fixture'
 )
 if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
-$hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle Hidden
+if ($PrivacyProbe) { $arguments += '--privacy-renderer-test' }
+$hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle Hidden -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
@@ -114,6 +119,14 @@ try {
             if (-not $probeReady) { Start-Sleep -Milliseconds 100 }
         } until ($probeReady -or (Get-Date) -gt $deadline)
         if (-not $probeReady) { throw 'Real renderer application escape/private-handle probe did not pass' }
+    }
+    if ($PrivacyProbe) {
+        do {
+            $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+            $privacyReady = @($events | Where-Object event -eq privacy_fixture_paths_exercised).Count -gt 0
+            if (-not $privacyReady) { Start-Sleep -Milliseconds 100 }
+        } until ($privacyReady -or (Get-Date) -gt $deadline)
+        if (-not $privacyReady) { throw 'Privacy fixture did not positively exercise all renderer paths' }
     }
     # Probe only after JavaScript ran: before lockdown a newly created process
     # may still carry its temporary startup token.
@@ -161,6 +174,11 @@ try {
             if (-not ($events | Where-Object event -eq $required)) { throw "Missing security event: $required" }
         }
         if (@($events | Where-Object event -eq renderer_privileged_message_rejected).Count -lt 8) { throw 'Renderer negative messages were not all rejected' }
+    }
+    if ($PrivacyProbe) {
+        foreach ($required in @('page_console_suppressed','privacy_dialog_suppressed','privacy_fixture_paths_exercised','privacy_human_title_preserved')) {
+            if (-not ($events | Where-Object event -eq $required)) { throw "Missing privacy event: $required" }
+        }
     }
     $success = $true
 } catch {

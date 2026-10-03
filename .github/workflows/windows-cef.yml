@@ -2,7 +2,7 @@ name: Windows CEF build and lifecycle
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', '.github/workflows/windows-cef.yml']
+    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', '.github/workflows/windows-cef.yml']
 permissions:
   contents: read
 concurrency:
@@ -40,6 +40,10 @@ jobs:
         shell: pwsh
         timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1 -SecurityProbe -EvidenceDirectory build/cef-security
+      - name: Real privacy sentinels and startup logging rejection
+        shell: pwsh
+        timeout-minutes: 3
+        run: ./tools/cef/test-privacy.ps1
       - name: Expired and corrupt credentials preserve human browsing
         shell: pwsh
         timeout-minutes: 3
@@ -56,6 +60,11 @@ jobs:
             build/cef-lifecycle/**/lifecycle.jsonl
             build/cef-security/**/result.json
             build/cef-security/**/lifecycle.jsonl
+            build/cef-privacy/**/result.json
+            build/cef-privacy/**/privacy-result.json
+            build/cef-privacy/**/lifecycle.jsonl
+            build/cef-privacy/**/stdout.txt
+            build/cef-privacy/**/stderr.txt
             build/cef-transport-fallback/**/result.json
             build/cef-transport-fallback/**/lifecycle.jsonl
             build/windows-cef/Testing/Temporary/LastTest.log

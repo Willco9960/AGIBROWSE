@@ -55,4 +55,6 @@ The `.github/workflows/windows-cef.yml` workflow builds and runs the lifecycle t
 
 ## Current status
 
+Task010 adds [host privacy publication guards](security/privacy-publication.md), bounded native staging redaction, and real broker/nonfatal-output sentinel tests. [Its evidence](evidence/AIBROWESE-010.md) records passing focused native checks and the local launcher quarantine blocker; final corrected CEF GUI/startup acceptance requires clean CI. Run `./tools/cef/test-privacy.ps1` after the normal pinned Windows build.
+
 The Windows CEF host has passed local and clean hosted builds and sandbox lifecycle tests. Tasks001–005 and milestoneM01 are accepted: seeded fixtures passed14/14 browser assertions for each of two seeds, and routing checks passed12/12 tests. Detailed protocol choices remain with their assigned tasks; human navigation controls, public MCP tools, SDK operations and the two-tier agent runtime are not available yet.
