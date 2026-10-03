@@ -1,6 +1,6 @@
 # AIBROWESE-009 evidence
 
-Status: actual local native/CEF checks passed; exact-source hosted acceptance remains pending. [Scoped session contract](../security/scoped-sessions.md) and [ADR-003](../decisions/003-host-scoped-session-lifecycle.md) describe the enforced boundaries and current production limit.
+Status: accepted after actual local and clean hosted Windows verification, 2026-10-03. [Scoped session contract](../security/scoped-sessions.md) and [ADR-003](../decisions/003-host-scoped-session-lifecycle.md) describe the enforced boundaries and current production limit.
 
 The Windows MSVC v143 incremental native build passes with existing pinned OpenSSL3.5.9/Boost1.92.0 dependencies. No global installation or PATH change occurs. The CMake child environment normalizes duplicate case-insensitive PATH/Path keys. `/EHsc` was added explicitly after a throwing callback test exposed failed mutex unwinding; the corrected test proves consumed tickets, released mutex and subsequent valid delivery.
 
@@ -23,3 +23,5 @@ Canonical-origin validation in these tests is an explicit closed oracle; product
 No commit, push or board mutation was performed by the task engineer.
 
 Coordinator final-source incremental CEF rebuild and selected native checks passed:348 scope checks0.14s and77 host lifecycle checks4.67s,2/2 tests,total5.18s. [Final native receipt](AIBROWESE-009-final-native.log) includes the expired-owner lease regression. Unchanged TLS/churn paths were not repeated locally after this one-condition lease fix; exact-source hosted CI will run the complete suite.
+
+Clean Windows2022 CI [37132033013](https://github.com/Willco9960/AGIBROWSE/actions/runs/37132033013) passed on exact implementation997b8441e27a9634a21e9bd6d32d6e769292c0c7:193 IPC1.60s,348 scope0.03s,60 TLS58.52s,77 host lifecycle5.52s,143 real socket churn223.24s, five native tests and seven cache vectors. Healthy2.3041322s, renderer-security2.2805103s, expired-store1.7198885s and corrupt-store1.6109941s passed with restrictedRID0 renderers, exit0, no orphan processes or forced cleanup. Coordinator artifact11276984581 SHA25620702795f61e86203e5e78859abf9a38be8dc1ffd4ee6e66b362d84a735c918e matched GitHub digest before direct receipt inspection. [Sanitized hosted acceptance](AIBROWESE-009-ci-acceptance.json) separates the tested implementation from this evidence-only checkpoint.
