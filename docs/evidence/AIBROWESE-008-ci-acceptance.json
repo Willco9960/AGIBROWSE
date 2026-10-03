@@ -1,0 +1,396 @@
+{
+  "cacheChecks": 7,
+  "ciUrl": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37081273015",
+  "lifecycles": [
+    {
+      "scenario": "healthy",
+      "passed": true,
+      "durationSeconds": 2.8972737,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "rendererTokens": [
+        {
+          "processId": 5140,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 3088,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0
+    },
+    {
+      "scenario": "renderer-security",
+      "passed": true,
+      "durationSeconds": 2.1880251,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "rendererTokens": [
+        {
+          "processId": 3836,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 2544,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0
+    },
+    {
+      "scenario": "corrupt",
+      "passed": true,
+      "durationSeconds": 1.4705344,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "rendererTokens": [
+        {
+          "processId": 3092,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 6796,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0
+    },
+    {
+      "scenario": "expired",
+      "passed": true,
+      "durationSeconds": 1.6110278,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "rendererTokens": [
+        {
+          "processId": 1164,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 2884,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0
+    }
+  ],
+  "sourceCommit": "ae7fd96333072c9a59c7ce7754a5aaa22072c70b",
+  "limits": [
+    "Native human enrollment dialog end-to-end automation unverified",
+    "Zero application grants and no engine dispatch",
+    "No non-Windows parity or authenticated key rotation claim"
+  ],
+  "nativeChecks": {
+    "transport": 60,
+    "testsPassed": 2,
+    "ipc": 193
+  },
+  "artifact": {
+    "sha256": "c26036451e668a1c9abdca928e38e672eb6c80cd790e947d56fc0d2463583768",
+    "digestVerified": true,
+    "id": 11259361958
+  },
+  "ciRun": 37081273015,
+  "accepted": true,
+  "taskId": "AIBROWESE-008",
+  "lifecycleEvents": [
+    {
+      "scenario": "healthy",
+      "events": [
+        {
+          "event": "sandbox_bootstrap_verified",
+          "value": 6440
+        },
+        {
+          "event": "private_broker_challenge_verified",
+          "value": 7268
+        },
+        {
+          "event": "context_initialized",
+          "value": 0
+        },
+        {
+          "event": "browser_created",
+          "value": 1
+        },
+        {
+          "event": "window_created",
+          "value": 197166
+        },
+        {
+          "event": "initialized",
+          "value": 0
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "main_frame_loaded",
+          "value": 200
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "browser_closed",
+          "value": 1
+        },
+        {
+          "event": "window_destroyed",
+          "value": 0
+        },
+        {
+          "event": "message_loop_exited",
+          "value": 0
+        },
+        {
+          "event": "private_broker_stopped",
+          "value": 0
+        },
+        {
+          "event": "shutdown_complete",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "scenario": "renderer-security",
+      "events": [
+        {
+          "event": "sandbox_bootstrap_verified",
+          "value": 4416
+        },
+        {
+          "event": "private_broker_challenge_verified",
+          "value": 1500
+        },
+        {
+          "event": "context_initialized",
+          "value": 0
+        },
+        {
+          "event": "browser_created",
+          "value": 1
+        },
+        {
+          "event": "window_created",
+          "value": 262306
+        },
+        {
+          "event": "initialized",
+          "value": 0
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "main_frame_loaded",
+          "value": 200
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_privileged_message_rejected",
+          "value": 0
+        },
+        {
+          "event": "renderer_application_escape_blocked",
+          "value": 0
+        },
+        {
+          "event": "renderer_private_handles_absent",
+          "value": 0
+        },
+        {
+          "event": "page_native_api_absent",
+          "value": 0
+        },
+        {
+          "event": "browser_closed",
+          "value": 1
+        },
+        {
+          "event": "window_destroyed",
+          "value": 0
+        },
+        {
+          "event": "message_loop_exited",
+          "value": 0
+        },
+        {
+          "event": "private_broker_stopped",
+          "value": 0
+        },
+        {
+          "event": "shutdown_complete",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "scenario": "credential-fallback",
+      "events": [
+        {
+          "event": "sandbox_bootstrap_verified",
+          "value": 7916
+        },
+        {
+          "event": "agent_transport_unavailable",
+          "value": 0
+        },
+        {
+          "event": "context_initialized",
+          "value": 0
+        },
+        {
+          "event": "browser_created",
+          "value": 1
+        },
+        {
+          "event": "window_created",
+          "value": 459256
+        },
+        {
+          "event": "initialized",
+          "value": 0
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "main_frame_loaded",
+          "value": 200
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "browser_closed",
+          "value": 1
+        },
+        {
+          "event": "window_destroyed",
+          "value": 0
+        },
+        {
+          "event": "message_loop_exited",
+          "value": 0
+        },
+        {
+          "event": "private_broker_stopped",
+          "value": 0
+        },
+        {
+          "event": "shutdown_complete",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "scenario": "credential-fallback",
+      "events": [
+        {
+          "event": "sandbox_bootstrap_verified",
+          "value": 1264
+        },
+        {
+          "event": "agent_transport_unavailable",
+          "value": 0
+        },
+        {
+          "event": "context_initialized",
+          "value": 0
+        },
+        {
+          "event": "browser_created",
+          "value": 1
+        },
+        {
+          "event": "window_created",
+          "value": 393532
+        },
+        {
+          "event": "initialized",
+          "value": 0
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "main_frame_loaded",
+          "value": 200
+        },
+        {
+          "event": "fixture_ready",
+          "value": 0
+        },
+        {
+          "event": "browser_closed",
+          "value": 1
+        },
+        {
+          "event": "window_destroyed",
+          "value": 0
+        },
+        {
+          "event": "message_loop_exited",
+          "value": 0
+        },
+        {
+          "event": "private_broker_stopped",
+          "value": 0
+        },
+        {
+          "event": "shutdown_complete",
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "ciJob": 111082111115
+}

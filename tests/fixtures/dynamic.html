@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Fixture dynamic</title><h1>Dynamic items</h1><button id="advance">Load next item</button><ol id="items"></ol><output id="status">Ready</output>
+<script>
+document.querySelector('#advance').addEventListener('click', async event => {
+  const button = event.currentTarget; button.disabled = true;
+  try {
+    const response = await fetch('/api/step', { method: 'POST' });
+    if (!response.ok) { document.querySelector('#status').textContent = 'Complete'; return; }
+    const item = await response.json(); const li = document.createElement('li'); li.dataset.id = item.id; li.textContent = item.label; document.querySelector('#items').append(li);
+    document.querySelector('#status').textContent = `Loaded ${item.id}`;
+  } finally { button.disabled = false; }
+});
+</script></html>

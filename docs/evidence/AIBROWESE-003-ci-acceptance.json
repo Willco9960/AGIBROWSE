@@ -1,0 +1,98 @@
+{
+  "acceptance": true,
+  "task": "AIBROWESE-003",
+  "verifiedUtc": "2026-10-02T20:31:07.5105429Z",
+  "runId": 37060320215,
+  "jobId": 111015090899,
+  "jobUrl": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37060320215/job/111015090899",
+  "sourceHead": "62019d863c8f958181b2ff6b62b89dfaddd7fd59",
+  "checkoutCommit": "bf6467f91386e9bdb30f186936890a59a0b9a0e8",
+  "runner": "windows-2022",
+  "startedAt": "2026-10-02T20:24:03Z",
+  "completedAt": "2026-10-02T20:27:42Z",
+  "artifact": {
+    "id": 11251050042,
+    "digest": "sha256:0b6ce249fdd266a3e64d00982df2ba5fd2e4b19e4e9003207da86bfd1402d86e",
+    "digestVerified": true,
+    "url": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37060320215/artifacts/11251050042"
+  },
+  "build": {
+    "configureExit": 0,
+    "buildExit": 0,
+    "launcherHashVerifiedByBuild": true,
+    "msvc": "19.44.35229.0",
+    "windowsSdk": "10.0.26100.0"
+  },
+  "lifecycle": {
+    "passed": true,
+    "startedUtc": "2026-10-02T20:27:35.251858Z",
+    "durationSeconds": 2.0858676,
+    "hostExitCode": 0,
+    "rendererTokens": [
+      {
+        "processId": 1032,
+        "restricted": true,
+        "integrityRid": 0
+      },
+      {
+        "processId": 6728,
+        "restricted": true,
+        "integrityRid": 0
+      }
+    ],
+    "orphanProcesses": [],
+    "forcedCleanup": false,
+    "failure": null,
+    "events": [
+      {
+        "event": "sandbox_bootstrap_verified",
+        "value": 3788
+      },
+      {
+        "event": "context_initialized",
+        "value": 0
+      },
+      {
+        "event": "browser_created",
+        "value": 1
+      },
+      {
+        "event": "window_created",
+        "value": 197086
+      },
+      {
+        "event": "initialized",
+        "value": 0
+      },
+      {
+        "event": "fixture_ready",
+        "value": 0
+      },
+      {
+        "event": "main_frame_loaded",
+        "value": 200
+      },
+      {
+        "event": "fixture_ready",
+        "value": 0
+      },
+      {
+        "event": "browser_closed",
+        "value": 1
+      },
+      {
+        "event": "window_destroyed",
+        "value": 0
+      },
+      {
+        "event": "message_loop_exited",
+        "value": 0
+      },
+      {
+        "event": "shutdown_complete",
+        "value": 0
+      }
+    ]
+  },
+  "sourceReceiptSha256": "45766fa254533cb56fa156b06b56579adc3d06500153fc9ed4cb130653baa623"
+}

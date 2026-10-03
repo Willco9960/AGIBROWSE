@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Fixture proof running</title><h1>Browser conformance proof</h1><p>Fixture page scripts exercise browser behavior. This does not test agent commands.</p><ol id="results"></ol>
+<script type="module">
+const results = [];
+function check(name, condition) { results.push({ name, passed: Boolean(condition) }); const li = document.createElement('li'); li.textContent = `${condition ? 'PASS' : 'FAIL'}: ${name}`; document.querySelector('#results').append(li); if (!condition) throw new Error(name); }
+function load(frame, action) { return new Promise((resolve, reject) => { const timer = setTimeout(() => reject(new Error('Frame timeout')), 8000); frame.addEventListener('load', () => { clearTimeout(timer); resolve(); }, { once: true }); action(); }); }
+function frame() { const f = document.createElement('iframe'); document.body.append(f); return f; }
+async function until(predicate) { const end = performance.now() + 8000; while (!predicate()) { if (performance.now() > end) throw new Error('Dynamic timeout'); await new Promise(r => setTimeout(r, 20)); } }
+try {
+  await fetch('/api/reset', { method: 'POST' }); const expected = (await (await fetch('/api/state')).json()).data;
+  const formFrame = frame(); await load(formFrame, () => formFrame.src = '/forms');
+  const form = formFrame.contentDocument.querySelector('form');
+  check('empty required form invalid', !form.checkValidity());
+  form.elements.name.value = 'Ada'; form.elements.email.value = 'invalid'; check('invalid email rejected', !form.checkValidity());
+  let invalidCount = 0; form.addEventListener('invalid', () => invalidCount++, true); form.requestSubmit();
+  check('native submit blocked by validation', invalidCount > 0 && formFrame.contentWindow.location.pathname === '/forms');
+  form.elements.email.value = 'ada@example.test'; check('valid form accepted', form.checkValidity());
+  await load(formFrame, () => form.requestSubmit());
+  const receipt = JSON.parse(formFrame.contentDocument.querySelector('#receipt').textContent);
+  check('native POST and redirect receipt', receipt.name === 'Ada' && receipt.email === 'ada@example.test' && receipt.code === expected.code && receipt.id === 1);
+  const nav = frame(); await load(nav, () => nav.src = '/navigation');
+  await load(nav, () => nav.contentDocument.querySelector('#next').click()); check('anchor navigation', nav.contentDocument.querySelector('#arrival').textContent === 'link');
+  await load(nav, () => nav.contentWindow.location.href = '/redirect'); check('HTTP redirect', nav.contentDocument.querySelector('#arrival').textContent === 'redirect');
+  const dynamic = frame(); await load(dynamic, () => dynamic.src = '/dynamic');
+  for (const item of expected.items) { dynamic.contentDocument.querySelector('#advance').click(); await until(() => dynamic.contentDocument.querySelectorAll('li').length === item.id && !dynamic.contentDocument.querySelector('button').disabled); check(`dynamic step ${item.id}`, dynamic.contentDocument.querySelector('li:last-child').textContent === item.label); }
+  dynamic.contentDocument.querySelector('#advance').click(); await until(() => dynamic.contentDocument.querySelector('#status').textContent === 'Complete'); check('dynamic exhaustion', dynamic.contentDocument.querySelectorAll('li').length === 3);
+  const foreign = frame();
+  const message = new Promise((resolve, reject) => { const timer = setTimeout(() => reject(new Error('Foreign message timeout')), 8000); const listener = event => { if (event.source === foreign.contentWindow && event.origin === '{{SECONDARY}}' && event.data.type === 'fixture-foreign') { clearTimeout(timer); removeEventListener('message', listener); resolve(event); } }; addEventListener('message', listener); });
+  await load(foreign, () => foreign.src = '/cross-redirect'); const event = await message;
+  check('cross origin redirect and checked message', event.data.origin === '{{SECONDARY}}');
+  let denied = false; try { void foreign.contentWindow.document.body; } catch (error) { denied = error.name === 'SecurityError'; } check('same origin policy denies frame DOM', denied);
+  let corsDenied = false; try { await fetch('{{SECONDARY}}/foreign'); } catch { corsDenied = true; } check('cross origin fetch denied without CORS', corsDenied);
+} catch (error) { results.push({ name: `exception: ${error.message}`, passed: false }); }
+await fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(results) });
+document.title = results.every(x => x.passed) ? 'AGI-BROWSE fixture ready' : 'Fixture proof FAILED';
+</script></html>

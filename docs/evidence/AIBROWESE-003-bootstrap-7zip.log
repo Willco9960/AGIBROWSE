@@ -1,0 +1,12 @@
+2026-10-02T20:14:48.9292041Z CEF bootstrap: start version=154.0.33+ga03e714+chromium-154.0.8037.94; cache=C:\Users\conne\Documents\Codex\2026-09-25\new-chat\work\agi-browse-dev\build\cef-ci-7zip-test
+2026-10-02T20:14:48.9376666Z CEF bootstrap: archive cache hit
+2026-10-02T20:14:48.9438828Z CEF bootstrap: archive size/SHA256/upstreamSHA1 verification start
+2026-10-02T20:14:49.4304695Z CEF bootstrap: archive checksums verified
+2026-10-02T20:14:49.4467587Z CEF bootstrap: extractor=C:\Program Files\7-Zip\7z.exe; version=24.09
+2026-10-02T20:14:49.4538741Z CEF bootstrap: decompression start: bzip2 to tar; processLimit=180s
+2026-10-02T20:14:50.5538283Z CEF bootstrap: decompression running: elapsed=1s; tarBytes=88080384; processCpuSeconds=0.2
+2026-10-02T20:14:54.2602322Z CEF bootstrap: decompression completed in 5s
+2026-10-02T20:14:54.2678845Z CEF bootstrap: tar ready: bytes=443525120
+2026-10-02T20:14:54.2731257Z CEF bootstrap: extraction start: tar to SDK; processLimit=120s
+2026-10-02T20:14:54.9243614Z CEF bootstrap: extraction completed in 1s
+2026-10-02T20:14:54.9341342Z CEF bootstrap: SDK ready

@@ -1,0 +1,80 @@
+name: Windows CEF build and lifecycle
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', '.github/workflows/windows-cef.yml']
+permissions:
+  contents: read
+concurrency:
+  group: windows-cef-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows-cef:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verify and build pinned native transport dependencies
+        shell: pwsh
+        timeout-minutes: 15
+        run: |
+          ./tools/transport/bootstrap.ps1 | Out-Null
+          ./tools/transport/test-cache.ps1
+      - name: Retrieve and verify pinned CEF SDK
+        shell: pwsh
+        timeout-minutes: 13
+        run: ./tools/cef/bootstrap.ps1 | Out-Null
+      - name: Build pinned CEF and native browser
+        shell: pwsh
+        timeout-minutes: 10
+        run: ./tools/cef/build.ps1
+      - name: Exercise Views, renderer sandbox and complete shutdown
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1
+      - name: Native private IPC and authenticated transport adversarial cases
+        shell: pwsh
+        timeout-minutes: 8
+        run: ctest --test-dir build/windows-cef -C Release --output-on-failure
+      - name: Real renderer application boundary attacks
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1 -SecurityProbe -EvidenceDirectory build/cef-security
+      - name: Real privacy sentinels and startup logging rejection
+        shell: pwsh
+        timeout-minutes: 3
+        run: ./tools/cef/test-privacy.ps1
+      - name: Expired and corrupt credentials preserve human browsing
+        shell: pwsh
+        timeout-minutes: 3
+        run: |
+          ./tools/cef/test-lifecycle.ps1 -TransportStoreFixture expired -EvidenceDirectory build/cef-transport-fallback
+          ./tools/cef/test-lifecycle.ps1 -TransportStoreFixture corrupt -EvidenceDirectory build/cef-transport-fallback
+      - name: Preserve lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-cef-lifecycle
+          path: |
+            build/cef-lifecycle/**/result.json
+            build/cef-lifecycle/**/lifecycle.jsonl
+            build/cef-security/**/result.json
+            build/cef-security/**/lifecycle.jsonl
+            build/cef-privacy/**/result.json
+            build/cef-privacy/**/privacy-result.json
+            build/cef-privacy/**/lifecycle.jsonl
+            build/cef-privacy/**/stdout.txt
+            build/cef-privacy/**/stderr.txt
+            build/cef-transport-fallback/**/result.json
+            build/cef-transport-fallback/**/lifecycle.jsonl
+            build/windows-cef/Testing/Temporary/LastTest.log
+            build/windows-cef/Testing/Temporary/LastTestsFailed.log
+            build/cef-sdk/bootstrap.log
+            build/windows-cef/configure.log
+            build/windows-cef/build.log
+            build/transport-deps/*-download.log
+            build/transport-deps/*-decompression.log
+            build/transport-deps/*-extraction.log
+            build/transport-deps/openssl-build.log
+            build/transport-deps/openssl-install/agi-build.json
+            build/transport-cache-tests/**/result.json

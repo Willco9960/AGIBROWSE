@@ -1,0 +1,1923 @@
+{
+  "version": 1,
+  "date": "2026-10-01",
+  "mode": "standard",
+  "modelCounts": {
+    "gpt-6.1-sol": 71,
+    "gpt-6-luna": 15,
+    "gpt-6-astra": 4
+  },
+  "reasoningCounts": {
+    "high": 55,
+    "low": 8,
+    "medium": 27
+  },
+  "assignments": [
+    {
+      "taskId": "AIBROWESE-001",
+      "milestoneId": "M01",
+      "agent": "System architect",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Sol 6.1/high turns the already-approved architecture into module contracts. Reserve Astra for unresolved security and state-protocol decisions rather than repeating settled architecture work.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [],
+      "acceptanceCriteria": [
+        "Process ownership, trust boundaries, data flow, public interfaces, and platform scope are documented",
+        "every roadmap subsystem maps to an owner module."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-002",
+      "milestoneId": "M01",
+      "agent": "Repository maintainer",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-001"
+      ],
+      "acceptanceCriteria": [
+        "One documented command builds each package",
+        "Apache-2.0 project licensing and third-party notices are separated correctly."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-003",
+      "milestoneId": "M01",
+      "agent": "Windows browser engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser integration work. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-002"
+      ],
+      "acceptanceCriteria": [
+        "A pinned CEF distribution builds on a clean Windows runner",
+        "opening and closing a local fixture leaves no orphan processes."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-004",
+      "milestoneId": "M01",
+      "agent": "Fixture engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles substantial test infrastructure. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-003"
+      ],
+      "acceptanceCriteria": [
+        "Fixtures cover forms, navigation, dynamic content, and multiple origins",
+        "seeded runs produce repeatable expected outcomes."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-005",
+      "milestoneId": "M01",
+      "agent": "Execution routing engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles execution routing and accounting logic. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-004"
+      ],
+      "acceptanceCriteria": [
+        "The runner rejects missing or mismatched model configuration",
+        "execution evidence records actual model, attempts, usage, and cost when rates are available.",
+        "Enforce the current routing-manifest.json model AND reasoning, declared fallbacks and prerequisite completion; log actual settings and usage before marking work complete."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-006",
+      "milestoneId": "M02",
+      "agent": "Security architect",
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Capability policy defines the security boundary for all later work. Reserve flagship spend for this gate; high reasoning, standard mode.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-005"
+      ],
+      "acceptanceCriteria": [
+        "Tests are mapped to malicious pages, rogue local clients, cross-profile access, and confused-deputy attacks",
+        "permission grants and revocation rules are explicit."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-007",
+      "milestoneId": "M02",
+      "agent": "Sandbox engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Sol 6.1 handles core sandbox and security protocol work. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-006"
+      ],
+      "acceptanceCriteria": [
+        "Renderer escape through application APIs is blocked in negative tests",
+        "IPC validates message shape, sender identity, destination, and operation permission."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-008",
+      "milestoneId": "M02",
+      "agent": "Transport engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles implementation against the defined security contract. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-007"
+      ],
+      "acceptanceCriteria": [
+        "The listener binds only to loopback and validates paired credentials and certificate identity",
+        "unauthenticated requests and browser-origin connection attempts fail."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-009",
+      "milestoneId": "M02",
+      "agent": "Authorization engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles authorization enforcement and tests. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-008"
+      ],
+      "acceptanceCriteria": [
+        "Cross-scope reads and writes are rejected",
+        "revocation prevents queued commands and subsequent observations from using revoked access."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-010",
+      "milestoneId": "M02",
+      "agent": "Privacy engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles data handling with adversarial tests. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-009"
+      ],
+      "acceptanceCriteria": [
+        "Password fields and marked sensitive values are omitted or masked",
+        "sentinel-secret tests find no leakage in every exported channel."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-011",
+      "milestoneId": "M03",
+      "agent": "Browser lifecycle engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles native browser lifecycle integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-010"
+      ],
+      "acceptanceCriteria": [
+        "Tab identities remain correct across reordering and window changes",
+        "closing a tab releases its resources and invalidates its automation handles."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-012",
+      "milestoneId": "M03",
+      "agent": "Browser UI engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-011"
+      ],
+      "acceptanceCriteria": [
+        "Controls reflect actual engine state",
+        "keyboard navigation and disabled states work without an agent connection."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-013",
+      "milestoneId": "M03",
+      "agent": "Profile isolation engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles persistence and isolation integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-012"
+      ],
+      "acceptanceCriteria": [
+        "Cookies, storage, cache, and permissions do not cross profiles",
+        "profile selection and deletion operate on the intended profile only."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-014",
+      "milestoneId": "M03",
+      "agent": "Website permission engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles engine permission integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-013"
+      ],
+      "acceptanceCriteria": [
+        "Certificate errors are not silently bypassed",
+        "camera, microphone, location, notifications, and external protocols follow explicit native decisions."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-015",
+      "milestoneId": "M03",
+      "agent": "Control arbitration engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Sol 6.1 handles complex human/agent state synchronization. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-014"
+      ],
+      "acceptanceCriteria": [
+        "Human input revokes the affected lease and cancels undispatched actions",
+        "two agents cannot concurrently mutate the same tab."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-016",
+      "milestoneId": "M04",
+      "agent": "Chromium instrumentation engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles Chromium integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-015"
+      ],
+      "acceptanceCriteria": [
+        "The adapter receives lifecycle and accessibility events",
+        "engine detachments invalidate pending work and trigger recovery."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-017",
+      "milestoneId": "M04",
+      "agent": "Accessibility semantics engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles semantic processing and verification. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-016"
+      ],
+      "acceptanceCriteria": [
+        "Golden fixtures cover labels, headings, landmarks, buttons, inputs, and tables",
+        "decorative nodes do not duplicate meaningful content."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-018",
+      "milestoneId": "M04",
+      "agent": "DOM interaction engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser semantics and actionability. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-017"
+      ],
+      "acceptanceCriteria": [
+        "Supported unlabeled/custom controls receive explicit coverage or supported actions",
+        "disabled, hidden, and obstructed targets are distinguished."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-019",
+      "milestoneId": "M04",
+      "agent": "Frame identity engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles complex engine integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-018"
+      ],
+      "acceptanceCriteria": [
+        "Cross-origin frames honor their own grants",
+        "replacement nodes, detached frames, and unsupported shadow content cannot reuse stale references."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-020",
+      "milestoneId": "M04",
+      "agent": "Projection engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles projection logic and budgeting. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-019"
+      ],
+      "acceptanceCriteria": [
+        "Role/text/subtree filtering and pagination work",
+        "omitted content, redaction, and budget truncation are reported explicitly."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-021",
+      "milestoneId": "M05",
+      "agent": "State protocol architect",
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Revision and delta contracts govern every reconnect, observation and action. Reserve flagship spend for this gate; high reasoning, standard mode.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-020"
+      ],
+      "acceptanceCriteria": [
+        "Snapshot, delta, reset, acknowledgment, and resume schemas have valid and invalid examples",
+        "document epochs and projection revisions cannot be confused."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-022",
+      "milestoneId": "M05",
+      "agent": "Semantic event engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles event processing implementation. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-021"
+      ],
+      "acceptanceCriteria": [
+        "Equivalent DOM churn produces no redundant semantic update",
+        "focus, value, validation, and navigation changes remain observable."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-023",
+      "milestoneId": "M05",
+      "agent": "State recovery engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Sol 6.1 handles difficult distributed-state correctness. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-022"
+      ],
+      "acceptanceCriteria": [
+        "Duplicate delivery is harmless",
+        "missing history, invalid bases, and hash mismatches produce explicit reset behavior."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-024",
+      "milestoneId": "M05",
+      "agent": "Broker resource engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles transport and resource management. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-023"
+      ],
+      "acceptanceCriteria": [
+        "Per-client memory and queue limits are enforced",
+        "overflow resets the affected subscription instead of silently dropping required deltas."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-025",
+      "milestoneId": "M05",
+      "agent": "State verification engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles heavy test generation. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-024"
+      ],
+      "acceptanceCriteria": [
+        "Generated mutation sequences converge to canonical snapshots",
+        "tests cover reorder, removal, navigation, disconnect, replay, and malformed updates."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-026",
+      "milestoneId": "M06",
+      "agent": "Command dispatch engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Sol 6.1 handles complex synchronization and execution semantics. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-025"
+      ],
+      "acceptanceCriteria": [
+        "Dispatch validates document, target, origin, and lease",
+        "repeated identical request IDs return the recorded outcome, while changed payloads with reused IDs fail."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-027",
+      "milestoneId": "M06",
+      "agent": "Native input engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles native input integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-026"
+      ],
+      "acceptanceCriteria": [
+        "The host resolves geometry internally and performs hit testing",
+        "obstructed or replaced targets fail without clicking a substitute."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-028",
+      "milestoneId": "M06",
+      "agent": "Form interaction engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser input behavior and TDD. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-027"
+      ],
+      "acceptanceCriteria": [
+        "Native and controlled-form fixtures receive expected input/change behavior",
+        "Unicode and contenteditable cases pass without exposing arbitrary evaluation."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-029",
+      "milestoneId": "M06",
+      "agent": "Navigation engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser routing and lifecycle. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-028"
+      ],
+      "acceptanceCriteria": [
+        "Redirects are rechecked against policy",
+        "each operation reports the resulting tab identity and document changes."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-030",
+      "milestoneId": "M06",
+      "agent": "Concurrency test engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles concurrency-focused TDD. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-029"
+      ],
+      "acceptanceCriteria": [
+        "Controlled races reject detected stale targets and revoked leases",
+        "crash-after-dispatch scenarios report unknown outcomes without automatic replay."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-031",
+      "milestoneId": "M07",
+      "agent": "Protocol schema engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles schema integration and compatibility tests. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-030"
+      ],
+      "acceptanceCriteria": [
+        "Schemas cover Section 3 and native stream messages",
+        "compatibility tests reject breaking changes without a protocol-major change.",
+        "Two-tier contract: schemas/: versioned strategy/input/candidate/decision/execution contracts and compatibility vectors. Acceptance: Closed-type validation; forged refs/candidates/scope and obsolete strategy vectors rejected; original browser schemas unchanged"
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-032",
+      "milestoneId": "M07",
+      "agent": "MCP bridge engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles protocol integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-031"
+      ],
+      "acceptanceCriteria": [
+        "MCP discovery and execution pass conformance tests",
+        "application sessions remain explicit under both supported MCP revisions."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-033",
+      "milestoneId": "M07",
+      "agent": "MCP transport engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles backend transport integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-032"
+      ],
+      "acceptanceCriteria": [
+        "Version-appropriate request handling and authentication pass tests",
+        "transport choice does not expand browser permissions."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-034",
+      "milestoneId": "M07",
+      "agent": "TypeScript SDK engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles stateful SDK engineering. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-033"
+      ],
+      "acceptanceCriteria": [
+        "The SDK reconnects and reconstructs state",
+        "its examples complete fixture workflows and expose typed failure states.",
+        "Implement the planner/local-decision/executor runtime: typed strategy versions, valid-action candidate generation, pluggable local inference, deterministic preconditions and receipt verification. Prove the hybrid loop on fixtures; page text cannot rewrite strategy. Runtime operates outside privileged browser processes.",
+        "Two-tier contract: packages/sdk-typescript: orchestrator/provider interface, shortlist/rules/executor/fallback state machine. Acceptance: General fixtures complete locally and via smartLLM fallback; stale target, takeover and unknown effects remain guarded"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-035",
+      "milestoneId": "M07",
+      "agent": "Python SDK engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles cross-language protocol implementation. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-034"
+      ],
+      "acceptanceCriteria": [
+        "Shared contract vectors pass",
+        "cancellation, reconnect, pagination, and error behavior match the TypeScript SDK.",
+        "Match the TypeScript two-tier strategy/decision/result contracts in Python. Shared tests cover candidate IDs, abstention, cancellation, stale strategy/observations and unknown outcomes.",
+        "Two-tier contract: packages/sdk-python: equivalent runtime plus optional pinned Laya adapter/adoption record. Acceptance: Shared vectors and TS parity; held-out calibration, provider abstention/failure, offline/cold/warm behavior and resource bounds"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-036",
+      "milestoneId": "M08",
+      "agent": "Agent skill author",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-035"
+      ],
+      "acceptanceCriteria": [
+        "The skill follows Section 3’s five-step operating procedure",
+        "examples cover stale references, human takeover, and unsupported content.",
+        "Document LLM strategy ownership, local routine decisions, deterministic numerical signals, escalation and human takeover. Distinguish simulation permission from live financial permission.",
+        "Two-tier contract: skills/aibrowese-native: teach strategy versus bounded decision/execution, escalation and honest verification. Acceptance: Examples cover replanning, insufficient candidates/coverage, human control and uncertain effects"
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-037",
+      "milestoneId": "M08",
+      "agent": "Integration examples engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-036"
+      ],
+      "acceptanceCriteria": [
+        "Each example runs against fixtures from a clean environment",
+        "examples require no embedded credentials or undocumented setup.",
+        "Provide a runnable LLM-planner/local-model/executor fixture demonstration. Include deterministic simulated quote-spike and virtual-order fixtures; no live trades or credentials. Model setup must pin and verify weight license/version.",
+        "Two-tier contract: examples/: general browser workflow plus virtual-only target/spike/buy/sell demonstration. Acceptance: Clean fixture setup; deterministic numeric rules; paper identity verified; no real orders/embedded credentials"
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-038",
+      "milestoneId": "M08",
+      "agent": "Trace and replay engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles diagnostics and replay engineering. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-037"
+      ],
+      "acceptanceCriteria": [
+        "Captured protocol traces reproduce reducer behavior",
+        "redaction applies before recording and traces have bounded retention."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-039",
+      "milestoneId": "M08",
+      "agent": "Windows packaging engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles platform packaging integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-038"
+      ],
+      "acceptanceCriteria": [
+        "Install, launch, upgrade, and uninstall pass on a clean VM",
+        "packaged execution preserves sandbox and credential protections."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-040",
+      "milestoneId": "M08",
+      "agent": "Alpha acceptance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles end-to-end acceptance testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-039"
+      ],
+      "acceptanceCriteria": [
+        "An agent searches, navigates, fills a form, and yields to a human without screenshots",
+        "all M01–M08 gates have linked evidence."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-041",
+      "milestoneId": "M09",
+      "agent": "Browsing data engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles persistence and browser integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-040"
+      ],
+      "acceptanceCriteria": [
+        "Add, search, edit, delete, and bookmark import/export work",
+        "private browsing does not populate persistent history."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-042",
+      "milestoneId": "M09",
+      "agent": "Library UI engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-041"
+      ],
+      "acceptanceCriteria": [
+        "Search, selection, empty states, and keyboard operation work",
+        "destructive deletion identifies the affected items."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-043",
+      "milestoneId": "M09",
+      "agent": "Download engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles engine and filesystem integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-042"
+      ],
+      "acceptanceCriteria": [
+        "Progress, cancellation, interrupted transfer, and collision handling work",
+        "downloads cannot silently execute or escape the approved destination."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-044",
+      "milestoneId": "M09",
+      "agent": "Upload capability engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles constrained file integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-043"
+      ],
+      "acceptanceCriteria": [
+        "Native selection creates scoped file references",
+        "expired, cross-session, or unauthorized references fail before file access."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-045",
+      "milestoneId": "M09",
+      "agent": "Dialog lifecycle engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser lifecycle integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-044"
+      ],
+      "acceptanceCriteria": [
+        "Alerts, prompts, confirmation dialogs, and popup tabs have stable identities",
+        "authentication fixtures retain correct opener and profile relationships."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-046",
+      "milestoneId": "M10",
+      "agent": "DevTools integration engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser instrumentation integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-045"
+      ],
+      "acceptanceCriteria": [
+        "Opening and closing DevTools does not silently corrupt observations",
+        "engine detachment and conflicting state changes produce explicit recovery."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-047",
+      "milestoneId": "M10",
+      "agent": "Semantic inspector UI engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-046"
+      ],
+      "acceptanceCriteria": [
+        "The panel displays node references, supported actions, revisions, omissions, and redactions",
+        "selecting a reference highlights the corresponding page element."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-048",
+      "milestoneId": "M10",
+      "agent": "Private profile engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles storage lifecycle and isolation. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-047"
+      ],
+      "acceptanceCriteria": [
+        "Closing the private profile removes its application-managed persistent artifacts",
+        "cookies and grants never cross into normal profiles."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-049",
+      "milestoneId": "M10",
+      "agent": "Browser recovery engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser lifecycle and recovery. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-048"
+      ],
+      "acceptanceCriteria": [
+        "Recovery restores safe navigation state without replaying actions or POST submissions",
+        "resumed tabs invalidate obsolete observations and leases."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-050",
+      "milestoneId": "M10",
+      "agent": "Secret capability engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles implementation of the established credential policy. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-049"
+      ],
+      "acceptanceCriteria": [
+        "The user grants a secret reference to a specific origin and scope",
+        "filling never returns the secret through observations, errors, or logs."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-051",
+      "milestoneId": "M11",
+      "agent": "Visual design implementation agent",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-050"
+      ],
+      "acceptanceCriteria": [
+        "Light, dark, high-contrast, loading, and disabled states are covered",
+        "supported display scaling produces no clipped critical controls."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-052",
+      "milestoneId": "M11",
+      "agent": "Keyboard interaction engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-051"
+      ],
+      "acceptanceCriteria": [
+        "A documented shortcut map operates the browser",
+        "shortcut conflicts and focus transitions have regression tests."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-053",
+      "milestoneId": "M11",
+      "agent": "Accessibility and IME engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles platform behavior and integration testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-052"
+      ],
+      "acceptanceCriteria": [
+        "Screen-reader smoke tests pass for browser chrome",
+        "IME, composed text, Unicode, and right-to-left input work in supported controls."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-054",
+      "milestoneId": "M11",
+      "agent": "Onboarding UI engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-053"
+      ],
+      "acceptanceCriteria": [
+        "A new user can identify the connected agent and its scope",
+        "permissions can be inspected and revoked without developer tools."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-055",
+      "milestoneId": "M11",
+      "agent": "Recovery content designer",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-054"
+      ],
+      "acceptanceCriteria": [
+        "Offline, blocked permission, stale state, lost connection, and unsupported content receive distinct messages",
+        "each provides a working recovery path."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-056",
+      "milestoneId": "M12",
+      "agent": "PDF and printing engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles browser and native dialog integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-055"
+      ],
+      "acceptanceCriteria": [
+        "Print preview and save-to-PDF work on fixtures",
+        "automation reports PDF semantic coverage accurately rather than assuming HTML behavior."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-057",
+      "milestoneId": "M12",
+      "agent": "OS integration engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles native integration and permission tests. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-056"
+      ],
+      "acceptanceCriteria": [
+        "Clipboard behavior works across browser and OS applications",
+        "agent access remains separately permissioned and cannot bypass file-reference restrictions."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-058",
+      "milestoneId": "M12",
+      "agent": "Media integration engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles Chromium feature integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-057"
+      ],
+      "acceptanceCriteria": [
+        "Supported media playback and permissioned calls work",
+        "recording indicators, device denial, and tab mute behavior are visible and correct."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-059",
+      "milestoneId": "M12",
+      "agent": "Developer networking engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles networking and browser configuration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-058"
+      ],
+      "acceptanceCriteria": [
+        "Local development sites and configured proxies work",
+        "certificate exceptions require explicit user action and do not become global trust bypasses."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-060",
+      "milestoneId": "M12",
+      "agent": "Compatibility test engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles broad compatibility testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-059"
+      ],
+      "acceptanceCriteria": [
+        "Tests include SPAs, virtualized lists, frames, shadow content, and authentication redirects",
+        "unsupported DRM, canvas, and challenge flows have explicit handoff behavior."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-061",
+      "milestoneId": "M13",
+      "agent": "Benchmark engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles benchmark engineering. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-060"
+      ],
+      "acceptanceCriteria": [
+        "Raw DOM, compact accessibility snapshots, and AIBROWESE use identical tasks and model settings",
+        "results include retries, tools, observations, and completion rates.",
+        "Compare human, LLM-only and hybrid execution on research, forms, shopping and simulated trading. Report full task time, p50/p95 decision latency, success/errors, large-model calls, total costs and hardware. Freeze fixtures and market timestamps; prevent future-data leakage.",
+        "Two-tier contract: benchmarks/: matched human, LLM-only and hybrid harness/corpus. Acceptance: Same goals, semantic facts, permissions, hardware/network and success labels; record retrieval/inference/dispatch/verification separately"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-062",
+      "milestoneId": "M13",
+      "agent": "Semantic performance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles performance-sensitive core work. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-061"
+      ],
+      "acceptanceCriteria": [
+        "Unchanged semantic state causes no repeated model observation",
+        "improvements preserve all correctness fixtures and report before/after measurements."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-063",
+      "milestoneId": "M13",
+      "agent": "Agent context engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles agent-runtime integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-062"
+      ],
+      "acceptanceCriteria": [
+        "SDKs replace obsolete observations with current bounded state",
+        "context-reset simulations recover without acting on discarded references.",
+        "Implement versioned strategy handoffs and local state compaction; loops, ambiguous candidates, invalid confidence and strategy expiry escalate to the LLM. Never replay uncertain orders; regression tests cover planner restart and local-model failure.",
+        "Two-tier contract: SDKs: context compaction preserving active strategy, observation validity, progress and uncertainty. Acceptance: Reset/reconnect/replan recovers without stale refs, duplicate effects or local/LLM escalation loops"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-064",
+      "milestoneId": "M13",
+      "agent": "Usage accounting engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles metrics collection and accounting. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-063"
+      ],
+      "acceptanceCriteria": [
+        "Users can distinguish measured usage from estimates",
+        "diagnostic export is opt-in and excludes page content and credentials by default."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-065",
+      "milestoneId": "M13",
+      "agent": "Efficiency acceptance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles statistical and end-to-end validation. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-064"
+      ],
+      "acceptanceCriteria": [
+        "Token-reduction targets pass on the frozen corpus",
+        "supported-task completion remains at least 95% and no more than two percentage points below the strongest structural baseline.",
+        "Require a functional two-tier end-to-end demonstration and reproducible hybrid versus human/LLM-only benchmarks. Treat human-speed parity as a measured target, not an assumed pass; publish results and residual limits. Report simulated profit and drawdown separately from browser efficiency.",
+        "Two-tier contract: benchmarks/ + acceptance suite: comparative integration gate. Acceptance: Held-out completion/false-action/abstention and latency/cost evidence, existing efficiency/completion criteria still pass"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-066",
+      "milestoneId": "M14",
+      "agent": "Independent security reviewer",
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Independent security review must challenge assumptions across the implemented boundaries. Reserve flagship spend for this gate; high reasoning, standard mode.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-065"
+      ],
+      "acceptanceCriteria": [
+        "Review covers host IPC, local pairing, renderer privileges, leases, credentials, and update trust",
+        "unresolved critical/high findings block release."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-067",
+      "milestoneId": "M14",
+      "agent": "Protocol fuzzing engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles heavy adversarial test engineering. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-066"
+      ],
+      "acceptanceCriteria": [
+        "Fuzzing covers command, event, replay, and schema boundaries",
+        "crashes and sanitizer findings become reproducible regression cases and are resolved."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-068",
+      "milestoneId": "M14",
+      "agent": "Adversarial workflow tester",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles policy and attack-fixture testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-067"
+      ],
+      "acceptanceCriteria": [
+        "Fixtures cannot grant permissions, access unapproved origins, fetch secrets, or invoke privileged tools",
+        "residual risks within already authorized scopes are documented.",
+        "Test prompt injection against planner strategy and local candidates, spoofed quotes/order receipts, real-versus-simulated destination confusion, and unauthorized strategy expansion. Local model scores never grant authority.",
+        "Two-tier contract: tests/security: adversarial strategy/shortlist/provider/page influence tests. Acceptance: Page text cannot alter strategy authority; forged local output cannot widen scope/access secrets, replay unknown effects or cross paper/live boundary"
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-069",
+      "milestoneId": "M14",
+      "agent": "Privacy verification engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles data-lifecycle testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-068"
+      ],
+      "acceptanceCriteria": [
+        "Canary secrets remain absent from telemetry and crash exports",
+        "profile deletion and retention expiry remove the documented application-managed records."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-070",
+      "milestoneId": "M14",
+      "agent": "Build provenance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles supply-chain integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-069"
+      ],
+      "acceptanceCriteria": [
+        "Dependency inventory, license notices, and SBOM are generated",
+        "release artifacts identify source revision, CEF version, build inputs, and signatures."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-071",
+      "milestoneId": "M15",
+      "agent": "macOS browser engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles platform-specific browser integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-070"
+      ],
+      "acceptanceCriteria": [
+        "Window, menu, focus, shutdown, and browser lifecycle tests pass",
+        "the packaged app runs with its required sandbox configuration."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-072",
+      "milestoneId": "M15",
+      "agent": "Linux browser engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles Linux browser integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-071"
+      ],
+      "acceptanceCriteria": [
+        "Input, scaling, clipboard, and window lifecycle smoke tests pass",
+        "installation and normal operation require no sandbox-disabling flags."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-073",
+      "milestoneId": "M15",
+      "agent": "Credential backend engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles established platform API integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-072"
+      ],
+      "acceptanceCriteria": [
+        "Windows credential protection, macOS Keychain, and Linux Secret Service implementations pass shared tests",
+        "unavailable secure storage fails explicitly."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-074",
+      "milestoneId": "M15",
+      "agent": "Platform UI engineer",
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Established UI and interaction contracts; medium reasoning handles wiring and states at the lowest model tier. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-073"
+      ],
+      "acceptanceCriteria": [
+        "Platform shortcuts, menus, dialogs, and theme behavior match documented conventions",
+        "help text identifies the correct keys for each OS."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-075",
+      "milestoneId": "M15",
+      "agent": "Cross-platform acceptance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles cross-platform integration testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-074"
+      ],
+      "acceptanceCriteria": [
+        "SDK, MCP, identity, takeover, and permission tests pass on every target",
+        "platform deviations are either fixed or explicitly excluded before beta."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-076",
+      "milestoneId": "M16",
+      "agent": "Update security architect",
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-astra",
+      "rationale": "Signing, key rotation and recovery policy define release trust. Reserve flagship spend for this gate; high reasoning, standard mode.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-075"
+      ],
+      "acceptanceCriteria": [
+        "The policy distinguishes recovery from unauthorized downgrade",
+        "compromised-key and interrupted-update scenarios have explicit procedures."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-077",
+      "milestoneId": "M16",
+      "agent": "Windows release engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles Windows release integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-076"
+      ],
+      "acceptanceCriteria": [
+        "Stable and beta updates cannot cross accidentally",
+        "signature failure and interrupted installation preserve a usable prior installation."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-078",
+      "milestoneId": "M16",
+      "agent": "macOS release engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles native distribution integration. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-077"
+      ],
+      "acceptanceCriteria": [
+        "Clean installation and upgrade pass",
+        "update tampering and helper-signature failures are rejected."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-079",
+      "milestoneId": "M16",
+      "agent": "Linux release engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles packaging and repository integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-078"
+      ],
+      "acceptanceCriteria": [
+        "Install, upgrade, removal, and repository-key rotation are tested",
+        "packaged sandbox permissions remain correct."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-080",
+      "milestoneId": "M16",
+      "agent": "Upstream maintenance engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles maintenance automation and integration. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-079"
+      ],
+      "acceptanceCriteria": [
+        "CI detects upstream releases and runs compatibility checks",
+        "a documented emergency-update drill produces a signed test release."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-081",
+      "milestoneId": "M17",
+      "agent": "Reliability engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles reliability test engineering. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-080"
+      ],
+      "acceptanceCriteria": [
+        "A 24-hour mixed-workload run completes on each platform",
+        "memory growth, orphan processes, deadlocks, and unbounded queues remain within recorded limits."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-082",
+      "milestoneId": "M17",
+      "agent": "Performance verification engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles performance verification. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-081"
+      ],
+      "acceptanceCriteria": [
+        "Published results include hardware, build, fixture, and methodology",
+        "p95 local state-delivery latency is at most 100 ms under the documented reference workload."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-083",
+      "milestoneId": "M17",
+      "agent": "Beta usability coordinator",
+      "model": "gpt-6.1-sol",
+      "reasoning": "medium",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles acceptance analysis and regression work. Medium reasoning is sufficient for this bounded implementation contract. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "After two focused failed repairs, use gpt-6.1-sol/high with the minimal failing case; record the change.",
+      "prerequisites": [
+        "AIBROWESE-082"
+      ],
+      "acceptanceCriteria": [
+        "At least five testers complete the scripted scenarios across the supported platforms",
+        "failures become reproducible acceptance cases.",
+        "Record consented, real human tester sessions; do not substitute simulated personas for the five required testers."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-084",
+      "milestoneId": "M17",
+      "agent": "Integration defect engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles integration fixes across subsystems. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-083"
+      ],
+      "acceptanceCriteria": [
+        "Every failed beta acceptance case is retested successfully",
+        "critical paths have no unresolved dead ends, misleading success messages, or lost-control states."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-085",
+      "milestoneId": "M17",
+      "agent": "Release candidate verifier",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles release acceptance testing. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-084"
+      ],
+      "acceptanceCriteria": [
+        "Clean install, upgrade, profile migration, recovery, uninstall, and protocol compatibility pass",
+        "security, efficiency, and platform gates reference the same candidate build.",
+        "No stubbed critical path, mocked release-only evidence or skipped platform/security gate; required signing and human checks must have real evidence."
+      ],
+      "fallbackRoute": null
+    },
+    {
+      "taskId": "AIBROWESE-086",
+      "milestoneId": "M18",
+      "agent": "Quickstart documentation author",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-085"
+      ],
+      "acceptanceCriteria": [
+        "Clean-environment walkthroughs reach a working browser and agent session",
+        "troubleshooting covers pairing, permissions, stale observations, and unsupported pages."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-087",
+      "milestoneId": "M18",
+      "agent": "Protocol documentation author",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-086"
+      ],
+      "acceptanceCriteria": [
+        "Public schemas, architecture diagrams, build steps, testing commands, and extension points agree with 1.0",
+        "example commands pass CI."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-088",
+      "milestoneId": "M18",
+      "agent": "Demo and report author",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-087"
+      ],
+      "acceptanceCriteria": [
+        "Demos show human takeover and structural automation",
+        "performance claims link to versioned data and disclose unsupported scenarios."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-089",
+      "milestoneId": "M18",
+      "agent": "Open-source governance maintainer",
+      "model": "gpt-6-luna",
+      "reasoning": "low",
+      "mode": "standard",
+      "originalModel": "gpt-6-luna",
+      "rationale": "Bounded boilerplate, documentation or example work; low reasoning avoids unnecessary deliberation. Keep all functional checks; escalate only for evidenced failures.",
+      "fallback": "After two focused failed repairs, hand off the minimal failing case to gpt-6.1-sol/high; record the change.",
+      "prerequisites": [
+        "AIBROWESE-088"
+      ],
+      "acceptanceCriteria": [
+        "Contribution guidelines, issue templates, security reporting, release ownership, and triage procedures are published",
+        "starter issues identify bounded work."
+      ],
+      "fallbackRoute": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "failedRepairsRequired": 2
+      }
+    },
+    {
+      "taskId": "AIBROWESE-090",
+      "milestoneId": "M18",
+      "agent": "Release verification engineer",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "originalModel": "gpt-6-sol",
+      "rationale": "Sol 6.1 handles final integration and release verification. High reasoning covers integration, invariants and failure paths. Avoid Astra spend while retaining the acceptance gate.",
+      "fallback": "No automatic upgrade. Reassess the failing assumption; Astra is reserved for scoped architecture, security or state-contract review.",
+      "prerequisites": [
+        "AIBROWESE-089"
+      ],
+      "acceptanceCriteria": [
+        "Signed artifacts, schemas, SDKs, documentation, and benchmarks reference the same version",
+        "a post-publication smoke test verifies installation and an agent workflow.",
+        "No stubbed critical path, mocked release-only evidence or skipped platform/security gate; required signing and human checks must have real evidence."
+      ],
+      "fallbackRoute": null
+    }
+  ],
+  "twoTierAddendum": "# Required two-tier agent extension\n\nAccepted: 2026-10-02. Trading deferred until the two-tier runtime works.\n\nThe LLM owns strategy and major decisions. A pluggable local typed-decision model selects routine actions from valid semantic candidates; deterministic signal processing and host-validated execution handle numbers and effects. Laya is the initial evaluation candidate, subject to pinned model/license and hardware verification. Confidence does not grant authority. Preserve sandbox, leases, target validity and unknown-outcome rules.\n\nNo added virtual-trading count, position or loss caps requested initially. Simulator restrictions and browser permissions still apply. Real-money activity is outside this authorization.\n\n## Required acceptance additions\n\n### AIBROWESE-034\n\n- [ ] Implement the planner/local-decision/executor runtime: typed strategy versions, valid-action candidate generation, pluggable local inference, deterministic preconditions and receipt verification. Prove the hybrid loop on fixtures; page text cannot rewrite strategy. Runtime operates outside privileged browser processes.\n\n### AIBROWESE-035\n\n- [ ] Match the TypeScript two-tier strategy/decision/result contracts in Python. Shared tests cover candidate IDs, abstention, cancellation, stale strategy/observations and unknown outcomes.\n\n### AIBROWESE-036\n\n- [ ] Document LLM strategy ownership, local routine decisions, deterministic numerical signals, escalation and human takeover. Distinguish simulation permission from live financial permission.\n\n### AIBROWESE-037\n\n- [ ] Provide a runnable LLM-planner/local-model/executor fixture demonstration. Include deterministic simulated quote-spike and virtual-order fixtures; no live trades or credentials. Model setup must pin and verify weight license/version.\n\n### AIBROWESE-061\n\n- [ ] Compare human, LLM-only and hybrid execution on research, forms, shopping and simulated trading. Report full task time, p50/p95 decision latency, success/errors, large-model calls, total costs and hardware. Freeze fixtures and market timestamps; prevent future-data leakage.\n\n### AIBROWESE-063\n\n- [ ] Implement versioned strategy handoffs and local state compaction; loops, ambiguous candidates, invalid confidence and strategy expiry escalate to the LLM. Never replay uncertain orders; regression tests cover planner restart and local-model failure.\n\n### AIBROWESE-065\n\n- [ ] Require a functional two-tier end-to-end demonstration and reproducible hybrid versus human/LLM-only benchmarks. Treat human-speed parity as a measured target, not an assumed pass; publish results and residual limits. Report simulated profit and drawdown separately from browser efficiency.\n\n### AIBROWESE-068\n\n- [ ] Test prompt injection against planner strategy and local candidates, spoofed quotes/order receipts, real-versus-simulated destination confusion, and unauthorized strategy expansion. Local model scores never grant authority.\n\nImplementation contract: repository docs/contracts/two-tier-agent.md. This addendum extends the approved 90-task roadmap; no completed foundation task is reopened and no extension is marked implemented. Assigned agents/models/reasoning and prerequisite sequence remain unchanged.\n\n",
+  "twoTierContractSource": "docs/contracts/two-tier-agent.md (accepted 2026-10-02; nine task extensions)"
+}

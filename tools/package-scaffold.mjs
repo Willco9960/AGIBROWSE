@@ -5,7 +5,7 @@ const root = resolve(import.meta.dirname, '..');
 const kind = process.argv[2];
 const sources = {
   schema: ['schemas/README.md', 'docs/contracts/agent-tools.reference.json'],
-  fixtures: ['tests/fixtures/README.md'],
+  fixtures: ['tests/fixtures', 'tools/fixtures', 'tools/cef/test-lifecycle.ps1'],
   docs: ['README.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'docs']
 };
 if (!Object.hasOwn(sources, kind)) throw new Error('Usage: node tools/package-scaffold.mjs schema|fixtures|docs');

@@ -1,0 +1,97 @@
+{
+  "accepted": true,
+  "sourceCommit": "e22c64626d25b646985efc21a79f354f95a235db",
+  "runId": 37076718675,
+  "jobId": 111068158893,
+  "runUrl": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37076718675",
+  "artifactId": 11256863429,
+  "artifactSha256": "b1220b093484fe97ecdaac55fb398c2c4a5677b416dc731b31052f578c574f0e",
+  "artifactDigestVerified": true,
+  "nativeChecks": 193,
+  "nativeDurationSeconds": 1.63,
+  "receipts": [
+    {
+      "rendererTokens": [
+        {
+          "processId": 7144,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 4468,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "events": [
+        "sandbox_bootstrap_verified",
+        "private_broker_challenge_verified",
+        "context_initialized",
+        "browser_created",
+        "window_created",
+        "initialized",
+        "fixture_ready",
+        "main_frame_loaded",
+        "fixture_ready",
+        "browser_closed",
+        "window_destroyed",
+        "message_loop_exited",
+        "private_broker_stopped",
+        "shutdown_complete"
+      ],
+      "hostExitCode": 0,
+      "passed": true,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "durationSeconds": 2.4812475,
+      "kind": "cef-lifecycle"
+    },
+    {
+      "rendererTokens": [
+        {
+          "processId": 3212,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 7816,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "events": [
+        "sandbox_bootstrap_verified",
+        "private_broker_challenge_verified",
+        "context_initialized",
+        "browser_created",
+        "window_created",
+        "initialized",
+        "fixture_ready",
+        "main_frame_loaded",
+        "fixture_ready",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_privileged_message_rejected",
+        "renderer_application_escape_blocked",
+        "renderer_private_handles_absent",
+        "page_native_api_absent",
+        "browser_closed",
+        "window_destroyed",
+        "message_loop_exited",
+        "private_broker_stopped",
+        "shutdown_complete"
+      ],
+      "hostExitCode": 0,
+      "passed": true,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "durationSeconds": 1.9429933,
+      "kind": "cef-security"
+    }
+  ]
+}

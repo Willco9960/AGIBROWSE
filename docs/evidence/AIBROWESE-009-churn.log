@@ -1,0 +1,232 @@
+Start testing: Oct 03 10:51 Eastern Daylight Time
+----------------------------------------------------------
+5/5 Testing: scoped-authenticated-socket-churn
+5/5 Test: scoped-authenticated-socket-churn
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/transport/Release/agi-scoped-transport-tests.exe" "--socket-churn-test"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/transport
+"scoped-authenticated-socket-churn" start time: Oct 03 10:51 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS real host broker churn fixture started
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=1 probe_ms=3125 close_ms=0 total_ms=3125
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=2 probe_ms=3109 close_ms=0 total_ms=6265
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=3 probe_ms=3078 close_ms=0 total_ms=9359
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=4 probe_ms=3094 close_ms=0 total_ms=12484
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=5 probe_ms=3125 close_ms=0 total_ms=15640
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=6 probe_ms=3141 close_ms=0 total_ms=18812
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=7 probe_ms=3141 close_ms=0 total_ms=21984
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=8 probe_ms=3109 close_ms=0 total_ms=25109
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=9 probe_ms=3078 close_ms=0 total_ms=28218
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=10 probe_ms=3078 close_ms=0 total_ms=31328
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=11 probe_ms=3109 close_ms=0 total_ms=34468
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=12 probe_ms=3125 close_ms=0 total_ms=37625
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=13 probe_ms=3094 close_ms=0 total_ms=40750
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=14 probe_ms=3078 close_ms=0 total_ms=43843
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=15 probe_ms=3125 close_ms=0 total_ms=47000
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=16 probe_ms=3125 close_ms=0 total_ms=50156
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=17 probe_ms=3109 close_ms=0 total_ms=53296
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=18 probe_ms=3109 close_ms=0 total_ms=56437
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=19 probe_ms=3110 close_ms=0 total_ms=59578
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=20 probe_ms=3125 close_ms=0 total_ms=62734
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=21 probe_ms=3078 close_ms=0 total_ms=65843
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=22 probe_ms=3093 close_ms=0 total_ms=68968
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=23 probe_ms=3062 close_ms=0 total_ms=72062
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=24 probe_ms=3110 close_ms=0 total_ms=75203
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=25 probe_ms=3094 close_ms=0 total_ms=78328
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=26 probe_ms=3109 close_ms=0 total_ms=81468
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=27 probe_ms=3109 close_ms=0 total_ms=84609
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=28 probe_ms=3078 close_ms=0 total_ms=87718
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=29 probe_ms=3125 close_ms=0 total_ms=90875
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=30 probe_ms=3078 close_ms=0 total_ms=93984
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=31 probe_ms=3093 close_ms=0 total_ms=97093
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=32 probe_ms=3125 close_ms=0 total_ms=100250
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=33 probe_ms=3078 close_ms=0 total_ms=103359
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=34 probe_ms=3125 close_ms=0 total_ms=106515
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=35 probe_ms=3110 close_ms=0 total_ms=109656
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=36 probe_ms=3125 close_ms=0 total_ms=112796
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=37 probe_ms=3110 close_ms=0 total_ms=115953
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=38 probe_ms=3109 close_ms=0 total_ms=119093
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=39 probe_ms=3078 close_ms=0 total_ms=122203
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=40 probe_ms=3109 close_ms=0 total_ms=125343
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=41 probe_ms=3109 close_ms=0 total_ms=128484
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=42 probe_ms=3110 close_ms=0 total_ms=131625
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=43 probe_ms=3125 close_ms=0 total_ms=134781
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=44 probe_ms=3094 close_ms=0 total_ms=137906
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=45 probe_ms=3094 close_ms=0 total_ms=141031
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=46 probe_ms=3125 close_ms=0 total_ms=144187
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=47 probe_ms=3157 close_ms=0 total_ms=147375
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=48 probe_ms=3062 close_ms=0 total_ms=150468
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=49 probe_ms=3140 close_ms=0 total_ms=153640
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=50 probe_ms=3094 close_ms=0 total_ms=156765
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=51 probe_ms=3125 close_ms=0 total_ms=159921
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=52 probe_ms=3078 close_ms=0 total_ms=163031
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=53 probe_ms=3109 close_ms=0 total_ms=166187
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=54 probe_ms=3110 close_ms=0 total_ms=169328
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=55 probe_ms=3078 close_ms=0 total_ms=172437
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=56 probe_ms=3094 close_ms=0 total_ms=175562
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=57 probe_ms=3110 close_ms=0 total_ms=178703
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=58 probe_ms=3141 close_ms=0 total_ms=181859
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=59 probe_ms=3093 close_ms=0 total_ms=184968
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=60 probe_ms=3078 close_ms=0 total_ms=188078
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=61 probe_ms=3109 close_ms=0 total_ms=191218
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=62 probe_ms=3093 close_ms=0 total_ms=194343
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=63 probe_ms=3140 close_ms=0 total_ms=197515
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=64 probe_ms=3110 close_ms=0 total_ms=200656
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=65 probe_ms=3094 close_ms=0 total_ms=203781
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=66 probe_ms=3078 close_ms=0 total_ms=206906
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=67 probe_ms=3094 close_ms=0 total_ms=210031
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=68 probe_ms=3094 close_ms=0 total_ms=213156
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=69 probe_ms=3094 close_ms=0 total_ms=216281
+PASS sequential real TLS socket churn after 64 sessions
+PASS churn close retires host binding
+TIMING socket=70 probe_ms=3109 close_ms=0 total_ms=219421
+PASS 70 socket sequence bounded and channel remains healthy
+PASS final identity exchange has no stranded close reply
+scoped authenticated host lifecycle: 143 checks passed
+<end of output>
+Test time = 222.79 sec
+----------------------------------------------------------
+Test Passed.
+"scoped-authenticated-socket-churn" end time: Oct 03 10:55 Eastern Daylight Time
+"scoped-authenticated-socket-churn" time elapsed: 00:03:42
+----------------------------------------------------------
+
+End testing: Oct 03 10:55 Eastern Daylight Time

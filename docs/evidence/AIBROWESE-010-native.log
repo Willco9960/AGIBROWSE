@@ -1,0 +1,72 @@
+Start testing: Oct 03 11:54 Eastern Daylight Time
+----------------------------------------------------------
+6/7 Testing: privacy-publication-contract
+6/7 Test: privacy-publication-contract
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/privacy/Release/agi-privacy-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/privacy
+"privacy-publication-contract" start time: Oct 03 11:54 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS bounded native fixture accepted
+PASS sensitive values names and exact reflections omitted entirely
+PASS no sensitive metadata in sanitized payload
+PASS no sensitive metadata in sanitized payload
+PASS no sensitive metadata in sanitized payload
+PASS no sensitive metadata in sanitized payload
+PASS no sensitive metadata in sanitized payload
+PASS no sensitive metadata in sanitized payload
+PASS native staging callback receives sanitized bytes
+PASS empty sensitive field name omitted
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS malformed unsupported or over-budget input fails closed
+PASS closed JSON escaping
+PASS empty bounded state serializes without metadata
+PASS unknown diagnostic event fails closed
+PASS text-free event rejects numeric secret encoding
+PASS HTTP diagnostic values bounded
+PASS native browser ID values bounded
+PASS actual diagnostic file sink available
+PASS current production diagnostic sink writes closed record
+PASS current production status record written
+PASS actual diagnostic file contains fixed schema only
+PASS privacy contract checks=30
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"privacy-publication-contract" end time: Oct 03 11:54 Eastern Daylight Time
+"privacy-publication-contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/7 Testing: privacy-actual-broker-export
+7/7 Test: privacy-actual-broker-export
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/privacy/Release/agi-privacy-transport-tests.exe" "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/apps/broker/Release/agi-browse-broker.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/privacy
+"privacy-actual-broker-export" start time: Oct 03 11:54 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS actual production broker path provided
+PASS actual production broker private channel and TLS listener started
+PASS actual broker AT01 exports exactly generic PERMISSION_DENIED
+PASS sentinel payload cannot become broker publication
+PASS broker remains healthy with zero grants after sentinel rejection
+PASS actual production broker stops cleanly
+PASS exact owned temporary credential store removed
+PASS privacy broker checks=7
+<end of output>
+Test time =   9.58 sec
+----------------------------------------------------------
+Test Passed.
+"privacy-actual-broker-export" end time: Oct 03 11:55 Eastern Daylight Time
+"privacy-actual-broker-export" time elapsed: 00:00:09
+----------------------------------------------------------
+
+End testing: Oct 03 11:55 Eastern Daylight Time

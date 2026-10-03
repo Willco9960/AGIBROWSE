@@ -42,6 +42,8 @@ Codes: NEEDS_PAIRING, NEEDS_APPROVAL, PERMISSION_DENIED, STALE_OBSERVATION, INVA
 
 These reserve responsibility/minimum information, not exact wire schemas or TLS/IPC mechanisms. IDs are opaque/scoped, not authorization. Redaction precedes broker publication and recording. Host owns engine/document/node identity and authoritative execution; broker owns bounded per-client projections/replay/history; SDK owns client materialization. Tasks 021–025 formalize revision, hashes, atomic reset, pagination, ack/resume and resource limits.
 
+Task 007 implements the Windows private inherited host/broker admission channel and separate unprivileged CEF renderer lane; [internal binary schema and bounds](../security/private-ipc.md), [actual local tests](../evidence/AIBROWESE-007.md). Production has zero grants and no external client intake or engine dispatch. Task 008 pairing and task 009 full grant lifecycle remain separate.
+
 Human takeover cancels undispatched work; in-flight effects retain honest receipts. Disconnect keeps human tabs. Permission changes, document replacement, gaps and invalid hashes cannot silently become empty deltas. Identical live-session retries may recover an existing receipt; no automatic uncertain-action replay or new request ID hiding unknown effects.
 
 Credentials stay outside model context. Opaque secret/file references may appear in typed tool inputs; resolved values and local paths never do. Only native UI approves. NEEDS_APPROVAL occurs before dispatch; after approval obtain fresh observation and issue a new command. Sensitive values never return through state/errors/logs.

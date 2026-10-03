@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Privacy fixture loading</title>
+<h1>Public fixture content</h1>
+<label>Password <input type="password" name="PRIVATE_PASSWORD_NAME_010" value="SENTINEL_PASSWORD_010"></label>
+<label>Private <input data-agi-sensitive="true" name="PRIVATE_MARKED_NAME_010" value="SENTINEL_MARKED_010"></label>
+<div data-agi-sensitive="true" aria-label="PRIVATE_SUBTREE_NAME_010">SENTINEL_MARKED_010</div>
+<script>
+  const password=document.querySelector('input[type=password]');
+  const marked=document.querySelector('input[data-agi-sensitive]');
+  globalThis.privacyProof=[password.value==='SENTINEL_PASSWORD_010',marked.value==='SENTINEL_MARKED_010'];
+  document.title=password.value+' '+marked.value;
+  privacyProof.push(document.title.includes(password.value));
+  location.hash=password.value+'-'+marked.value;
+  privacyProof.push(location.hash.includes(marked.value));
+  console.log(password.value,marked.value);
+  console.error('PRIVATE_PASSWORD_NAME_010',password.value);
+  alert('PRIVATE_MARKED_NAME_010 '+marked.value);
+  privacyProof.push(true);
+  globalThis.addEventListener('error',()=>{
+    privacyProof.push(true);
+    // Give the native title callback time to receive the reflected title;
+    // readiness in a separate task prevents same-script title coalescing.
+    setTimeout(()=>{document.title='AGI-BROWSE fixture ready';},150);
+  });
+  // Uncaught errors also traverse CEF's default console path.
+  throw new Error(password.value+' '+marked.value);
+</script>

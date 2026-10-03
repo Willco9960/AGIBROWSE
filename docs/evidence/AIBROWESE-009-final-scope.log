@@ -1,0 +1,367 @@
+Start testing: Oct 03 11:01 Eastern Daylight Time
+----------------------------------------------------------
+2/5 Testing: scoped-session-authority
+2/5 Test: scoped-session-authority
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/ipc/Release/agi-scope-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/transport-native/lib/ipc
+"scoped-session-authority" start time: Oct 03 11:01 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS authenticated native binding
+PASS native document
+PASS pairing alone grants zero access
+PASS native grant installed
+PASS approved observation delivered
+PASS approved wait delivered
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS monotonic grant expiration exact boundary
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS same origin child registered
+PASS top only excludes descendant
+PASS native grant installed
+PASS explicit same origin descendants allowed
+PASS cross origin child registered
+PASS parent grant excludes cross origin child
+PASS native grant installed
+PASS explicit exact child origin allowed
+PASS opaque frame denied
+PASS authenticated native binding
+PASS native document
+PASS host blank native marker
+PASS native grant installed
+PASS blank control lease
+PASS approved blank observe
+PASS approved blank focus
+PASS blank exposes no DOM actions
+PASS blank forbids origin
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS control needs lease
+PASS native lease acquired
+PASS leased control handoff
+PASS second native session
+PASS second session grant
+PASS exclusive tab lease
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS lease reacquired
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS native grant installed
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS native grant installed
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS revoked grant blocks subsequent observation
+PASS native grant installed
+PASS lease after fresh native approval
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS client revocation tombstones session
+PASS client revoke blocks observations
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS queue bounded at 128
+PASS ticket consumed at handoff
+PASS ticket replay denied
+PASS wrong client disconnect rejected
+PASS own authenticated disconnect
+PASS closed session reuse denied within transport window
+PASS disconnect purges queued delivery
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS fresh reconnect binds
+PASS reconnect has zero grants
+PASS expired live binding rejected
+PASS expired live and tombstone entries pruned
+PASS channel invalidation cannot rebind
+PASS missing trusted clock fails closed
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS throwing handoff still consumes ticket
+PASS throwing callback releases mutex
+PASS original transport deadline installed
+PASS binding cannot extend original transport deadline
+PASS extended transport deadline denied
+PASS overlapping unequal transport lifetimes
+PASS grants outlast original transport bindings
+PASS lease expiry native document
+PASS older live transport initially owns lease
+PASS younger live session acquires expired transport owner lease without new binding
+PASS expired transport owner cannot act despite unexpired grant
+PASS younger current leased ticket admitted
+PASS younger current lease handoff allowed
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS revocation serializes after synchronous handoff
+PASS actual bounded synchronous handoff returns
+PASS completed revoke prevents next delivery
+scoped session authority: 348 checks passed
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Passed.
+"scoped-session-authority" end time: Oct 03 11:01 Eastern Daylight Time
+"scoped-session-authority" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 03 11:01 Eastern Daylight Time

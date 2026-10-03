@@ -1,0 +1,12 @@
+{
+  "version": "154.0.33+ga03e714+chromium-154.0.8037.94",
+  "cefCommit": "a03e7146331fc5bd72784591e82df01e8007e17b",
+  "chromiumCommit": "5bbbefeff14f16f56713e7a3a3e58328aa48e6a5",
+  "platform": "windows64",
+  "archive": "cef_binary_154.0.33+ga03e714+chromium-154.0.8037.94_windows64_minimal.tar.bz2",
+  "url": "https://cef-builds.spotifycdn.com/cef_binary_154.0.33%2Bga03e714%2Bchromium-154.0.8037.94_windows64_minimal.tar.bz2",
+  "size": 172788468,
+  "upstreamSha1": "fced8a0428b7ef68d0df5e288281c673798d3071",
+  "sha256": "a211b8f10a99d1db49afd5b7d9fa7ab3222ebc6ea3026b31c3c9431e7d4a5ac2",
+  "sandboxCompat": "265fca9293e6b6ef"
+}
