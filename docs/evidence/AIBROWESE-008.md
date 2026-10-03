@@ -1,6 +1,6 @@
 # AIBROWESE-008 evidence
 
-Status: implementation and actual local Windows checks passed, 2026-10-02. Coordinator final acceptance and clean hosted CI remain pending. [Transport contract](../security/loopback-transport.md) records exact dependency pins, enrollment, IPCv2 and bounds.
+Status: accepted after actual local and clean hosted Windows checks, 2026-10-03. [Transport contract](../security/loopback-transport.md) records exact dependency pins, enrollment, IPCv2 and bounds.
 
 Initial actual Windows MSVC v143/OpenSSL3.5.9/Boost1.92.0 CTest run passed **2/2**: **193 task007 IPC checks** in1.84s and **36 transport checks** in33.65s, total36.02s. [Raw initial receipt](AIBROWESE-008-initial-native.log) contains actual socket/certificate/DPAPI outcomes; no trust mock was substituted. An earlier direct executable attempt had no progress output and was stopped; its outcome remains unverified. Tests now flush per-case results and CTest enforces120s for expanded transport vectors.
 
@@ -17,3 +17,7 @@ The real pinned CEF host built with `AGI_BROWSE_WITH_TRANSPORT=ON`. Coordinator 
 Native file-picker/dialog enrollment is code-reviewed and available in the real host; end-to-end human dialog automation is unverified. The final [pinned CEF/Chromium source review](../security/loopback-transport.md#native-enrollment-and-revocation) found that `SendKeyEvent` can produce a non-null `os_event` and hence a non-null `MSG*` callback handle. The existing message/type/key/modifier checks are not proof of physical or human provenance. Native selection and fingerprint confirmation remain mandatory, with no automatic approval; current zero application dispatch and the closed public press enum exclude the privileged shortcuts. Future dispatchers must explicitly prohibit those shortcuts regardless of event provenance. This correction changes documentation only; prior runtime receipts remain unchanged.
 
 Non-Windows secure storage/TLS parity, application tools/grants, authenticated rotation and an independent security audit remain their assigned gates. No commit/push/board mutation was performed by the task engineer.
+
+Clean Windows2022 CI [37081273015](https://github.com/Willco9960/AGIBROWSE/actions/runs/37081273015) passed on exact implementation commit ae7fd96333072c9a59c7ce7754a5aaa22072c70b:193 IPC checks1.51s,60 transport checks58.41s,7 cache vectors, healthy lifecycle2.8972737s, renderer-security2.1880251s, expired-store1.6110278s and corrupt-store1.4705344s. All renderers restricted at integrityRID0; host exited0, no orphan processes or forced cleanup. Coordinator downloaded artifact11259361958 and matched SHA256 c26036451e668a1c9abdca928e38e672eb6c80cd790e947d56fc0d2463583768 to GitHub's digest before inspecting receipts. [Sanitized acceptance receipt](AIBROWESE-008-ci-acceptance.json) records the tested source separately from this evidence-only follow-up.
+
+
