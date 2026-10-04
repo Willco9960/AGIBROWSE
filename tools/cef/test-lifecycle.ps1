@@ -93,6 +93,7 @@ $processes = @{}
 $rendererTokens = @{}
 $success = $false
 $cleanupRequired = $false
+$tabFixtureFailure = $null
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -113,6 +114,7 @@ try {
         }
         $events = if (Test-Path -LiteralPath $log) { @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json }) } else { @() }
         $ready = @($events | Where-Object event -eq fixture_ready).Count -gt 0
+        if ($TabProbe -and (Get-TabFixtureFailure -Events $events)) { throw 'Host-native tab lifecycle fixture failed' }
         if ($hostProcess.HasExited) { throw "Host exited before fixture readiness: $($hostProcess.ExitCode)" }
         if (-not $ready) { Start-Sleep -Milliseconds 250 }
     } until ($ready -or (Get-Date) -gt $deadline)
@@ -193,6 +195,22 @@ try {
     $success = $true
 } catch {
     $failure = $_.Exception.Message
+    if ($TabProbe -and (Test-Path -LiteralPath $log)) {
+        $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+        $tabFixtureFailure = Get-TabFixtureFailure -Events $events
+        if ($tabFixtureFailure) {
+            $failure = "Host-native tab lifecycle fixture failed: stage=$($tabFixtureFailure.stage); reason=$($tabFixtureFailure.reason)"
+            # A rapid native fixture failure can outlive the renderer before
+            # token sampling. Keep it failed and allow its existing Close path
+            # to finish; absent renderer evidence never supplies a pass.
+            [void]$hostProcess.WaitForExit(10000)
+            $failureExitDeadline = (Get-Date).AddSeconds(10)
+            do {
+                $failureRemaining = @(Get-RunProcesses)
+                if ($failureRemaining.Count) { Start-Sleep -Milliseconds 250 }
+            } until (-not $failureRemaining.Count -or (Get-Date) -gt $failureExitDeadline)
+        }
+    }
 } finally {
     $remaining = @(Get-RunProcesses)
     if ($remaining.Count) {
@@ -209,6 +227,8 @@ try {
         forcedCleanup = $cleanupRequired; failure = $failure
         transportStoreFixture = $TransportStoreFixture
         tabLifecycleProbe = [bool]$TabProbe
+        tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
+        tabFailureReason = $(if ($tabFixtureFailure) { $tabFixtureFailure.reason } else { $null })
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'result.json') -Encoding utf8
     $hostProcess.Dispose()
 }

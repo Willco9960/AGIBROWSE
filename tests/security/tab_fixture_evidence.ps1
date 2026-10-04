@@ -26,4 +26,19 @@ $events = @(New-Proof); $events[19].value = 6
 Reject-Proof -Events $events -Name 'unmatched browser close'
 $events = @(New-Proof); $events += [pscustomobject]@{ event = 'tab_fixture_failed_stage'; value = 1 }
 Reject-Proof -Events $events -Name 'failure mixed with positive proof'
-Write-Host 'PASS: 8 tab fixture evidence checks'
+$events = @(New-Proof); $events += [pscustomobject]@{ event = 'tab_fixture_failed_reason'; value = 13 }
+Reject-Proof -Events $events -Name 'native failure reason mixed with positive proof'
+$reasonNames = @('lifecycle_state','deadline','window_missing','window_unregistered','window_mismatch','screen_conversion','tab_window_changed','engine_changed','context_changed','retained_window_changed','cursor_unavailable','cursor_target_missing','cursor_root_mismatch')
+for ($i = 1; $i -le 13; $i++) {
+    $failureEvents = @([pscustomobject]@{ event = 'tab_fixture_failed_stage'; value = 0 }, [pscustomobject]@{ event = 'tab_fixture_failed_reason'; value = $i })
+    $failure = Get-TabFixtureFailure -Events $failureEvents
+    if ($failure.stage -ne 0 -or $failure.reason -ne $reasonNames[$i-1]) { throw "Closed failure mapping wrong: $i" }
+}
+foreach ($invalid in @('SENTINEL_PAGE_TEXT', 14)) {
+    $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_failed_reason'; value = $invalid })
+    if ($failure.reason -ne 'unknown') { throw 'Unknown failure payload escaped closed reason mapping' }
+}
+if (Get-TabFixtureFailure -Events @()) { throw 'Empty evidence manufactured a failure' }
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_failed_stage'; value = 99 })
+if ($null -ne $failure.stage) { throw 'Unknown failure payload escaped closed stage mapping' }
+Write-Host 'PASS: 26 tab fixture evidence checks'

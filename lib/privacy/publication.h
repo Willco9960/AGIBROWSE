@@ -45,7 +45,15 @@ enum class Event {
   tab_fixture_cancel_verified, tab_fixture_close_verified, tab_fixture_pending_expired,
   tab_fixture_resources_released, tab_fixture_failed,
   tab_fixture_click_issued, tab_fixture_click_acknowledged,
-  tab_fixture_popup_requested, tab_fixture_failed_stage
+  tab_fixture_popup_requested, tab_fixture_failed_stage, tab_fixture_failed_reason
+};
+// Fixture-only native branches. No OS error, coordinate, HWND, page string or
+// arbitrary numeric payload may be encoded by these diagnostic values.
+enum class TabFixtureFailureReason : uint64_t {
+  lifecycle_state = 1, deadline, window_missing, window_unregistered,
+  window_mismatch, screen_conversion, tab_window_changed, engine_changed,
+  context_changed, retained_window_changed, cursor_unavailable,
+  cursor_target_missing, cursor_root_mismatch
 };
 // Values are accepted only for specific engine/native IDs and HTTP statuses.
 // Call sites must derive them from engine/native APIs, never renderer payloads.

@@ -78,6 +78,7 @@ void MaybeQuit();
 constexpr uint64_t kCreationTimeoutMs = 10000;
 
 using agi::privacy::Event;
+using agi::privacy::TabFixtureFailureReason;
 void Record(Event event, unsigned long long value = 0) {
   agi::privacy::WriteDiagnostic(lifecycle_log, event, value);
 }
@@ -501,18 +502,20 @@ class TabLifecycleFixture final : public CefTask {
  public:
   void Execute() override {
     CEF_REQUIRE_UI_THREAD();
-    if(GetTickCount64()>deadline_){Fail();return;}
+    if(GetTickCount64()>deadline_){Fail(TabFixtureFailureReason::deadline);return;}
     auto root=tabs.Resolve(test_root);auto root_view=tab_views.find(test_root);
     if(stage_>0 && stage_<4 && (!root || root_view==tab_views.end())){Fail();return;}
     if(stage_==0) {
       if(!fixture_ready || !test_root_loaded || !root || root_view==tab_views.end() || !root_view->second->IsDrawn()) {Again();return;}
       auto browser=root_view->second->GetBrowser();if(!browser){Again();return;}
       auto window=root_view->second->GetWindow();
-      if(!window || !native_windows.contains(root->window) || !window->IsSame(native_windows.at(root->window))){Fail();return;}
+      if(!window){Fail(TabFixtureFailureReason::window_missing);return;}
+      if(!native_windows.contains(root->window)){Fail(TabFixtureFailureReason::window_unregistered);return;}
+      if(!window->IsSame(native_windows.at(root->window))){Fail(TabFixtureFailureReason::window_mismatch);return;}
       if(!input_window_) {
         engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
         CefPoint click(60,20);
-        if(!root_view->second->ConvertPointToScreen(click)){Fail();return;}
+        if(!root_view->second->ConvertPointToScreen(click)){Fail(TabFixtureFailureReason::screen_conversion);return;}
         input_window_=window;window->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
         // CEF154's Views testing API routes through Windows native UI controls.
         // ConvertPointToScreen supplies DIP; SendMouseMove converts to pixels.
@@ -520,11 +523,16 @@ class TabLifecycleFixture final : public CefTask {
         // Let the native move/activation dispatch before using its cursor.
         Again();return;
       }
-      if(root->window!=source_ || root->engine!=engine_ || browser->GetIdentifier()!=engine_ ||
-          !context_->IsSame(browser->GetHost()->GetRequestContext()) || !input_window_->IsSame(window)){Fail();return;}
+      if(root->window!=source_){Fail(TabFixtureFailureReason::tab_window_changed);return;}
+      if(root->engine!=engine_ || browser->GetIdentifier()!=engine_){Fail(TabFixtureFailureReason::engine_changed);return;}
+      if(!context_->IsSame(browser->GetHost()->GetRequestContext())){Fail(TabFixtureFailureReason::context_changed);return;}
+      if(!input_window_->IsSame(window)){Fail(TabFixtureFailureReason::retained_window_changed);return;}
       if(!window->IsActive()){Again();return;}
       POINT cursor;
-      if(!GetCursorPos(&cursor) || GetAncestor(WindowFromPoint(cursor),GA_ROOT)!=window->GetWindowHandle()){Fail();return;}
+      if(!GetCursorPos(&cursor)){Fail(TabFixtureFailureReason::cursor_unavailable);return;}
+      auto cursor_window=WindowFromPoint(cursor);
+      if(!cursor_window){Fail(TabFixtureFailureReason::cursor_target_missing);return;}
+      if(GetAncestor(cursor_window,GA_ROOT)!=window->GetWindowHandle()){Fail(TabFixtureFailureReason::cursor_root_mismatch);return;}
       window->SendMouseEvents(MBT_LEFT,true,true);
       input_window_=nullptr;
       Record(Event::tab_fixture_click_issued);
@@ -593,7 +601,7 @@ class TabLifecycleFixture final : public CefTask {
   }
  private:
   void Again(){CefPostDelayedTask(TID_UI,this,100);}
-  void Fail(){input_window_=nullptr;load_failed=true;Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
+  void Fail(TabFixtureFailureReason reason=TabFixtureFailureReason::lifecycle_state){input_window_=nullptr;load_failed=true;Record(Event::tab_fixture_failed_reason,static_cast<unsigned>(reason));Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
   uint64_t deadline_=GetTickCount64()+30000;
   uint64_t hold_until_=0;
   int stage_=0,engine_=0;
