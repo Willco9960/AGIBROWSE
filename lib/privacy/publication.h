@@ -43,7 +43,9 @@ enum class Event {
   privacy_fixture_paths_exercised, privacy_dialog_suppressed, privacy_human_title_preserved,
   tab_fixture_popup_registered, tab_fixture_order_verified, tab_fixture_move_verified,
   tab_fixture_cancel_verified, tab_fixture_close_verified, tab_fixture_pending_expired,
-  tab_fixture_resources_released, tab_fixture_failed
+  tab_fixture_resources_released, tab_fixture_failed,
+  tab_fixture_click_issued, tab_fixture_click_acknowledged,
+  tab_fixture_popup_requested, tab_fixture_failed_stage
 };
 // Values are accepted only for specific engine/native IDs and HTTP statuses.
 // Call sites must derive them from engine/native APIs, never renderer payloads.

@@ -176,8 +176,8 @@ try {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
     }
     if ($TabProbe) {
-        if ($events | Where-Object event -eq tab_fixture_failed) { throw 'Host-native tab lifecycle fixture failed' }
-        foreach ($required in @('tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
+        if ($events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage') }) { throw 'Host-native tab lifecycle fixture failed' }
+        foreach ($required in @('tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_popup_requested','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
             if (@($events | Where-Object event -eq $required).Count -ne 1) { throw "Missing or duplicate tab fixture proof: $required" }
         }
         $created=@($events | Where-Object event -eq browser_created | ForEach-Object value)

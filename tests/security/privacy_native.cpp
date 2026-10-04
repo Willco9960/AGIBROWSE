@@ -53,10 +53,15 @@ int main() {
     Check(!WriteDiagnostic(nullptr,static_cast<Event>(999)),"unknown diagnostic event fails closed");
     for(auto event:{Event::tab_fixture_popup_registered,Event::tab_fixture_order_verified,Event::tab_fixture_move_verified,
         Event::tab_fixture_cancel_verified,Event::tab_fixture_close_verified,Event::tab_fixture_pending_expired,
-        Event::tab_fixture_resources_released,Event::tab_fixture_failed}) {
+        Event::tab_fixture_resources_released,Event::tab_fixture_failed,Event::tab_fixture_click_issued,
+        Event::tab_fixture_click_acknowledged,Event::tab_fixture_popup_requested}) {
       Check(WriteDiagnostic(nullptr,event),"lifecycle proof is a closed content-free diagnostic");
       Check(!WriteDiagnostic(nullptr,event,1),"lifecycle diagnostic refuses numeric payload");
     }
+    Check(WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,0),"native failed stage zero allowed");
+    Check(WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,7),"native failed stage upper bound allowed");
+    Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,8),"unknown lifecycle stage rejected");
+    Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,UINT64_MAX),"failed stage cannot encode arbitrary numeric content");
     Check(!WriteDiagnostic(nullptr,Event::fixture_ready,0x534543524554),"text-free event rejects numeric secret encoding");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
     Check(!WriteDiagnostic(nullptr,Event::browser_created,UINT64_MAX),"native browser ID values bounded");

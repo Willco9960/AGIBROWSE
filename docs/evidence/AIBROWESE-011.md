@@ -4,7 +4,7 @@ Status: source implementation ready for parent review; **clean Windows full buil
 
 ## Local evidence
 
-Final native lifecycle suite: **138 checks passed**. Existing scoped authority suite: **348 checks passed**. Privacy contract suite: **46 checks passed**, including payload rejection for the eight new closed lifecycle diagnostic kinds. Final pinnedCEF154 host `ClCompile` target passed with warnings treated as errors. PowerShell harness parser passed. Local evidence and source hashes are recorded in `AIBROWESE-011-local.json`.
+Final native lifecycle suite: **138 checks passed**. Existing scoped authority suite: **348 checks passed**. Privacy contract suite: **56 checks passed**, including payload rejection for closed lifecycle diagnostic kinds and the bounded native failure-stage field. Final pinnedCEF154 host `ClCompile` target passed with warnings treated as errors. PowerShell harness parser passed. Local evidence and source hashes are recorded in `AIBROWESE-011-local.json`.
 
 The full CEF launcher was quarantined locally by Defender; false positive has not been established. No launcher restoration, exclusions, replacement download, local full packaging or local GUI execution was attempted. A passing compile is not proof of the lifecycle behavior.
 
@@ -17,7 +17,7 @@ The full CEF launcher was quarantined locally by Defender; false positive has no
 
 ## Clean CI verification contract
 
-Run `tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs` after the standard clean pinned build. The workflow now includes this test and exports its result, closed event log and stdout/stderr. It requires exactly five actual browser-created IDs to match five graceful browser-close IDs, a restricted renderer token and no run-owned orphan processes/forced cleanup.
+Run `tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs` after the standard clean pinned build. The workflow now includes this test and exports its result, closed event log and stdout/stderr. It requires ten exact-once proof events, exactly five actual browser-created IDs to match five graceful browser-close IDs, a restricted renderer token and no run-owned orphan processes/forced cleanup.
 
 Host fixture proof events require actual CEF popup context/opener identity, native child order and active title, inactive-tab close while siblings stay usable, root move with same engine/profile/request context and actual `GetWindow`, one actual beforeunload cancellation followed by one actual acceptance, initial-tab resource release while the source sibling survives, asynchronous blank replacement remaining visible, deadline sweep and final graceful native window shutdown. The fixture waits for replacement browser creation/drawing. A five-second final hold gives the external harness time to inspect renderer tokens; that timer is not close/cancel evidence.
 
@@ -34,3 +34,15 @@ Clean Windows CI run `37169082800` for exact source `57d108d` failed at host lin
 Renamed that host-internal API to `LookupWindow` in its declaration, implementation, CEF adapter and native tests. No Win32 macro was globally undefined. The native lifecycle test now includes `windows.h` before the lifecycle header on Windows; its linked library still compiles without that include, making this include-order/link mismatch a tested regression.
 
 After repair, the native lifecycle target rebuilt **and linked**, and138 lifecycle/348 scope/46 privacy checks passed. Final CEF host ClCompile passed with `/WX`. Updated local source hashes reflect the repair. Full host linking/GUI acceptance still requires a new clean Windows CI run; no quarantined launcher was restored and no local full build was attempted.
+
+## Focused repair2: distinguish pre-popup readiness/input failure
+
+Clean Windows CI run `37169898469` for source `1615286` passed full building, ordinary GUI shutdown, eight native suites and the renderer security fixture. Its TabProbe failed after30.7seconds with host69, a restricted renderer and no orphan/forced cleanup. Verified artifact `11291436469`, digest `1e39028513a19bd1e087c9e250a7e19bf7c216e55ac927324636970b8186a44b`, contains only root-browser/window creation, title/load readiness and final fixture failure; no popup/order proof appeared. Privacy and fallback GUI stages were skipped after that failure.
+
+The doubtful assumption was that parser-time title readiness plus `IsDrawn` ensured the fixture button had completed layout and that its trusted click reached the page. The revised fixture publishes its readiness title only after the window load event, two animation frames and measured button bounds `(0,0,160,40)`. Native input additionally requires the root's actual OnLoadEnd, activates/focuses its Views host and sends mouse move plus explicit down/up flags. Readiness is based on page load/layout observations, not an elapsed timer or business readiness.
+
+The actual button handler acknowledges only `event.isTrusted && navigator.userActivation.isActive`, then retains the same real `window.open` call. Its title acknowledgment is a fixture diagnostic, never a production authority or popup registration. Separate closed events now identify native click issuance, fixture acknowledgment and actual `OnBeforePopup` entry; popup registration still requires real CEF browser/context/window state. The harness requires these three additional events, making ten exact-once proof events. A separate native failure-stage diagnostic accepts only0–7, never page text or arbitrary numeric payload.
+
+Pinned [Views delegate source](https://github.com/chromiumembedded/cef/blob/a03e7146331fc5bd72784591e82df01e8007e17b/libcef/browser/views/browser_platform_delegate_views.cc) forwards SendMouseClickEvent to the native delegate; [NativeAura source](https://github.com/chromiumembedded/cef/blob/a03e7146331fc5bd72784591e82df01e8007e17b/libcef/browser/native/browser_platform_delegate_native_aura.cc) forwards it to the host View's OnMouseEvent when that View exists. The pinned BrowserViewDelegate header defaults popup delegation to `this`; a missing default delegate is not supported as the failure explanation.
+
+Local repair2 checks:138 lifecycle,348 scope,56 privacy checks passed; harness parsing and final pinnedCEF ClCompile `/WX` passed. The actual TabProbe remains unverified until the next clean CI run. If this second focused repair fails, stop and report the minimal stage/click/popup evidence before any parent-approved reasoning fallback or additional repair. No launcher restoration, local full GUI, commit, push or board mutation occurred in this lane.

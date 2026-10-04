@@ -5,10 +5,22 @@
 <button id="open">Open popup</button>
 <script>
 if (location.hash !== '#popup') {
-  document.querySelector('#open').onclick = () => {
+  document.querySelector('#open').onclick = event => {
+    if (!event.isTrusted || !navigator.userActivation.isActive) {
+      document.title='AGI-BROWSE tab fixture untrusted click';
+      return;
+    }
+    document.title='AGI-BROWSE tab fixture clicked';
     window.addEventListener('beforeunload', event => {event.preventDefault();event.returnValue='';});
     window.open(location.href + '#popup', '_blank', 'width=500,height=400');
   };
 }
-document.title='AGI-BROWSE fixture ready';
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const bounds=document.querySelector('#open').getBoundingClientRect();
+    if (bounds.left===0 && bounds.top===0 && bounds.width===160 && bounds.height===40) {
+      document.title='AGI-BROWSE fixture ready';
+    }
+  }));
+});
 </script>

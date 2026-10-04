@@ -46,6 +46,7 @@ bool privacy_test = false;
 bool privacy_test_passed = false;
 bool privacy_dialog_seen = false;
 bool tab_lifecycle_test = false, tab_lifecycle_passed = false;
+bool test_root_loaded = false, test_button_clicked = false;
 unsigned test_unload_canceled = 0, test_unload_accepted = 0;
 bool test_cancel_unload = false;
 std::string test_root;
@@ -274,7 +275,9 @@ class BrowserClient final : public CefClient,
   bool OnBeforePopup(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame>,int popup_id,
       const CefString&,const CefString&,WindowOpenDisposition,bool,const CefPopupFeatures&,
       CefWindowInfo&,CefRefPtr<CefClient>& client,CefBrowserSettings&,CefRefPtr<CefDictionaryValue>&,bool*) override {
-    CEF_REQUIRE_UI_THREAD();auto opener=tabs.Resolve(tab_);if(!opener)return true;
+    CEF_REQUIRE_UI_THREAD();
+    if(tab_lifecycle_test && tab_==test_root)Record(Event::tab_fixture_popup_requested);
+    auto opener=tabs.Resolve(tab_);if(!opener)return true;
     auto window=tabs.NewWindow();if(window.empty())return true;
     auto tab=tabs.CreateTab(window,opener->profile,tab_,GetTickCount64()+kCreationTimeoutMs);
     if(tab.empty()){tabs.RemoveWindow(window);return true;}
@@ -288,6 +291,11 @@ class BrowserClient final : public CefClient,
 
   void OnTitleChange(CefRefPtr<CefBrowser> browser, const CefString& title) override {
     CEF_REQUIRE_UI_THREAD();
+    // Fixture-only acknowledgment is content-free diagnostic evidence. It
+    // never registers a popup, enters a scope or authorizes an engine action.
+    if(tab_lifecycle_test && tab_==test_root && title=="AGI-BROWSE tab fixture clicked" && !test_button_clicked) {
+      test_button_clicked=true;Record(Event::tab_fixture_click_acknowledged);
+    }
     if (title == "AGI-BROWSE fixture ready") {
       fixture_ready = true;
       Record(Event::fixture_ready);
@@ -307,6 +315,7 @@ class BrowserClient final : public CefClient,
                  int http_status_code) override {
     CEF_REQUIRE_UI_THREAD();
     if (frame->IsMain()) {
+      if(tab_lifecycle_test && tab_==test_root)test_root_loaded=true;
       Record(Event::main_frame_loaded, http_status_code);
       if(privacy_test) frame->SendProcessMessage(PID_RENDERER,CefProcessMessage::Create("agi.test.privacy.probe.v1"));
       if(renderer_security_test) {
@@ -496,14 +505,20 @@ class TabLifecycleFixture final : public CefTask {
     auto root=tabs.Resolve(test_root);auto root_view=tab_views.find(test_root);
     if(stage_>0 && stage_<4 && (!root || root_view==tab_views.end())){Fail();return;}
     if(stage_==0) {
-      if(!fixture_ready || !root || root_view==tab_views.end() || !root_view->second->IsDrawn()) {Again();return;}
+      if(!fixture_ready || !test_root_loaded || !root || root_view==tab_views.end() || !root_view->second->IsDrawn()) {Again();return;}
       auto browser=root_view->second->GetBrowser();if(!browser){Again();return;}
       engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
+      root_view->second->GetWindow()->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
       CefMouseEvent click;click.x=60;click.y=20;
+      browser->GetHost()->SendMouseMoveEvent(click,false);
+      click.modifiers=EVENTFLAG_LEFT_MOUSE_BUTTON;
       browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,false,1);
+      click.modifiers=EVENTFLAG_NONE;
       browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,true,1);
+      Record(Event::tab_fixture_click_issued);
       stage_=1;
     } else if(stage_==1) {
+      if(!test_button_clicked){Again();return;}
       std::string popup;
       for(const auto& [id,view]:tab_views) {auto tab=tabs.Resolve(id);if(tab && tab->opener==test_root && tab->engine && view->GetWindow())popup=id;}
       if(popup.empty()){Again();return;}
@@ -566,7 +581,7 @@ class TabLifecycleFixture final : public CefTask {
   }
  private:
   void Again(){CefPostDelayedTask(TID_UI,this,100);}
-  void Fail(){load_failed=true;Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
+  void Fail(){load_failed=true;Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
   uint64_t deadline_=GetTickCount64()+30000;
   uint64_t hold_until_=0;
   int stage_=0,engine_=0;
@@ -644,11 +659,12 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
     Record(Event::context_initialized);
     CefBrowserSettings settings;
     auto window=tabs.NewWindow();auto tab=tabs.CreateTab(window,"human",{},GetTickCount64()+kCreationTimeoutMs);
+    if(tab_lifecycle_test)test_root=tab;
     auto view = CefBrowserView::CreateBrowserView(new BrowserClient(tab), url_, settings,
                                                  nullptr, nullptr, new TabViewDelegate);
     if(!view){tabs.FinishClose(tab);tabs.RemoveWindow(window);CefQuitMessageLoop();return;}
     tab_views[tab]=view;CreateNativeWindow(view,window);
-    if(tab_lifecycle_test){test_root=tab;CefPostDelayedTask(TID_UI,new TabLifecycleFixture,100);}
+    if(tab_lifecycle_test)CefPostDelayedTask(TID_UI,new TabLifecycleFixture,100);
     CefPostDelayedTask(TID_UI,new PendingCreationSweep,250);
   }
 

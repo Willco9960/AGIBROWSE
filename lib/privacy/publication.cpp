@@ -75,11 +75,14 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "privacy_fixture_paths_exercised", "privacy_dialog_suppressed", "privacy_human_title_preserved",
     "tab_fixture_popup_registered", "tab_fixture_order_verified", "tab_fixture_move_verified",
     "tab_fixture_cancel_verified", "tab_fixture_close_verified", "tab_fixture_pending_expired",
-    "tab_fixture_resources_released", "tab_fixture_failed"
+    "tab_fixture_resources_released", "tab_fixture_failed",
+    "tab_fixture_click_issued", "tab_fixture_click_acknowledged",
+    "tab_fixture_popup_requested", "tab_fixture_failed_stage"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;
   switch (event) {
+    case Event::tab_fixture_failed_stage: if(value>7)return false;break;
     case Event::browser_created: case Event::browser_closed:
     case Event::sandbox_bootstrap_verified: case Event::private_broker_challenge_verified:
       if (!value || value > std::numeric_limits<uint32_t>::max()) return false;
