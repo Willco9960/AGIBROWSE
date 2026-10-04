@@ -888,15 +888,24 @@ std::string CreateTab(const std::string& window,CefRefPtr<CefRequestContext> con
   auto chrome=browser_chrome.find(window);if(chrome!=browser_chrome.end())chrome->second.content->AddChildView(view);
   ShowActive(window);return tab;
 }
-std::string OpenProfileWindow(const std::string& profile,const std::string& url="about:blank") {
-  auto context=ProfileContext(profile);if(!context)return {};
+std::string OpenProfileWindow(const std::string& profile,const std::string& url="about:blank",bool diagnose=false) {
+  if(diagnose)Record(Event::profile_action_phase,4);
+  auto context=ProfileContext(profile);
+  if(diagnose)Record(Event::profile_action_phase,5);
+  if(!context)return {};
   auto window=tabs.NewWindow();if(window.empty())return {};
   auto tab=tabs.CreateTab(window,profile,{},GetTickCount64()+kCreationTimeoutMs);
   if(tab.empty()){tabs.RemoveWindow(window);return {};}
   CefBrowserSettings settings;
+  if(diagnose)Record(Event::profile_action_phase,6);
   auto view=CefBrowserView::CreateBrowserView(new BrowserClient(tab),url,settings,nullptr,context,new TabViewDelegate);
+  if(diagnose)Record(Event::profile_action_phase,7);
   if(!view){CancelReservation(tab);return {};}
-  tab_views[tab]=view;CreateNativeWindow(view,window);return tab;
+  tab_views[tab]=view;
+  if(diagnose)Record(Event::profile_action_phase,8);
+  CreateNativeWindow(view,window);
+  if(diagnose)Record(Event::profile_action_phase,9);
+  return tab;
 }
 void RevokeProfile(const std::string& id) {
 #ifdef AGI_TRANSPORT
@@ -908,7 +917,20 @@ class ProfileAction final : public CefTask {
  public:
   ProfileAction(std::string id,bool create):id_(std::move(id)),create_(create){}
   void Execute() override {
-    CEF_REQUIRE_UI_THREAD();try{if(create_)id_=profiles->CreateHuman();if(!id_.empty()&&!OpenProfileWindow(id_).empty())return;}catch(...){}
+    CEF_REQUIRE_UI_THREAD();
+    if(profile_test)Record(Event::profile_action_phase,1);
+    try {
+      if(create_) {
+        if(profile_test)Record(Event::profile_action_phase,2);
+        id_=profiles->CreateHuman();
+        if(profile_test)Record(Event::profile_action_phase,3);
+      }
+      if(!id_.empty()&&!OpenProfileWindow(id_,"about:blank",profile_test).empty()) {
+        if(profile_test)Record(Event::profile_action_phase,11);
+        return;
+      }
+    }catch(...){if(profile_test)Record(Event::profile_action_phase,12);}
+    if(profile_test)Record(Event::profile_action_phase,10);
     MessageBoxW(nullptr,L"This profile could not be opened. Its storage or the native profile limit is unavailable.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);
   }
  private:
@@ -933,7 +955,7 @@ void ShowProfilesMenu(const std::string& window) {
     Record(Event::profile_native_menu_return,profile_native_menu_return);
   }
   auto current=native_windows.find(window);if(current==native_windows.end()||!current->second->IsSame(owner))return;
-  if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);CefPostTask(TID_UI,new ProfileAction({},true));return;}
+  if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);const bool posted=CefPostTask(TID_UI,new ProfileAction({},true));if(profile_test)Record(Event::profile_action_posted,posted?1:0);return;}
   if(selected>=100&&selected<100+ids.size()){CefPostTask(TID_UI,new ProfileAction(ids[selected-100],false));return;}
   if(selected>=201&&selected<200+ids.size()) {
     const auto id=ids[selected-200];if(!profiles->CanDelete(id))return;

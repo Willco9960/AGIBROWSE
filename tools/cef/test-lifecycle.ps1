@@ -105,6 +105,20 @@ namespace CefProfileMenu {
   [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hwnd,uint flags);
   [DllImport("user32.dll")] static extern uint SendInput(uint count,Input[] input,int size);
+  delegate bool WindowVisitor(IntPtr hwnd,IntPtr parameter);
+  [DllImport("user32.dll")] static extern bool EnumWindows(WindowVisitor visitor,IntPtr parameter);
+  [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern int GetClassName(IntPtr hwnd,System.Text.StringBuilder name,int maximum);
+  public static bool OwnedDialogPresent(uint expectedProcess) {
+   bool found=false;int visited=0;
+   bool completed=EnumWindows((hwnd,parameter)=>{
+    if(++visited>1024)return false;
+    uint process;if(GetWindowThreadProcessId(hwnd,out process)==0)return false;
+    if(process==expectedProcess){var name=new System.Text.StringBuilder(16);if(GetClassName(hwnd,name,16)==0)return false;if(name.ToString()=="#32770"){found=true;return false;}}
+    return true;
+   },IntPtr.Zero);
+   if(!completed&&!found)throw new InvalidOperationException("Native dialog observation unavailable");
+   return found;
+  }
   public static bool MenuReady(IntPtr expected) {
    uint process;uint thread=GetWindowThreadProcessId(expected,out process);Gui gui=new Gui();gui.size=(uint)Marshal.SizeOf<Gui>();
    return thread!=0&&GetGUIThreadInfo(thread,ref gui)&&(gui.flags&4)!=0&&gui.menuOwner==expected&&GetAncestor(GetForegroundWindow(),2)==expected;
@@ -147,6 +161,7 @@ $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
 $profileFailureStage=$null;$profileFailureReason=$null;$profileSettingState=$null
 $profileMenuInputDelivered=$false
+$profileOwnedDialogPresent=$null;$profileHostAliveBeforeCleanup=$null
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -340,6 +355,10 @@ try {
         }
     }
 } finally {
+    if($ProfileProbe) {
+        $profileHostAliveBeforeCleanup=-not $hostProcess.HasExited
+        if($profileHostAliveBeforeCleanup){try{$profileOwnedDialogPresent=[CefProfileMenu.Native]::OwnedDialogPresent([uint32]$hostProcess.Id)}catch{$profileOwnedDialogPresent=$null}}
+    }
     $remaining = @(Get-RunProcesses)
     if ($remaining.Count) {
         $success = $false
@@ -362,6 +381,8 @@ try {
         profileFailureReason=$profileFailureReason
         profileSettingState=$profileSettingState
         profileMenuInputDelivered=$profileMenuInputDelivered
+        profileHostAliveBeforeCleanup=$profileHostAliveBeforeCleanup
+        profileOwnedDialogPresent=$profileOwnedDialogPresent
         launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         navigationUiFailureStage = $navigationUiFailureStage

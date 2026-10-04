@@ -89,6 +89,10 @@ int main() {
     for(auto state:{uint64_t{512},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_setting_state,state),"profile setting state rejects arbitrary numeric content");
     for(uint64_t result=0;result<=4;++result)Check(WriteDiagnostic(nullptr,Event::profile_native_menu_return,result),"closed native menu return category accepted");
     for(auto result:{uint64_t{5},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_native_menu_return,result),"native menu return rejects arbitrary command values");
+    for(uint64_t phase=1;phase<=12;++phase)Check(WriteDiagnostic(nullptr,Event::profile_action_phase,phase),"closed native profile action phase accepted");
+    for(auto phase:{uint64_t{0},uint64_t{13},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_action_phase,phase),"profile action phase rejects arbitrary numeric content");
+    Check(WriteDiagnostic(nullptr,Event::profile_action_posted,0)&&WriteDiagnostic(nullptr,Event::profile_action_posted,1),"native task posting accepts only boolean result");
+    for(auto posted:{uint64_t{2},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_action_posted,posted),"native task posting rejects arbitrary numeric content");
     Check(WriteDiagnostic(nullptr,Event::profile_menu_requested)&&WriteDiagnostic(nullptr,Event::profile_native_create_selected),"native profile menu proof accepts no content");
     Check(!WriteDiagnostic(nullptr,Event::profile_menu_requested,1)&&!WriteDiagnostic(nullptr,Event::profile_native_create_selected,1),"native profile menu proof rejects numeric content");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
