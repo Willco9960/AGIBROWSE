@@ -86,7 +86,7 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "profile_probe_step", "profile_probe_failed_stage", "profile_menu_requested",
     "profile_native_create_selected", "profile_probe_failed_reason", "profile_setting_state",
     "profile_native_menu_return", "profile_action_phase", "profile_action_posted", "profile_cookie_flush",
-    "profile_storage_match"
+    "profile_storage_match", "profile_local_state_window"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;
@@ -101,6 +101,7 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     case Event::profile_action_posted: if(value>1)return false;break;
     case Event::profile_cookie_flush: if(value>7)return false;break;
     case Event::profile_storage_match: if((value>>3)<1||(value>>3)>9)return false;break;
+    case Event::profile_local_state_window: if(value<1||value>3)return false;break;
     case Event::tab_fixture_cursor_relation: if(value>7)return false;break;
     case Event::tab_fixture_cursor_destination: if(value>15)return false;break;
     case Event::tab_fixture_native_window_state: if(value>63)return false;break;

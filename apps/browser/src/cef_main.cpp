@@ -1309,8 +1309,25 @@ class ProfileFixture final : public CefTask {
   void Execute() override {
     CEF_REQUIRE_UI_THREAD();
     if(finish_pending_){
-      if(cookie_flush_->failed||GetTickCount64()>flush_deadline_){Fail(1);return;}
+      if(cookie_flush_->failed||(cookie_flush_->completed!=7&&GetTickCount64()>flush_deadline_)){Fail(1);return;}
       if(cookie_flush_->completed!=7){Again();return;}
+      // Evidence only: observe the entire preference-writer timer window,
+      // including when Local State appears early. Read existence, never data.
+      const auto now=GetTickCount64();
+      if(!state_window_start_)state_window_start_=now;
+      if(now-state_window_start_>=15000){Record(Event::profile_local_state_window,3);}
+      else {
+        const auto path=profiles->root()/L"Local State";
+        const auto attributes=GetFileAttributesW(path.c_str());
+        const auto error=attributes==INVALID_FILE_ATTRIBUTES?GetLastError():ERROR_SUCCESS;
+        if(attributes!=INVALID_FILE_ATTRIBUTES&&!(attributes&(FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT))) {
+          if(!state_present_){state_present_=true;Record(Event::profile_local_state_window,2);}
+        }else if(!state_absent_&&(error==ERROR_FILE_NOT_FOUND||error==ERROR_PATH_NOT_FOUND)) {
+          state_absent_=true;Record(Event::profile_local_state_window,1);
+        }
+        if(now-state_window_start_<12000){Again();return;}
+        if(!state_present_)Record(Event::profile_local_state_window,3);
+      }
       profile_passed=true;cookie_flush_->cancelled=true;
       auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();return;
     }
@@ -1434,6 +1451,8 @@ class ProfileFixture final : public CefTask {
   void Fail(unsigned reason=6){if(cookie_flush_)cookie_flush_->cancelled=true;load_failed=true;Record(Event::profile_probe_failed_reason,reason);Record(Event::profile_probe_failed_stage,profile_stage);if(menu_window_)menu_window_->SetAlwaysOnTop(was_always_on_top_);auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();}
   bool awaiting_native_create_=false,was_always_on_top_=false,finish_pending_=false;
   uint64_t flush_deadline_=0;
+  uint64_t state_window_start_=0;
+  bool state_present_=false,state_absent_=false;
   std::shared_ptr<ProfileCookieFlushState> cookie_flush_;
   std::string original_human_tab_;
   CefRefPtr<CefView> menu_control_;
