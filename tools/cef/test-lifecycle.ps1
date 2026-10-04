@@ -11,6 +11,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $PSScriptRoot 'assert-tab-evidence.ps1')
 $exe = [IO.Path]::GetFullPath((Join-Path $BuildDirectory 'browser/Release/agi-browse-host.exe'))
 $brokerExe = Join-Path (Split-Path -Parent $exe) 'agi-browse-broker.exe'
 $evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
@@ -176,13 +177,7 @@ try {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
     }
     if ($TabProbe) {
-        if ($events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage') }) { throw 'Host-native tab lifecycle fixture failed' }
-        foreach ($required in @('tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_popup_requested','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
-            if (@($events | Where-Object event -eq $required).Count -ne 1) { throw "Missing or duplicate tab fixture proof: $required" }
-        }
-        $created=@($events | Where-Object event -eq browser_created | ForEach-Object value)
-        $closed=@($events | Where-Object event -eq browser_closed | ForEach-Object value)
-        if ($created.Count -ne 5 -or $closed.Count -ne 5 -or (Compare-Object ($created | Sort-Object) ($closed | Sort-Object))) { throw 'Five actual CEF browser creations must match five graceful browser closes' }
+        Assert-TabEvidence -Events $events
     }
     if ($SecurityProbe) {
         foreach ($required in @('renderer_application_escape_blocked','renderer_private_handles_absent','page_native_api_absent')) {

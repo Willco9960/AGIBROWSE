@@ -507,14 +507,26 @@ class TabLifecycleFixture final : public CefTask {
     if(stage_==0) {
       if(!fixture_ready || !test_root_loaded || !root || root_view==tab_views.end() || !root_view->second->IsDrawn()) {Again();return;}
       auto browser=root_view->second->GetBrowser();if(!browser){Again();return;}
-      engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
-      root_view->second->GetWindow()->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
-      CefMouseEvent click;click.x=60;click.y=20;
-      browser->GetHost()->SendMouseMoveEvent(click,false);
-      click.modifiers=EVENTFLAG_LEFT_MOUSE_BUTTON;
-      browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,false,1);
-      click.modifiers=EVENTFLAG_NONE;
-      browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,true,1);
+      auto window=root_view->second->GetWindow();
+      if(!window || !native_windows.contains(root->window) || !window->IsSame(native_windows.at(root->window))){Fail();return;}
+      if(!input_window_) {
+        engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
+        CefPoint click(60,20);
+        if(!root_view->second->ConvertPointToScreen(click)){Fail();return;}
+        input_window_=window;window->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
+        // CEF154's Views testing API routes through Windows native UI controls.
+        // ConvertPointToScreen supplies DIP; SendMouseMove converts to pixels.
+        window->SendMouseMove(click.x,click.y);
+        // Let the native move/activation dispatch before using its cursor.
+        Again();return;
+      }
+      if(root->window!=source_ || root->engine!=engine_ || browser->GetIdentifier()!=engine_ ||
+          !context_->IsSame(browser->GetHost()->GetRequestContext()) || !input_window_->IsSame(window)){Fail();return;}
+      if(!window->IsActive()){Again();return;}
+      POINT cursor;
+      if(!GetCursorPos(&cursor) || GetAncestor(WindowFromPoint(cursor),GA_ROOT)!=window->GetWindowHandle()){Fail();return;}
+      window->SendMouseEvents(MBT_LEFT,true,true);
+      input_window_=nullptr;
       Record(Event::tab_fixture_click_issued);
       stage_=1;
     } else if(stage_==1) {
@@ -581,10 +593,11 @@ class TabLifecycleFixture final : public CefTask {
   }
  private:
   void Again(){CefPostDelayedTask(TID_UI,this,100);}
-  void Fail(){load_failed=true;Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
+  void Fail(){input_window_=nullptr;load_failed=true;Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
   uint64_t deadline_=GetTickCount64()+30000;
   uint64_t hold_until_=0;
   int stage_=0,engine_=0;
+  CefRefPtr<CefWindow> input_window_;
   std::string source_,destination_,a_,b_,pending_;
   CefRefPtr<CefRequestContext> context_;
   IMPLEMENT_REFCOUNTING(TabLifecycleFixture);

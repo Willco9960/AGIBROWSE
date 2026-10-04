@@ -40,10 +40,6 @@ jobs:
         shell: pwsh
         timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1 -SecurityProbe -EvidenceDirectory build/cef-security
-      - name: Actual Views tab identity, popup, cancellation, moves and release
-        shell: pwsh
-        timeout-minutes: 2
-        run: ./tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs
       - name: Real privacy sentinels and startup logging rejection
         shell: pwsh
         timeout-minutes: 3
@@ -54,6 +50,10 @@ jobs:
         run: |
           ./tools/cef/test-lifecycle.ps1 -TransportStoreFixture expired -EvidenceDirectory build/cef-transport-fallback
           ./tools/cef/test-lifecycle.ps1 -TransportStoreFixture corrupt -EvidenceDirectory build/cef-transport-fallback
+      - name: Actual Views tab identity, popup, cancellation, moves and release
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs
       - name: Preserve lifecycle evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
