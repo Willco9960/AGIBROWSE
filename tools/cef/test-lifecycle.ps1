@@ -111,9 +111,11 @@ namespace CefProfileMenu {
   }
   public static int SelectCreate(IntPtr expected) {
    if(!MenuReady(expected))return 0;
-   Input[] input=new Input[4];ushort[] vk={0x24,0x24,0x0D,0x0D};
-   for(int i=0;i<4;i++){input[i].type=1;input[i].value.key.vk=vk[i];input[i].value.key.flags=(uint)(i%2==1?2:0);}
-   return SendInput(4,input,Marshal.SizeOf<Input>())==4?1:-1;
+   // The menu exposes one explicit &Create access key. Alphabetical access
+   // keys choose the command directly, without assuming a highlighted item.
+   Input[] input=new Input[2];
+   for(int i=0;i<2;i++){input[i].type=1;input[i].value.key.vk=0x43;input[i].value.key.flags=(uint)(i==1?2:0);}
+   return SendInput(2,input,Marshal.SizeOf<Input>())==2?1:-1;
   }
  }
 }
@@ -144,6 +146,7 @@ $cleanupRequired = $false
 $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
 $profileFailureStage=$null;$profileFailureReason=$null;$profileSettingState=$null
+$profileMenuInputDelivered=$false
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -239,15 +242,15 @@ try {
                 $menuOwner=[IntPtr][long]$owner.value;$menuDeadline=(Get-Date).AddSeconds(3)
                 while(-not [CefProfileMenu.Native]::MenuReady($menuOwner)) {if($hostProcess.HasExited -or (Get-Date) -gt $menuDeadline){throw 'Native profile menu owner did not become ready'};Start-Sleep -Milliseconds 20}
                 # Dispatch exactly once. A partial/uncertain SendInput result
-                # cannot be retried because Enter may already have had effect.
+                # cannot be retried because the mnemonic may have had effect.
                 if([CefProfileMenu.Native]::SelectCreate($menuOwner) -ne 1){throw 'Native profile keyboard delivery failed or became uncertain'}
-                $nativeMenuInputSent=$true
+                $nativeMenuInputSent=$true;$profileMenuInputDelivered=$true
             }
             $profileSteps=@($events | Where-Object event -eq profile_probe_step | ForEach-Object {[int]$_.value})
             if($profileSteps.Count -lt $expectedProfileSteps.Count -and -not $hostProcess.HasExited){Start-Sleep -Milliseconds 100}
         } until($profileSteps.Count -ge $expectedProfileSteps.Count -or $hostProcess.HasExited -or (Get-Date) -gt $deadline)
         if(($profileSteps -join ',') -ne ($expectedProfileSteps -join ',')){throw 'Profile proof steps missing, duplicated or out of order'}
-        if(-not $ProfileRestart -and (-not $nativeMenuInputSent -or @($events | Where-Object event -eq profile_menu_requested).Count -ne 1 -or @($events | Where-Object event -eq profile_native_create_selected).Count -ne 1)){throw 'Actual native profile creation selection proof missing'}
+        if(-not $ProfileRestart -and (-not $nativeMenuInputSent -or @($events | Where-Object event -eq profile_menu_requested).Count -ne 1 -or @($events | Where-Object event -eq profile_native_create_selected).Count -ne 1 -or @($events | Where-Object { $_.event -eq 'profile_native_menu_return' -and $_.value -eq 1 }).Count -ne 1 -or @($events | Where-Object event -eq profile_native_menu_return).Count -ne 1)){throw 'Actual native profile creation selection proof missing'}
         if($rendererTokens.Count -lt 3){throw 'Three isolated profile renderers were not positively observed after sandbox lockdown'}
     }
     $window = $events | Where-Object event -eq window_created | Select-Object -First 1
@@ -358,6 +361,7 @@ try {
         profileFailureStage=$profileFailureStage
         profileFailureReason=$profileFailureReason
         profileSettingState=$profileSettingState
+        profileMenuInputDelivered=$profileMenuInputDelivered
         launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         navigationUiFailureStage = $navigationUiFailureStage

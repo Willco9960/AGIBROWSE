@@ -70,6 +70,7 @@ std::map<std::string,unsigned> profile_proofs;
 std::string profile_fixture_url,profile_fixture_tab;
 unsigned profile_stage=1;
 unsigned profile_failure_reason=0;
+unsigned profile_native_menu_return=5; // Pending; never exported as a result.
 std::string profile_fixture_user;
 bool browser_ui_loading_indicator_seen=false,browser_ui_idle_indicator_seen=false;
 bool test_root_loaded = false, test_button_clicked = false;
@@ -918,7 +919,7 @@ void ShowProfilesMenu(const std::string& window) {
   CefRefPtr<CefWindow> owner=native->second;
   auto ids=profiles->HumanProfiles();ids.insert(ids.begin()+1,"agent");
   HMENU menu=CreatePopupMenu(),deletion=CreatePopupMenu();if(!menu||!deletion){if(menu)DestroyMenu(menu);if(deletion)DestroyMenu(deletion);return;}
-  AppendMenuW(menu,MF_STRING,1,L"Create human profile (opens a new window)");
+  AppendMenuW(menu,MF_STRING,1,L"&Create human profile (opens a new window)");
   for(size_t i=0;i<ids.size();++i){std::wstring label=ids[i]=="human"?L"Human (existing Default)":ids[i]=="agent"?L"Agent (isolated)":L"Profile "+std::wstring(ids[i].begin()+2,ids[i].end());AppendMenuW(menu,MF_STRING,100+i,label.c_str());}
   AppendMenuW(deletion,MF_STRING|MF_DISABLED,0,L"Used this run? Restart AGI-BROWSE before deleting.");
   for(size_t i=2;i<ids.size();++i){auto label=L"Delete Profile "+std::wstring(ids[i].begin()+2,ids[i].end());AppendMenuW(deletion,MF_STRING|(profiles->CanDelete(ids[i])?0:MF_DISABLED),200+i,label.c_str());}
@@ -926,6 +927,11 @@ void ShowProfilesMenu(const std::string& window) {
   POINT point{};if(!GetCursorPos(&point)){DestroyMenu(menu);return;}
   if(profile_test)Record(Event::profile_menu_requested);
   auto selected=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_NONOTIFY,point.x,point.y,0,owner->GetWindowHandle(),nullptr);DestroyMenu(menu);
+  if(profile_test) {
+    profile_native_menu_return=selected==0?0u:selected==1?1u:
+      selected>=100&&selected<100+ids.size()?2u:selected>=201&&selected<200+ids.size()?3u:4u;
+    Record(Event::profile_native_menu_return,profile_native_menu_return);
+  }
   auto current=native_windows.find(window);if(current==native_windows.end()||!current->second->IsSame(owner))return;
   if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);CefPostTask(TID_UI,new ProfileAction({},true));return;}
   if(selected>=100&&selected<100+ids.size()){CefPostTask(TID_UI,new ProfileAction(ids[selected-100],false));return;}
@@ -1214,6 +1220,7 @@ class ProfileFixture final : public CefTask {
     if(GetTickCount64()>deadline_){Fail();return;}
     if(profile_failure_reason){Fail(profile_failure_reason);return;}
     if(awaiting_native_create_) {
+      if(profile_native_menu_return<5&&profile_native_menu_return!=1){Fail(6);return;}
       if(menu_control_) {
         auto owner=menu_control_->GetWindow();POINT cursor{};
         if(!owner||!owner->IsSame(menu_window_)||!owner->IsActive()||!menu_control_->IsVisible()||!menu_control_->IsDrawn()||!GetCursorPos(&cursor)){Fail(6);return;}
