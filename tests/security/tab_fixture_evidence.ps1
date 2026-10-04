@@ -41,4 +41,17 @@ foreach ($invalid in @('SENTINEL_PAGE_TEXT', 14)) {
 if (Get-TabFixtureFailure -Events @()) { throw 'Empty evidence manufactured a failure' }
 $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_failed_stage'; value = 99 })
 if ($null -ne $failure.stage) { throw 'Unknown failure payload escaped closed stage mapping' }
-Write-Host 'PASS: 26 tab fixture evidence checks'
+$events = @(New-Proof); $events += [pscustomobject]@{ event = 'tab_fixture_cursor_relation'; value = 0 }
+Reject-Proof -Events $events -Name 'native failure relation mixed with positive proof'
+for ($mask = 0; $mask -le 7; $mask++) {
+    $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_relation'; value = $mask })
+    $relation = $failure.cursorRelation
+    if ($relation.expectedIsRoot -ne [bool]($mask -band 1) -or
+        $relation.normalizedRootsMatch -ne [bool]($mask -band 2) -or
+        $relation.targetBelongsToExpected -ne [bool]($mask -band 4)) { throw "Closed cursor relation mapping wrong: $mask" }
+}
+foreach ($invalid in @('SENTINEL_OS_DATA', 8)) {
+    $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_relation'; value = $invalid })
+    if ($null -ne $failure.cursorRelation) { throw 'Unknown payload escaped closed cursor relation mapping' }
+}
+Write-Host 'PASS: 37 tab fixture evidence checks'

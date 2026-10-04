@@ -532,7 +532,17 @@ class TabLifecycleFixture final : public CefTask {
       if(!GetCursorPos(&cursor)){Fail(TabFixtureFailureReason::cursor_unavailable);return;}
       auto cursor_window=WindowFromPoint(cursor);
       if(!cursor_window){Fail(TabFixtureFailureReason::cursor_target_missing);return;}
-      if(GetAncestor(cursor_window,GA_ROOT)!=window->GetWindowHandle()){Fail(TabFixtureFailureReason::cursor_root_mismatch);return;}
+      auto cursor_root=GetAncestor(cursor_window,GA_ROOT);auto expected_window=window->GetWindowHandle();
+      if(cursor_root!=expected_window) {
+        // Closed relationship bits only; the comparison and failure decision
+        // stay unchanged until exact-source CI identifies the native relation.
+        auto expected_root=GetAncestor(expected_window,GA_ROOT);
+        unsigned relation=(expected_root && expected_root==expected_window ? 1u : 0u) |
+            (cursor_root && expected_root && cursor_root==expected_root ? 2u : 0u) |
+            (cursor_window==expected_window || IsChild(expected_window,cursor_window) ? 4u : 0u);
+        Record(Event::tab_fixture_cursor_relation,relation);
+        Fail(TabFixtureFailureReason::cursor_root_mismatch);return;
+      }
       window->SendMouseEvents(MBT_LEFT,true,true);
       input_window_=nullptr;
       Record(Event::tab_fixture_click_issued);

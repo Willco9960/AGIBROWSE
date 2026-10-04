@@ -229,6 +229,7 @@ try {
         tabLifecycleProbe = [bool]$TabProbe
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         tabFailureReason = $(if ($tabFixtureFailure) { $tabFixtureFailure.reason } else { $null })
+        tabCursorRelation = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorRelation } else { $null })
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'result.json') -Encoding utf8
     $hostProcess.Dispose()
 }

@@ -1,6 +1,6 @@
 function Get-TabFixtureFailure {
     param([AllowEmptyCollection()][object[]]$Events)
-    if (-not ($Events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage','tab_fixture_failed_reason') })) { return $null }
+    if (-not ($Events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage','tab_fixture_failed_reason','tab_fixture_cursor_relation') })) { return $null }
     $stage = $null
     $stages = @($Events | Where-Object event -eq tab_fixture_failed_stage)
     $parsedStage = 0
@@ -10,7 +10,17 @@ function Get-TabFixtureFailure {
     $reasons = @($Events | Where-Object event -eq tab_fixture_failed_reason)
     $parsedReason = 0
     if ($reasons.Count -eq 1 -and [int]::TryParse([string]$reasons[0].value, [ref]$parsedReason) -and $parsedReason -ge 1 -and $parsedReason -le 13) { $reason = $names[$parsedReason] }
-    [pscustomobject]@{ stage = $stage; reason = $reason }
+    $cursorRelation = $null
+    $relations = @($Events | Where-Object event -eq tab_fixture_cursor_relation)
+    $parsedRelation = 0
+    if ($relations.Count -eq 1 -and [int]::TryParse([string]$relations[0].value, [ref]$parsedRelation) -and $parsedRelation -ge 0 -and $parsedRelation -le 7) {
+        $cursorRelation = [pscustomobject]@{
+            expectedIsRoot = [bool]($parsedRelation -band 1)
+            normalizedRootsMatch = [bool]($parsedRelation -band 2)
+            targetBelongsToExpected = [bool]($parsedRelation -band 4)
+        }
+    }
+    [pscustomobject]@{ stage = $stage; reason = $reason; cursorRelation = $cursorRelation }
 }
 
 function Assert-TabEvidence {
