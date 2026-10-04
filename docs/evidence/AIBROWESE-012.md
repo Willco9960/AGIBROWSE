@@ -1,6 +1,6 @@
 # AIBROWESE-012 browser navigation controls
 
-Status: **native UI implementation ready; clean Windows GUI acceptance pending**.
+Status: **focused source repair ready; separate navigation probe rerun required**.
 
 Each Alloy window now owns a native CEF Views root panel with a clickable tab strip, a navigation toolbar and a browser content panel. Selecting or closing a tab uses the existing host lifecycle; `+` creates a tab, the address field navigates on Enter, and Back, Forward and Reload/Stop call the active tab's real `CefBrowser` state. Ctrl+L focuses and selects the address field. The existing Ctrl+T, Ctrl+W and Ctrl+Tab handling remains in the browser keyboard handler.
 
@@ -11,3 +11,9 @@ The browser Views are children of the content panel. Reorder, move, close and po
 The separate `-NavigationProbe` run uses two static local fixture pages. It enters page B through the address field and Enter, clicks the native Back, Forward and Reload controls, uses native Ctrl+L and Enter, creates a tab with Ctrl+T, clicks the source tab and closes the other tab. Each success event has one closed stage number from1 to9. The probe verifies the engine's current URL and history state internally, confirms a main-frame load after Reload, and requires actual active-tab loading and idle callbacks to match the Stop and Reload labels. It never writes page URLs or titles to the receipt. The probe does not exercise a slow-load Stop click. Its CI workflow runs after and separately from AIBROWESE-011 TabProbe, whose proof gates are preserved.
 
 Local verification is limited to the pinned CEF host `ClCompile` target with warnings treated as errors, PowerShell parser validation, and the focused privacy diagnostic contract test. The quarantined launcher prevents local full packaging or GUI execution, so the new navigation probe still requires a clean Windows GUI run before acceptance.
+
+## Navigation probe repair attempt 1
+
+Clean Windows CI run `37192143326` for source `d65c33d706aa6bb21a54bc4c43ef3a2009f5598c` passed all preceding native, security, privacy and TabProbe checks. The separate NavigationProbe recorded steps1–7, then its host exited with code `-36861` before step8; there is no fixture failure-stage or graceful browser-close event. Verified artifact `11299532993` has SHA-256 `dac573460bdb1bd76ac55515f571101d2a2b3e487b09063506fd46ac61f67e5e`. The log does not establish the exact crash cause.
+
+Step8 clicks a native tab button. Its callback synchronously activated the source tab, called `ShowActive`, and rebuilt the tab strip by removing all child Views, including the button currently handling input. This is a plausible event-target lifetime failure consistent with the failure point, but remains a diagnosis hypothesis. The focused repair refreshes toolbar state synchronously from the active browser, preserving immediate loading-label evidence, and coalesces only destructive tab-strip child rebuilding onto a later CEF UI task so child Views stay attached until the current input callback unwinds. If CEF rejects the task post, the coalescing marker is cleared so a later refresh can retry. The click remains a real native input event, and all nine proof steps plus the task-011 TabProbe gates are retained. Exact-source clean Windows CI must determine whether the repair resolves the exit.

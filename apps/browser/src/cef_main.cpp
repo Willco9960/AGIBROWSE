@@ -78,6 +78,7 @@ agi::browser::Lifecycle tabs([](const std::string& profile, const std::string& t
 std::map<std::string, CefRefPtr<CefBrowserView>> tab_views;
 std::map<std::string, CefString> tab_titles;
 std::map<std::string, CefRefPtr<CefWindow>> native_windows;
+std::set<std::string> scheduled_chrome_refreshes;
 struct BrowserChrome {
   CefRefPtr<CefPanel> root, tabs, toolbar, content;
   CefRefPtr<CefTextfield> address;
@@ -441,7 +442,37 @@ class AddressField final : public CefTextfieldDelegate {
   const std::string tab_;
   IMPLEMENT_REFCOUNTING(AddressField);
 };
+void RefreshChromeToolbar(const std::string& window);
+void RefreshChromeTabs(const std::string& window);
+class RefreshChromeTask final : public CefTask {
+ public:
+  explicit RefreshChromeTask(std::string window):window_(std::move(window)){}
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    RefreshChromeTabs(window_);
+    scheduled_chrome_refreshes.erase(window_);
+  }
+ private:
+  const std::string window_;
+  IMPLEMENT_REFCOUNTING(RefreshChromeTask);
+};
 void RefreshChrome(const std::string& window) {
+  if(!browser_chrome.contains(window))return;
+  RefreshChromeToolbar(window);
+  if(!scheduled_chrome_refreshes.insert(window).second)return;
+  if(!CefPostTask(TID_UI,new RefreshChromeTask(window)))scheduled_chrome_refreshes.erase(window);
+}
+void RefreshChromeToolbar(const std::string& window) {
+  auto found=browser_chrome.find(window);auto w=tabs.LookupWindow(window);
+  if(found==browser_chrome.end()||!w)return;
+  auto& chrome=found->second;
+  auto item=tab_views.find(w->active);auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
+  chrome.back->SetEnabled(browser&&browser->CanGoBack());chrome.forward->SetEnabled(browser&&browser->CanGoForward());chrome.reload->SetEnabled(browser!=nullptr);
+  chrome.reload->SetText(browser&&browser->IsLoading()?"■":"↻");
+  if(browser){auto address=browser->GetMainFrame()->GetURL();if(!chrome.address->HasFocus()&&chrome.address->GetText()!=address)chrome.address->SetText(address);}
+  chrome.toolbar->Layout();chrome.root->Layout();
+}
+void RefreshChromeTabs(const std::string& window) {
   auto found=browser_chrome.find(window);auto w=tabs.LookupWindow(window);
   if(found==browser_chrome.end()||!w)return;
   auto& chrome=found->second;
@@ -453,11 +484,7 @@ void RefreshChrome(const std::string& window) {
     chrome.tabs->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("select:"+id),label));
     chrome.tabs->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("close:"+id),"x"));
   }
-  auto item=tab_views.find(w->active);auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
-  chrome.back->SetEnabled(browser&&browser->CanGoBack());chrome.forward->SetEnabled(browser&&browser->CanGoForward());chrome.reload->SetEnabled(browser!=nullptr);
-  chrome.reload->SetText(browser&&browser->IsLoading()?"■":"↻");
-  if(browser){auto address=browser->GetMainFrame()->GetURL();if(!chrome.address->HasFocus()&&chrome.address->GetText()!=address)chrome.address->SetText(address);}
-  chrome.root->Layout();
+  chrome.tabs->Layout();chrome.root->Layout();
 }
 void NavigateAddress(const std::string& id,CefRefPtr<CefTextfield> field) {
   auto item=tab_views.find(id);if(!tabs.Resolve(id)||item==tab_views.end())return;
