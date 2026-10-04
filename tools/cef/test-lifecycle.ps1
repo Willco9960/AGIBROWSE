@@ -160,6 +160,7 @@ $cleanupRequired = $false
 $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
 $profileFailureStage=$null;$profileFailureReason=$null;$profileSettingState=$null
+$profileCookieFlushMask=$null
 $profileMenuInputDelivered=$false
 $profileOwnedDialogPresent=$null;$profileHostAliveBeforeCleanup=$null
 $failure = $null
@@ -298,6 +299,19 @@ try {
     foreach ($required in $requiredEvents) {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
     }
+    if($ProfileProbe) {
+        $flushMasks=@($events | Where-Object event -eq profile_cookie_flush | ForEach-Object {[int]$_.value})
+        if($flushMasks.Count -ne 4 -or $flushMasks[0] -ne 0 -or $flushMasks[-1] -ne 7){throw 'All three exact profile cookie flush completions are required'}
+        for($flushIndex=1;$flushIndex -lt $flushMasks.Count;$flushIndex++) {
+            $previousMask=$flushMasks[$flushIndex-1];$currentMask=$flushMasks[$flushIndex]
+            if(($currentMask -band $previousMask) -ne $previousMask -or ($currentMask-$previousMask) -notin @(1,2,4)){throw 'Cookie flush completion mask duplicated or invalid'}
+        }
+        $flushComplete=$false
+        foreach($event in $events) {
+            if($event.event -eq 'profile_cookie_flush' -and $event.value -eq 7){$flushComplete=$true}
+            if($event.event -eq 'browser_closed' -and -not $flushComplete){throw 'Browser closed before profile cookie backing-store completion'}
+        }
+    }
     if ($TabProbe) {
         Assert-TabEvidence -Events $events
     }
@@ -356,6 +370,11 @@ try {
     }
 } finally {
     if($ProfileProbe) {
+        if(Test-Path -LiteralPath $log) {
+            $flushEvents=@(Get-Content -LiteralPath $log | ForEach-Object {$_ | ConvertFrom-Json} | Where-Object event -eq profile_cookie_flush)
+            $parsedFlushMask=0
+            if($flushEvents.Count -and [int]::TryParse([string]$flushEvents[-1].value,[ref]$parsedFlushMask) -and $parsedFlushMask -ge 0 -and $parsedFlushMask -le 7){$profileCookieFlushMask=$parsedFlushMask}
+        }
         $profileHostAliveBeforeCleanup=-not $hostProcess.HasExited
         if($profileHostAliveBeforeCleanup){try{$profileOwnedDialogPresent=[CefProfileMenu.Native]::OwnedDialogPresent([uint32]$hostProcess.Id)}catch{$profileOwnedDialogPresent=$null}}
     }
@@ -380,6 +399,7 @@ try {
         profileFailureStage=$profileFailureStage
         profileFailureReason=$profileFailureReason
         profileSettingState=$profileSettingState
+        profileCookieFlushMask=$profileCookieFlushMask
         profileMenuInputDelivered=$profileMenuInputDelivered
         profileHostAliveBeforeCleanup=$profileHostAliveBeforeCleanup
         profileOwnedDialogPresent=$profileOwnedDialogPresent

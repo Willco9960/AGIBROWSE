@@ -7,6 +7,7 @@
 #include <array>
 #include <algorithm>
 #include <set>
+#include <memory>
 #include "apps/browser/lifecycle.h"
 #include "apps/browser/profiles.h"
 #include "apps/browser/popup_reservation.h"
@@ -20,6 +21,7 @@
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
+#include "include/cef_cookie.h"
 #include "include/cef_permission_handler.h"
 #include "include/cef_request_context.h"
 #include "include/cef_request_context_handler.h"
@@ -1259,11 +1261,51 @@ class RendererApp final : public CefApp,public CefRenderProcessHandler {
  private:
   IMPLEMENT_REFCOUNTING(RendererApp);
 };
+struct ProfileCookieFlushState {
+  unsigned completed=0;
+  bool failed=false,cancelled=false;
+};
+class ProfileCookieFlushCallback final : public CefCompletionCallback {
+ public:
+  ProfileCookieFlushCallback(std::string id,CefRequestContext* context,unsigned bit,
+                            std::shared_ptr<ProfileCookieFlushState> state)
+      :id_(std::move(id)),context_(context),bit_(bit),state_(std::move(state)){}
+  void OnComplete() override {
+    CEF_REQUIRE_UI_THREAD();
+    if(state_->cancelled)return;
+    auto found=profile_contexts.find(id_);
+    // The registry owns context lifetime. A callback cannot certify a different
+    // registry entry and never retains a context across engine shutdown.
+    if(!profiles||!profiles->Find(id_)||!ready_profile_contexts.contains(id_)||
+       found==profile_contexts.end()||found->second.get()!=context_){state_->failed=true;return;}
+    state_->completed|=bit_;Record(Event::profile_cookie_flush,state_->completed);
+  }
+ private:
+  const std::string id_;
+  CefRequestContext* const context_;
+  const unsigned bit_;
+  const std::shared_ptr<ProfileCookieFlushState> state_;
+  IMPLEMENT_REFCOUNTING(ProfileCookieFlushCallback);
+};
+bool BeginProfileCookieFlush(const std::string& id,unsigned bit,
+                           const std::shared_ptr<ProfileCookieFlushState>& state) {
+  CEF_REQUIRE_UI_THREAD();
+  if(!state||state->cancelled||(bit!=1&&bit!=2&&bit!=4)||!profiles||!profiles->Find(id)||
+     !ready_profile_contexts.contains(id))return false;
+  auto found=profile_contexts.find(id);if(found==profile_contexts.end())return false;
+  auto manager=found->second->GetCookieManager(nullptr);
+  return manager&&manager->FlushStore(new ProfileCookieFlushCallback(id,found->second.get(),bit,state));
+}
 class ProfileFixture final : public CefTask {
  public:
   void Execute() override {
     CEF_REQUIRE_UI_THREAD();
-    if(finish_pending_){auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();return;}
+    if(finish_pending_){
+      if(cookie_flush_->failed||GetTickCount64()>flush_deadline_){Fail(1);return;}
+      if(cookie_flush_->completed!=7){Again();return;}
+      profile_passed=true;cookie_flush_->cancelled=true;
+      auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();return;
+    }
     if(GetTickCount64()>deadline_){Fail();return;}
     if(profile_failure_reason){Fail(profile_failure_reason);return;}
     if(awaiting_native_create_) {
@@ -1325,7 +1367,14 @@ class ProfileFixture final : public CefTask {
        (check_user&&user_setting!=CEF_CONTENT_SETTING_VALUE_ASK)){Fail();return;}
     Record(Event::profile_probe_step,profile_stage);
     if(profile_stage==6||profile_stage==9) {
-      profile_passed=true;finish_pending_=true;CefPostDelayedTask(TID_UI,this,300);return;
+      // A permanent fixture cookie still needs an explicit backing-store
+      // completion barrier before this deliberately short-lived host exits.
+      finish_pending_=true;flush_deadline_=GetTickCount64()+10000;
+      cookie_flush_=std::make_shared<ProfileCookieFlushState>();Record(Event::profile_cookie_flush,0);
+      if(!BeginProfileCookieFlush("human",1,cookie_flush_)||
+         !BeginProfileCookieFlush("agent",2,cookie_flush_)||
+         !BeginProfileCookieFlush(profile_fixture_user,4,cookie_flush_)){Fail(1);return;}
+      CefPostDelayedTask(TID_UI,this,300);return;
     }
     ++profile_stage;
     if(profile_stage==2)profile_fixture_tab=OpenProfileWindow("agent",profile_fixture_url+"?stage=2");
@@ -1374,8 +1423,10 @@ class ProfileFixture final : public CefTask {
   }
   unsigned setting_state_=512,setting_stage_=0;
   void Again(){CefPostDelayedTask(TID_UI,this,150);}
-  void Fail(unsigned reason=6){load_failed=true;Record(Event::profile_probe_failed_reason,reason);Record(Event::profile_probe_failed_stage,profile_stage);if(menu_window_)menu_window_->SetAlwaysOnTop(was_always_on_top_);auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();}
+  void Fail(unsigned reason=6){if(cookie_flush_)cookie_flush_->cancelled=true;load_failed=true;Record(Event::profile_probe_failed_reason,reason);Record(Event::profile_probe_failed_stage,profile_stage);if(menu_window_)menu_window_->SetAlwaysOnTop(was_always_on_top_);auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();}
   bool awaiting_native_create_=false,was_always_on_top_=false,finish_pending_=false;
+  uint64_t flush_deadline_=0;
+  std::shared_ptr<ProfileCookieFlushState> cookie_flush_;
   std::string original_human_tab_;
   CefRefPtr<CefView> menu_control_;
   CefRefPtr<CefWindow> menu_window_;
