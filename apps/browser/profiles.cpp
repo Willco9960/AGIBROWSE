@@ -73,15 +73,16 @@ ProfileStore::ProfileStore(const Path& root):root_(root),handles_(std::make_uniq
     current/=part;Directory(current);handles_->ancestors.push_back(Lock(current));
   }
   root_=current;
-  Directory(root_/L"Default");Directory(root_/L"Profiles");
-  handles_->ancestors.push_back(Lock(root_/L"Profiles"));
-  Directory(root_/L"Profiles"/L"Agent");
+  // ChromeBrowserContext accepts only direct children of user_data_dir for
+  // persistent profiles. Nested paths silently become off-the-record profiles
+  // inheriting restrictions from Default. Leave old nested data untouched.
+  Directory(root_/L"Default");Directory(root_/L"Agent");
   profiles_.emplace("human",Profile{"human",root_/L"Default"});
-  profiles_.emplace("agent",Profile{"agent",root_/L"Profiles"/L"Agent"});
+  profiles_.emplace("agent",Profile{"agent",root_/L"Agent"});
   handles_->profiles.emplace("human",Lock(root_/L"Default"));
-  handles_->profiles.emplace("agent",Lock(root_/L"Profiles"/L"Agent"));
+  handles_->profiles.emplace("agent",Lock(root_/L"Agent"));
   unsigned visited=0;
-  for(const auto& item:std::filesystem::directory_iterator(root_/L"Profiles")) {
+  for(const auto& item:std::filesystem::directory_iterator(root_)) {
     if(++visited>128)throw std::runtime_error("profile bound exceeded");
     auto id=item.path().filename().string();
     if(UserId(id) && Owned(item.path(),id)) {
@@ -101,7 +102,7 @@ std::string ProfileStore::CreateHuman() {
   std::array<unsigned char,16> random{};
   if(BCryptGenRandom(nullptr,random.data(),static_cast<ULONG>(random.size()),BCRYPT_USE_SYSTEM_PREFERRED_RNG)<0)return {};
   std::string id="p-";constexpr char hex[]="0123456789abcdef";for(auto byte:random){id+=hex[byte>>4];id+=hex[byte&15];}
-  Path path=root_/L"Profiles"/id;
+  Path path=root_/id;
   if(!CreateDirectoryW(path.c_str(),nullptr))return {};
   auto held=Lock(path,true);
   Handle marker(CreateFileW((path/L"profile.identity").c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr));
@@ -139,7 +140,7 @@ bool ProfileStore::DeleteConfirmed(const std::string& id,bool confirmed,const st
   if(!confirmed||!revoke||!CanDelete(id))return false;
   auto p=profiles_.find(id);const auto path=p->second.cache;
   try {
-    if(path!=root_/L"Profiles"/id || !Owned(path,id))return false;
+    if(path!=root_/id || path.parent_path()!=root_ || !Owned(path,id))return false;
     // Flush durable retirement first; partial cleanup cannot resurrect the
     // native identity after restart. The pinned DELETE-capable root handle
     // stays held throughout, including descendant enumeration and revocation.

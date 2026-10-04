@@ -133,6 +133,9 @@ class ProfileContextHandler final : public CefRequestContextHandler {
 CefRefPtr<CefRequestContext> ProfileContext(const std::string& id) {
   CEF_REQUIRE_UI_THREAD();
   if(!profiles || !profiles->Find(id))return nullptr;
+  // Reject unsupported nested layout before CEF can silently fall back to an
+  // off-the-record profile inheriting Human content settings.
+  if(profiles->Find(id)->cache.parent_path()!=profiles->root())return nullptr;
   if(auto item=profile_contexts.find(id);item!=profile_contexts.end())return item->second;
   if(!profiles->MarkContextOpened(id))return nullptr;
   CefRequestContextSettings settings;CefString(&settings.cache_path)=profiles->Find(id)->cache.wstring();
@@ -1250,6 +1253,10 @@ class ProfileFixture final : public CefTask {
       SettingState(ready);Again();return;
     }
     if(profile_stage==1) {
+      // Capture the initialized baseline before the Human-only mutation, so
+      // a pre-existing policy/default BLOCK cannot be mistaken for sharing.
+      SettingState(ready|(SettingClass(human_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS))<<3)|
+        (SettingClass(agent_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS))<<5));
       // A restrictive setting, never an ALLOW grant. The engine-owned setting
       // is deliberately changed only in the human request context.
       human_context->SetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS,CEF_CONTENT_SETTING_VALUE_BLOCK);

@@ -39,15 +39,23 @@ int main() {
   try {
     Check(!std::filesystem::exists(fixture),"fresh narrowly named temporary fixture");std::filesystem::create_directory(fixture);
     const auto root=fixture/L"root",outside=fixture/L"outside";std::filesystem::create_directory(outside);std::ofstream(outside/L"sentinel")<<"preserve";
+    const std::string legacy_id="p-00000000000000000000000000000000";
+    std::filesystem::create_directories(root/L"Profiles"/legacy_id);
+    std::ofstream(root/L"Profiles"/legacy_id/L"profile.identity")<<"AGI-BROWSE profile v1\n"<<legacy_id<<'\n';
+    std::ofstream(root/L"Profiles"/L"sentinel")<<"preserve";
     std::string saved,retired;
     {
       ProfileStore store(root);
       Check(store.Find("human")->cache==root/L"Default","legacy human Default preserved");
       Check(store.Find("agent")->cache!=store.Find("human")->cache,"agent storage separate");
+      Check(store.Find("agent")->cache==root/L"Agent","agent persistent cache is a direct root child");
+      Check(store.Find("human")->cache.parent_path()==root,"human persistent cache is a direct root child");
+      Check(!store.Find(legacy_id)&&std::filesystem::exists(root/L"Profiles"/legacy_id/L"profile.identity")&&std::filesystem::exists(root/L"Profiles"/L"sentinel"),"unsupported nested layout remains untouched and undiscovered");
       ReparseWriteDenied(store.Find("human")->cache);
       Check(!store.Find("../human")&&!store.Find("renderer-supplied"),"unknown profile identity denied");
       Check(!store.SitePermissionAllowed("human")&&!store.SitePermissionAllowed("agent")&&!store.SitePermissionAllowed("invented"),"all site permissions start denied");
       saved=store.CreateHuman();auto disposable=store.CreateHuman();Check(!saved.empty()&&!disposable.empty()&&saved!=disposable,"native random profiles created");
+      Check(store.Find(saved)->cache==root/saved&&store.Find(disposable)->cache.parent_path()==root,"created persistent caches are direct root children");
       Check(store.MarkContextOpened(saved)&&!store.CanDelete(saved),"opened context prevents deletion until restart");
       ReparseWriteDenied(store.Find(saved)->cache);
       auto invalid=store.CreateHuman();std::ofstream(store.Find(invalid)->cache/L"profile.identity",std::ios::trunc)<<"invalid";
@@ -71,6 +79,8 @@ int main() {
     }
     {
       ProfileStore store(root);Check(store.Find(saved)&&store.CanDelete(saved),"closed profile discovered after restart");
+      Check(store.Find(saved)->cache.parent_path()==root,"restart discovers only supported direct-child cache");
+      Check(!store.Find(legacy_id)&&std::filesystem::exists(root/L"Profiles"/legacy_id/L"profile.identity"),"restart preserves and excludes unsupported nested identity");
       Check(!store.Find(retired),"partial cleanup cannot resurrect on restart");
       Check(store.DeleteConfirmed(saved,true,[](const auto&){}),"previously marked profile deletion after native restart");
     }
