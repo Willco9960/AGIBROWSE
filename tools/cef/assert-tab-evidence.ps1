@@ -47,7 +47,7 @@ function Assert-TabEvidence {
     param([Parameter(Mandatory)][object[]]$Events)
     if (Get-TabFixtureFailure -Events $Events) { throw 'Host-native tab lifecycle fixture failed' }
     $indices = @{}
-    foreach ($required in @('tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_popup_requested','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
+    foreach ($required in @('tab_fixture_visibility_adjusted','tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_visibility_restored','tab_fixture_popup_requested','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
         $matches = @(for ($i = 0; $i -lt $Events.Count; $i++) { if ($Events[$i].event -eq $required) { $i } })
         if ($matches.Count -ne 1) { throw "Missing or duplicate tab fixture proof: $required" }
         $indices[$required] = $matches[0]
@@ -57,7 +57,7 @@ function Assert-TabEvidence {
     # Title and popup notifications may arrive on different engine channels;
     # both must follow issuance and precede fixture registration, without
     # assuming a relative callback order between those two notifications.
-    $sequence = @('tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')
+    $sequence = @('tab_fixture_visibility_adjusted','tab_fixture_click_issued','tab_fixture_click_acknowledged','tab_fixture_visibility_restored','tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')
     for ($i = 1; $i -lt $sequence.Count; $i++) {
         if ($indices[$sequence[$i-1]] -ge $indices[$sequence[$i]]) { throw "Out-of-order tab fixture proof: $($sequence[$i])" }
     }

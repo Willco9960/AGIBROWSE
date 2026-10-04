@@ -54,7 +54,8 @@ int main() {
     for(auto event:{Event::tab_fixture_popup_registered,Event::tab_fixture_order_verified,Event::tab_fixture_move_verified,
         Event::tab_fixture_cancel_verified,Event::tab_fixture_close_verified,Event::tab_fixture_pending_expired,
         Event::tab_fixture_resources_released,Event::tab_fixture_failed,Event::tab_fixture_click_issued,
-        Event::tab_fixture_click_acknowledged,Event::tab_fixture_popup_requested}) {
+        Event::tab_fixture_click_acknowledged,Event::tab_fixture_popup_requested,
+        Event::tab_fixture_visibility_adjusted,Event::tab_fixture_visibility_restored}) {
       Check(WriteDiagnostic(nullptr,event),"lifecycle proof is a closed content-free diagnostic");
       Check(!WriteDiagnostic(nullptr,event,1),"lifecycle diagnostic refuses numeric payload");
     }
@@ -79,8 +80,10 @@ int main() {
     Check(WriteDiagnostic(file,Event::tab_fixture_failed_reason,static_cast<uint64_t>(TabFixtureFailureReason::cursor_root_mismatch)),"native failure writes closed reason to actual sink");
     Check(WriteDiagnostic(file,Event::tab_fixture_cursor_relation,5),"native cursor relation writes closed mask to actual sink");
     Check(WriteDiagnostic(file,Event::tab_fixture_cursor_destination,3),"native cursor destination writes closed mask to actual sink");
+    Check(WriteDiagnostic(file,Event::tab_fixture_visibility_adjusted),"native visibility adjustment writes content-free proof");
+    Check(WriteDiagnostic(file,Event::tab_fixture_visibility_restored),"native visibility restoration writes content-free proof");
     std::rewind(file);char buffer[1024]{};auto n=std::fread(buffer,1,sizeof(buffer),file);std::fclose(file);
-    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n","actual diagnostic file contains fixed schema only");
+    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n{\"event\":\"tab_fixture_visibility_adjusted\",\"value\":0}\n{\"event\":\"tab_fixture_visibility_restored\",\"value\":0}\n","actual diagnostic file contains fixed schema only");
     std::cout << "PASS privacy contract checks=" << checks << '\n';return 0;
   } catch(const std::exception& e) {std::cerr<<"FAIL privacy contract case: "<<e.what()<<'\n';return 1;}
 }

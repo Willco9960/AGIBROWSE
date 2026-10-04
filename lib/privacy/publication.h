@@ -47,7 +47,8 @@ enum class Event {
   tab_fixture_click_issued, tab_fixture_click_acknowledged,
   tab_fixture_popup_requested, tab_fixture_failed_stage, tab_fixture_failed_reason,
   tab_fixture_cursor_relation, tab_fixture_cursor_destination,
-  tab_fixture_cursor_destination_unavailable
+  tab_fixture_cursor_destination_unavailable,
+  tab_fixture_visibility_adjusted, tab_fixture_visibility_restored
 };
 // Fixture-only native branches. No OS error, coordinate, HWND, page string or
 // arbitrary numeric payload may be encoded by these diagnostic values.

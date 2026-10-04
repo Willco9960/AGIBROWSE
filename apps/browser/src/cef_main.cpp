@@ -518,6 +518,12 @@ class TabLifecycleFixture final : public CefTask {
         CefPoint click(60,20);
         if(!root_view->second->ConvertPointToScreen(click)){Fail(TabFixtureFailureReason::screen_conversion);return;}
         input_pixel_point_=CefDisplay::ConvertScreenPointToPixels(click);
+        // Fixture-only visibility: CI native hit-testing proved this point was
+        // covered by another root. Keep the real cursor ownership guard below.
+        visibility_window_=window;was_always_on_top_=window->IsAlwaysOnTop();
+        window->SetAlwaysOnTop(true);
+        if(!window->IsAlwaysOnTop()){Fail();return;}
+        Record(Event::tab_fixture_visibility_adjusted);
         input_window_=window;window->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
         // CEF154's Views testing API routes through Windows native UI controls.
         // ConvertPointToScreen supplies DIP; SendMouseMove converts to pixels.
@@ -570,6 +576,9 @@ class TabLifecycleFixture final : public CefTask {
       stage_=1;
     } else if(stage_==1) {
       if(!test_button_clicked){Again();return;}
+      // SendInput dispatch is asynchronous. Restore only after the actual
+      // trusted handler has acknowledged the click, before later test stages.
+      if(!RestoreFixtureVisibility()){Fail();return;}
       std::string popup;
       for(const auto& [id,view]:tab_views) {auto tab=tabs.Resolve(id);if(tab && tab->opener==test_root && tab->engine && view->GetWindow())popup=id;}
       if(popup.empty()){Again();return;}
@@ -632,11 +641,22 @@ class TabLifecycleFixture final : public CefTask {
   }
  private:
   void Again(){CefPostDelayedTask(TID_UI,this,100);}
-  void Fail(TabFixtureFailureReason reason=TabFixtureFailureReason::lifecycle_state){input_window_=nullptr;load_failed=true;Record(Event::tab_fixture_failed_reason,static_cast<unsigned>(reason));Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
+  bool RestoreFixtureVisibility() {
+    if(!visibility_window_)return true;
+    auto keep=visibility_window_;visibility_window_=nullptr;
+    auto native=native_windows.find(source_);
+    if(native==native_windows.end() || !keep->IsSame(native->second) || !keep->GetWindowHandle())return false;
+    keep->SetAlwaysOnTop(was_always_on_top_);
+    if(keep->IsAlwaysOnTop()!=was_always_on_top_)return false;
+    Record(Event::tab_fixture_visibility_restored);return true;
+  }
+  void Fail(TabFixtureFailureReason reason=TabFixtureFailureReason::lifecycle_state){RestoreFixtureVisibility();input_window_=nullptr;load_failed=true;Record(Event::tab_fixture_failed_reason,static_cast<unsigned>(reason));Record(Event::tab_fixture_failed_stage,static_cast<unsigned>(stage_));Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
   uint64_t deadline_=GetTickCount64()+30000;
   uint64_t hold_until_=0;
   int stage_=0,engine_=0;
   CefRefPtr<CefWindow> input_window_;
+  CefRefPtr<CefWindow> visibility_window_;
+  bool was_always_on_top_=false;
   CefPoint input_pixel_point_;
   std::string source_,destination_,a_,b_,pending_;
   CefRefPtr<CefRequestContext> context_;

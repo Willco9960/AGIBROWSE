@@ -79,7 +79,8 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "tab_fixture_click_issued", "tab_fixture_click_acknowledged",
     "tab_fixture_popup_requested", "tab_fixture_failed_stage", "tab_fixture_failed_reason",
     "tab_fixture_cursor_relation", "tab_fixture_cursor_destination",
-    "tab_fixture_cursor_destination_unavailable"
+    "tab_fixture_cursor_destination_unavailable",
+    "tab_fixture_visibility_adjusted", "tab_fixture_visibility_restored"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;
