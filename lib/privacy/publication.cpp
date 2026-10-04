@@ -80,7 +80,9 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "tab_fixture_popup_requested", "tab_fixture_failed_stage", "tab_fixture_failed_reason",
     "tab_fixture_cursor_relation", "tab_fixture_cursor_destination",
     "tab_fixture_cursor_destination_unavailable",
-    "tab_fixture_visibility_adjusted", "tab_fixture_visibility_restored"
+    "tab_fixture_visibility_adjusted", "tab_fixture_visibility_restored",
+    "tab_fixture_native_window_state", "tab_fixture_native_window_state_unavailable",
+    "tab_fixture_native_window_cloak"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;
@@ -88,6 +90,8 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     case Event::tab_fixture_failed_stage: if(value>7)return false;break;
     case Event::tab_fixture_cursor_relation: if(value>7)return false;break;
     case Event::tab_fixture_cursor_destination: if(value>15)return false;break;
+    case Event::tab_fixture_native_window_state: if(value>63)return false;break;
+    case Event::tab_fixture_native_window_cloak: if(value>2)return false;break;
     case Event::tab_fixture_failed_reason:
       if(value<static_cast<uint64_t>(TabFixtureFailureReason::lifecycle_state) ||
           value>static_cast<uint64_t>(TabFixtureFailureReason::cursor_root_mismatch))return false;

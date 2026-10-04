@@ -232,6 +232,9 @@ try {
         tabCursorRelation = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorRelation } else { $null })
         tabCursorDestination = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorDestination } else { $null })
         tabCursorDestinationAvailability = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorDestinationAvailability } else { $null })
+        tabNativeWindowState = $(if ($tabFixtureFailure) { $tabFixtureFailure.nativeWindowState } else { $null })
+        tabNativeWindowStateAvailability = $(if ($tabFixtureFailure) { $tabFixtureFailure.nativeWindowStateAvailability } else { $null })
+        tabNativeWindowCloak = $(if ($tabFixtureFailure) { $tabFixtureFailure.nativeWindowCloak } else { $null })
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'result.json') -Encoding utf8
     $hostProcess.Dispose()
 }

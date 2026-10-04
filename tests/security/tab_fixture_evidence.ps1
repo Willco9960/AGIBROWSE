@@ -97,4 +97,75 @@ $events = @(New-Proof); Swap-ProofEvents $events 'tab_fixture_visibility_restore
 Reject-Proof -Events $events -Name 'visibility restored before trusted handler acknowledgment'
 $events = @(New-Proof); Swap-ProofEvents $events 'tab_fixture_visibility_restored' 'tab_fixture_popup_registered'
 Reject-Proof -Events $events -Name 'visibility restoration delayed beyond subsequent lifecycle stages'
-Write-Host 'PASS: 70 tab fixture evidence checks'
+$nativeStateChecks = 0
+function New-NativeFailure {
+    param([string]$Event, [object]$Value)
+    @([pscustomobject]@{ event = $Event; value = $Value },
+      [pscustomobject]@{ event = 'tab_fixture_visibility_restored'; value = 0 },
+      [pscustomobject]@{ event = 'tab_fixture_failed_reason'; value = 13 },
+      [pscustomobject]@{ event = 'tab_fixture_failed_stage'; value = 0 })
+}
+foreach ($diagnostic in @('tab_fixture_native_window_state','tab_fixture_native_window_state_unavailable','tab_fixture_native_window_cloak')) {
+    Reject-Proof -Events @((New-Proof) + [pscustomobject]@{ event = $diagnostic; value = 0 }) -Name 'native window failure diagnostic mixed with positive proof'
+    $nativeStateChecks++
+}
+for ($mask = 0; $mask -le 63; $mask++) {
+    $failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_state' $mask)
+    $state = $failure.nativeWindowState
+    if ($failure.nativeWindowStateAvailability -ne 'observed' -or
+        $state.expectedNativeVisible -ne [bool]($mask -band 1) -or $state.expectedNativeEnabled -ne [bool]($mask -band 2) -or
+        $state.expectedNativeIconic -ne [bool]($mask -band 4) -or $state.expectedNativeTopmost -ne [bool]($mask -band 8) -or
+        $state.targetProcessIsHost -ne [bool]($mask -band 16) -or $state.foregroundRootIsExpected -ne [bool]($mask -band 32)) { throw "Closed native window mapping wrong: $mask" }
+    $nativeStateChecks++
+}
+foreach ($invalid in @('SENTINEL_OS_DATA', -1, 64, [uint64]::MaxValue)) {
+    $failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_state' $invalid)
+    if ($null -ne $failure.nativeWindowState -or $failure.nativeWindowStateAvailability -ne 'unknown') { throw 'Invalid native state fabricated an observation' }
+    $nativeStateChecks++
+}
+$failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_state_unavailable' 0)
+if ($null -ne $failure.nativeWindowState -or $failure.nativeWindowStateAvailability -ne 'unavailable') { throw 'Unavailable native state fabricated an observation' }
+$nativeStateChecks++
+$failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_state_unavailable' 1)
+if ($failure.nativeWindowStateAvailability -ne 'unknown') { throw 'Invalid unavailable marker accepted' }
+$nativeStateChecks++
+$failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_cloak' 0)
+if ($null -ne $failure.nativeWindowState -or $failure.nativeWindowStateAvailability -ne 'unreported') { throw 'Missing native state fabricated an observation' }
+$nativeStateChecks++
+foreach ($extra in @('tab_fixture_native_window_state','tab_fixture_native_window_state_unavailable')) {
+    $events = @(New-NativeFailure 'tab_fixture_native_window_state' 63)
+    $events = @([pscustomobject]@{ event = $extra; value = 0 }) + $events
+    $failure = Get-TabFixtureFailure -Events $events
+    if ($null -ne $failure.nativeWindowState -or $failure.nativeWindowStateAvailability -ne 'unknown') { throw 'Duplicate/contradictory native state accepted' }
+    $nativeStateChecks++
+}
+for ($cloak = 0; $cloak -le 2; $cloak++) {
+    $failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_cloak' $cloak)
+    if ($failure.nativeWindowCloak -ne @('unavailable','not_cloaked','cloaked')[$cloak]) { throw 'Closed cloak mapping wrong' }
+    $nativeStateChecks++
+}
+foreach ($invalid in @('SENTINEL_OS_DATA', -1, 3, [uint64]::MaxValue)) {
+    $failure = Get-TabFixtureFailure -Events @(New-NativeFailure 'tab_fixture_native_window_cloak' $invalid)
+    if ($failure.nativeWindowCloak -ne 'unknown') { throw 'Invalid cloak status accepted' }
+    $nativeStateChecks++
+}
+$events = @(New-NativeFailure 'tab_fixture_native_window_cloak' 1)
+$events = @([pscustomobject]@{ event = 'tab_fixture_native_window_cloak'; value = 1 }) + $events
+if ((Get-TabFixtureFailure -Events $events).nativeWindowCloak -ne 'unknown') { throw 'Duplicate cloak status accepted' }
+$nativeStateChecks++
+foreach ($invalidContext in @('wrong_reason','wrong_stage','after_restoration','after_failure')) {
+    foreach ($diagnostic in @('tab_fixture_native_window_state','tab_fixture_native_window_cloak')) {
+        $events = @(New-NativeFailure $diagnostic 1)
+        switch ($invalidContext) {
+            wrong_reason { $events[2].value = 1 }
+            wrong_stage { $events[3].value = 1 }
+            after_restoration { Swap-ProofEvents $events $diagnostic 'tab_fixture_visibility_restored' }
+            after_failure { Swap-ProofEvents $events $diagnostic 'tab_fixture_failed_reason' }
+        }
+        $failure = Get-TabFixtureFailure -Events $events
+        if ($null -ne $failure.nativeWindowState -or ($diagnostic -eq 'tab_fixture_native_window_state' -and $failure.nativeWindowStateAvailability -ne 'unknown') -or
+            ($diagnostic -eq 'tab_fixture_native_window_cloak' -and $failure.nativeWindowCloak -ne 'unknown')) { throw 'Wrong-context native diagnostic accepted' }
+        $nativeStateChecks++
+    }
+}
+Write-Host "PASS: $(70 + $nativeStateChecks) tab fixture evidence checks"

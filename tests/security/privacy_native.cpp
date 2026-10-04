@@ -71,6 +71,12 @@ int main() {
     for(auto destination:{uint64_t{16},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination,destination),"cursor destination refuses arbitrary numeric content");
     Check(WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination_unavailable),"unavailable geometry diagnostic is content-free");
     Check(!WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination_unavailable,1),"unavailable geometry refuses numeric payload");
+    for(uint64_t state=0;state<=63;++state)Check(WriteDiagnostic(nullptr,Event::tab_fixture_native_window_state,state),"closed native window state accepted");
+    for(auto state:{uint64_t{64},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_native_window_state,state),"native window state refuses arbitrary numeric content");
+    Check(WriteDiagnostic(nullptr,Event::tab_fixture_native_window_state_unavailable),"unavailable native state is content-free");
+    Check(!WriteDiagnostic(nullptr,Event::tab_fixture_native_window_state_unavailable,1),"unavailable native state refuses numeric payload");
+    for(uint64_t cloak=0;cloak<=2;++cloak)Check(WriteDiagnostic(nullptr,Event::tab_fixture_native_window_cloak,cloak),"closed cloak status accepted");
+    for(auto cloak:{uint64_t{3},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_native_window_cloak,cloak),"cloak status refuses arbitrary numeric content");
     Check(!WriteDiagnostic(nullptr,Event::fixture_ready,0x534543524554),"text-free event rejects numeric secret encoding");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
     Check(!WriteDiagnostic(nullptr,Event::browser_created,UINT64_MAX),"native browser ID values bounded");
@@ -82,8 +88,11 @@ int main() {
     Check(WriteDiagnostic(file,Event::tab_fixture_cursor_destination,3),"native cursor destination writes closed mask to actual sink");
     Check(WriteDiagnostic(file,Event::tab_fixture_visibility_adjusted),"native visibility adjustment writes content-free proof");
     Check(WriteDiagnostic(file,Event::tab_fixture_visibility_restored),"native visibility restoration writes content-free proof");
+    Check(WriteDiagnostic(file,Event::tab_fixture_native_window_state,43),"native state writes closed mask to actual sink");
+    Check(WriteDiagnostic(file,Event::tab_fixture_native_window_state_unavailable),"native state unavailable writes content-free marker");
+    Check(WriteDiagnostic(file,Event::tab_fixture_native_window_cloak,0),"cloak unavailable writes closed status");
     std::rewind(file);char buffer[1024]{};auto n=std::fread(buffer,1,sizeof(buffer),file);std::fclose(file);
-    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n{\"event\":\"tab_fixture_visibility_adjusted\",\"value\":0}\n{\"event\":\"tab_fixture_visibility_restored\",\"value\":0}\n","actual diagnostic file contains fixed schema only");
+    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n{\"event\":\"tab_fixture_visibility_adjusted\",\"value\":0}\n{\"event\":\"tab_fixture_visibility_restored\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_state\",\"value\":43}\n{\"event\":\"tab_fixture_native_window_state_unavailable\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_cloak\",\"value\":0}\n","actual diagnostic file contains fixed schema only");
     std::cout << "PASS privacy contract checks=" << checks << '\n';return 0;
   } catch(const std::exception& e) {std::cerr<<"FAIL privacy contract case: "<<e.what()<<'\n';return 1;}
 }

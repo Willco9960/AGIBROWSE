@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <dwmapi.h>
 
 #include <cstdio>
 #include <string>
@@ -542,6 +543,7 @@ class TabLifecycleFixture final : public CefTask {
       if(!cursor_window){Fail(TabFixtureFailureReason::cursor_target_missing);return;}
       auto cursor_root=GetAncestor(cursor_window,GA_ROOT);auto expected_window=window->GetWindowHandle();
       if(cursor_root!=expected_window) {
+        RecordCursorWindowState(expected_window,cursor_window);
         // Closed relationship bits only; the comparison and failure decision
         // stay unchanged until exact-source CI identifies the native relation.
         auto expected_root=GetAncestor(expected_window,GA_ROOT);
@@ -641,6 +643,41 @@ class TabLifecycleFixture final : public CefTask {
   }
  private:
   void Again(){CefPostDelayedTask(TID_UI,this,100);}
+  void RecordCursorWindowState(HWND expected,HWND target) {
+    // Failure13-only observations before restoration; no native identifiers
+    // escape. A failed query is unavailable, never a fabricated false bit.
+    DWORD expected_pid=0,target_pid=0;
+    const DWORD host_pid=GetCurrentProcessId();
+    auto foreground=GetForegroundWindow();
+    auto foreground_root=foreground ? GetAncestor(foreground,GA_ROOT) : nullptr;
+    SetLastError(ERROR_SUCCESS);
+    const auto style=GetWindowLongPtrW(expected,GWL_EXSTYLE);
+    const bool style_available=style!=0 || GetLastError()==ERROR_SUCCESS;
+    if(!IsWindow(expected) || !IsWindow(target) || !foreground_root ||
+        !style_available || !GetWindowThreadProcessId(expected,&expected_pid) ||
+        !GetWindowThreadProcessId(target,&target_pid) || !host_pid ||
+        expected_pid!=host_pid || !target_pid) {
+      Record(Event::tab_fixture_native_window_state_unavailable);
+    } else {
+      unsigned state=(IsWindowVisible(expected) ? 1u : 0u) |
+          (IsWindowEnabled(expected) ? 2u : 0u) |
+          (IsIconic(expected) ? 4u : 0u) |
+          ((style & WS_EX_TOPMOST)!=0 ? 8u : 0u) |
+          (target_pid==host_pid ? 16u : 0u) |
+          (foreground_root==expected ? 32u : 0u);
+      if(IsWindow(expected) && IsWindow(target) && IsWindow(foreground_root))
+        Record(Event::tab_fixture_native_window_state,state);
+      else Record(Event::tab_fixture_native_window_state_unavailable);
+    }
+    unsigned cloak_state=0; // 0 unavailable, 1 not cloaked, 2 cloaked.
+    if(auto dwm=GetModuleHandleW(L"dwmapi.dll")) {
+      auto query=reinterpret_cast<decltype(&DwmGetWindowAttribute)>(GetProcAddress(dwm,"DwmGetWindowAttribute"));
+      DWORD cloaked=0;
+      if(query && IsWindow(expected) && SUCCEEDED(query(expected,DWMWA_CLOAKED,&cloaked,sizeof(cloaked))) && IsWindow(expected))
+        cloak_state=cloaked ? 2u : 1u;
+    }
+    Record(Event::tab_fixture_native_window_cloak,cloak_state);
+  }
   bool RestoreFixtureVisibility() {
     if(!visibility_window_)return true;
     auto keep=visibility_window_;visibility_window_=nullptr;
