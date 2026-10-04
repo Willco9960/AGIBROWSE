@@ -29,6 +29,7 @@
 #include "include/cef_version_info.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_browser_view_delegate.h"
+#include "include/views/cef_display.h"
 #include "include/views/cef_fill_layout.h"
 #include "include/views/cef_window.h"
 #include "include/views/cef_window_delegate.h"
@@ -516,6 +517,7 @@ class TabLifecycleFixture final : public CefTask {
         engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
         CefPoint click(60,20);
         if(!root_view->second->ConvertPointToScreen(click)){Fail(TabFixtureFailureReason::screen_conversion);return;}
+        input_pixel_point_=CefDisplay::ConvertScreenPointToPixels(click);
         input_window_=window;window->Activate();root_view->second->RequestFocus();browser->GetHost()->SetFocus(true);
         // CEF154's Views testing API routes through Windows native UI controls.
         // ConvertPointToScreen supplies DIP; SendMouseMove converts to pixels.
@@ -541,6 +543,25 @@ class TabLifecycleFixture final : public CefTask {
             (cursor_root && expected_root && cursor_root==expected_root ? 2u : 0u) |
             (cursor_window==expected_window || IsChild(expected_window,cursor_window) ? 4u : 0u);
         Record(Event::tab_fixture_cursor_relation,relation);
+        // Retain the requested physical point, not a new layout coordinate.
+        // Failure to query native geometry remains unavailable diagnostic data.
+        const int desktop_x=GetSystemMetrics(SM_XVIRTUALSCREEN),desktop_y=GetSystemMetrics(SM_YVIRTUALSCREEN);
+        const int desktop_width=GetSystemMetrics(SM_CXVIRTUALSCREEN),desktop_height=GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        RECT expected_rect;
+        if(desktop_width<=0 || desktop_height<=0 || !GetWindowRect(expected_window,&expected_rect)) {
+          Record(Event::tab_fixture_cursor_destination_unavailable);
+        } else {
+          POINT requested={input_pixel_point_.x,input_pixel_point_.y};
+          auto requested_window=WindowFromPoint(requested);
+          const bool in_desktop=static_cast<int64_t>(requested.x)>=desktop_x && static_cast<int64_t>(requested.y)>=desktop_y &&
+              static_cast<int64_t>(requested.x)<static_cast<int64_t>(desktop_x)+desktop_width &&
+              static_cast<int64_t>(requested.y)<static_cast<int64_t>(desktop_y)+desktop_height;
+          unsigned destination=(in_desktop ? 1u : 0u) |
+              (PtInRect(&expected_rect,requested) ? 2u : 0u) |
+              (requested_window && GetAncestor(requested_window,GA_ROOT)==expected_window ? 4u : 0u) |
+              (cursor.x==requested.x && cursor.y==requested.y ? 8u : 0u);
+          Record(Event::tab_fixture_cursor_destination,destination);
+        }
         Fail(TabFixtureFailureReason::cursor_root_mismatch);return;
       }
       window->SendMouseEvents(MBT_LEFT,true,true);
@@ -616,6 +637,7 @@ class TabLifecycleFixture final : public CefTask {
   uint64_t hold_until_=0;
   int stage_=0,engine_=0;
   CefRefPtr<CefWindow> input_window_;
+  CefPoint input_pixel_point_;
   std::string source_,destination_,a_,b_,pending_;
   CefRefPtr<CefRequestContext> context_;
   IMPLEMENT_REFCOUNTING(TabLifecycleFixture);

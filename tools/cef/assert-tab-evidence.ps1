@@ -1,6 +1,6 @@
 function Get-TabFixtureFailure {
     param([AllowEmptyCollection()][object[]]$Events)
-    if (-not ($Events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage','tab_fixture_failed_reason','tab_fixture_cursor_relation') })) { return $null }
+    if (-not ($Events | Where-Object { $_.event -in @('tab_fixture_failed','tab_fixture_failed_stage','tab_fixture_failed_reason','tab_fixture_cursor_relation','tab_fixture_cursor_destination','tab_fixture_cursor_destination_unavailable') })) { return $null }
     $stage = $null
     $stages = @($Events | Where-Object event -eq tab_fixture_failed_stage)
     $parsedStage = 0
@@ -20,7 +20,27 @@ function Get-TabFixtureFailure {
             targetBelongsToExpected = [bool]($parsedRelation -band 4)
         }
     }
-    [pscustomobject]@{ stage = $stage; reason = $reason; cursorRelation = $cursorRelation }
+    $cursorDestination = $null
+    $destinationAvailability = 'unreported'
+    $destinations = @($Events | Where-Object event -eq tab_fixture_cursor_destination)
+    $unavailable = @($Events | Where-Object event -eq tab_fixture_cursor_destination_unavailable)
+    $parsedDestination = 0
+    if ($destinations.Count -or $unavailable.Count) { $destinationAvailability = 'unknown' }
+    if ($destinations.Count -eq 1 -and $unavailable.Count -eq 0 -and
+        [int]::TryParse([string]$destinations[0].value, [ref]$parsedDestination) -and $parsedDestination -ge 0 -and $parsedDestination -le 15) {
+        $destinationAvailability = 'observed'
+        $cursorDestination = [pscustomobject]@{
+            requestedPointInVirtualDesktop = [bool]($parsedDestination -band 1)
+            requestedPointInExpectedWindow = [bool]($parsedDestination -band 2)
+            requestedPointOwnedByExpectedRoot = [bool]($parsedDestination -band 4)
+            actualCursorAtRequestedPoint = [bool]($parsedDestination -band 8)
+        }
+    } elseif ($destinations.Count -eq 0 -and $unavailable.Count -eq 1 -and
+        [int]::TryParse([string]$unavailable[0].value, [ref]$parsedDestination) -and $parsedDestination -eq 0) {
+        $destinationAvailability = 'unavailable'
+    }
+    [pscustomobject]@{ stage = $stage; reason = $reason; cursorRelation = $cursorRelation;
+        cursorDestination = $cursorDestination; cursorDestinationAvailability = $destinationAvailability }
 }
 
 function Assert-TabEvidence {

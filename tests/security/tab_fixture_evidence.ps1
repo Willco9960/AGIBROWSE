@@ -54,4 +54,31 @@ foreach ($invalid in @('SENTINEL_OS_DATA', 8)) {
     $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_relation'; value = $invalid })
     if ($null -ne $failure.cursorRelation) { throw 'Unknown payload escaped closed cursor relation mapping' }
 }
-Write-Host 'PASS: 37 tab fixture evidence checks'
+foreach ($diagnostic in @('tab_fixture_cursor_destination','tab_fixture_cursor_destination_unavailable')) {
+    $events = @(New-Proof); $events += [pscustomobject]@{ event = $diagnostic; value = 0 }
+    Reject-Proof -Events $events -Name 'cursor destination failure diagnostic mixed with positive proof'
+}
+for ($mask = 0; $mask -le 15; $mask++) {
+    $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination'; value = $mask })
+    $destination = $failure.cursorDestination
+    if ($failure.cursorDestinationAvailability -ne 'observed' -or
+        $destination.requestedPointInVirtualDesktop -ne [bool]($mask -band 1) -or
+        $destination.requestedPointInExpectedWindow -ne [bool]($mask -band 2) -or
+        $destination.requestedPointOwnedByExpectedRoot -ne [bool]($mask -band 4) -or
+        $destination.actualCursorAtRequestedPoint -ne [bool]($mask -band 8)) { throw "Closed cursor destination mapping wrong: $mask" }
+}
+foreach ($invalid in @('SENTINEL_OS_DATA', -1, 16, [uint64]::MaxValue)) {
+    $failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination'; value = $invalid })
+    if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unknown') { throw 'Unknown payload escaped closed destination mapping' }
+}
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination_unavailable'; value = 0 })
+if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unavailable') { throw 'Unavailable geometry manufactured an observation' }
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination_unavailable'; value = 1 })
+if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unknown') { throw 'Unavailable marker accepted numeric payload' }
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_failed_reason'; value = 13 })
+if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unreported') { throw 'Missing destination diagnostic manufactured an observation' }
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination'; value = 15 }, [pscustomobject]@{ event = 'tab_fixture_cursor_destination_unavailable'; value = 0 })
+if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unknown') { throw 'Contradictory geometry observations were accepted' }
+$failure = Get-TabFixtureFailure -Events @([pscustomobject]@{ event = 'tab_fixture_cursor_destination'; value = 15 }, [pscustomobject]@{ event = 'tab_fixture_cursor_destination'; value = 15 })
+if ($null -ne $failure.cursorDestination -or $failure.cursorDestinationAvailability -ne 'unknown') { throw 'Duplicate geometry observations were accepted' }
+Write-Host 'PASS: 64 tab fixture evidence checks'

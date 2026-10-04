@@ -66,6 +66,10 @@ int main() {
     for(auto reason:{uint64_t{0},uint64_t{14},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_reason,reason),"failure reason refuses arbitrary numeric content");
     for(uint64_t relation=0;relation<=7;++relation)Check(WriteDiagnostic(nullptr,Event::tab_fixture_cursor_relation,relation),"closed native cursor relation accepted");
     for(auto relation:{uint64_t{8},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_cursor_relation,relation),"cursor relation refuses arbitrary numeric content");
+    for(uint64_t destination=0;destination<=15;++destination)Check(WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination,destination),"closed native cursor destination accepted");
+    for(auto destination:{uint64_t{16},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination,destination),"cursor destination refuses arbitrary numeric content");
+    Check(WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination_unavailable),"unavailable geometry diagnostic is content-free");
+    Check(!WriteDiagnostic(nullptr,Event::tab_fixture_cursor_destination_unavailable,1),"unavailable geometry refuses numeric payload");
     Check(!WriteDiagnostic(nullptr,Event::fixture_ready,0x534543524554),"text-free event rejects numeric secret encoding");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
     Check(!WriteDiagnostic(nullptr,Event::browser_created,UINT64_MAX),"native browser ID values bounded");
@@ -74,8 +78,9 @@ int main() {
     Check(WriteDiagnostic(file,Event::main_frame_loaded,200),"current production status record written");
     Check(WriteDiagnostic(file,Event::tab_fixture_failed_reason,static_cast<uint64_t>(TabFixtureFailureReason::cursor_root_mismatch)),"native failure writes closed reason to actual sink");
     Check(WriteDiagnostic(file,Event::tab_fixture_cursor_relation,5),"native cursor relation writes closed mask to actual sink");
+    Check(WriteDiagnostic(file,Event::tab_fixture_cursor_destination,3),"native cursor destination writes closed mask to actual sink");
     std::rewind(file);char buffer[1024]{};auto n=std::fread(buffer,1,sizeof(buffer),file);std::fclose(file);
-    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n","actual diagnostic file contains fixed schema only");
+    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n","actual diagnostic file contains fixed schema only");
     std::cout << "PASS privacy contract checks=" << checks << '\n';return 0;
   } catch(const std::exception& e) {std::cerr<<"FAIL privacy contract case: "<<e.what()<<'\n';return 1;}
 }
