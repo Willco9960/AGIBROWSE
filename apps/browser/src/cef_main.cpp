@@ -892,7 +892,7 @@ std::string OpenProfileWindow(const std::string& profile,const std::string& url=
   if(diagnose)Record(Event::profile_action_phase,4);
   auto context=ProfileContext(profile);
   if(diagnose)Record(Event::profile_action_phase,5);
-  if(!context)return {};
+  if(!context||!ready_profile_contexts.contains(profile))return {};
   auto window=tabs.NewWindow();if(window.empty())return {};
   auto tab=tabs.CreateTab(window,profile,{},GetTickCount64()+kCreationTimeoutMs);
   if(tab.empty()){tabs.RemoveWindow(window);return {};}
@@ -915,26 +915,51 @@ void RevokeProfile(const std::string& id) {
 }
 class ProfileAction final : public CefTask {
  public:
-  ProfileAction(std::string id,bool create):id_(std::move(id)),create_(create){}
+  ProfileAction(std::string id,bool create,CefRefPtr<CefWindow> owner,std::string window)
+      :id_(std::move(id)),create_(create),owner_(owner),window_(std::move(window)){}
   void Execute() override {
     CEF_REQUIRE_UI_THREAD();
-    if(profile_test)Record(Event::profile_action_phase,1);
+    auto owner=native_windows.find(window_);
+    if(!profiles||owner==native_windows.end()||!owner->second->IsSame(owner_)||closing_windows.contains(window_))return;
+    if(!started_){started_=true;if(profile_test)Record(Event::profile_action_phase,1);}
     try {
       if(create_) {
         if(profile_test)Record(Event::profile_action_phase,2);
         id_=profiles->CreateHuman();
+        create_=false; // Exactly one native identity, including delayed dispatch.
         if(profile_test)Record(Event::profile_action_phase,3);
       }
-      if(!id_.empty()&&!OpenProfileWindow(id_,"about:blank",profile_test).empty()) {
-        if(profile_test)Record(Event::profile_action_phase,11);
-        return;
+      if(!id_.empty()&&profiles->Find(id_)) {
+        if(!prepared_) {
+          if(profile_test)Record(Event::profile_action_phase,4);
+          ProfileContext(id_);prepared_=true;
+          if(profile_test)Record(Event::profile_action_phase,5);
+        }
+        auto registered=profile_contexts.find(id_);
+        if(registered!=profile_contexts.end()&&registered->second) {
+          if(!ready_profile_contexts.contains(id_)) {
+            if(!waiting_){waiting_=true;if(profile_test)Record(Event::profile_action_phase,13);}
+            if(GetTickCount64()<deadline_&&CefPostDelayedTask(TID_UI,this,100))return;
+          }else if(!waiting_||GetTickCount64()<deadline_) {
+            if(profile_test)Record(Event::profile_action_phase,14);
+            if(!OpenProfileWindow(id_,"about:blank",profile_test).empty()) {
+              if(profile_test)Record(Event::profile_action_phase,11);
+              return;
+            }
+          }
+        }
       }
     }catch(...){if(profile_test)Record(Event::profile_action_phase,12);}
     if(profile_test)Record(Event::profile_action_phase,10);
-    MessageBoxW(nullptr,L"This profile could not be opened. Its storage or the native profile limit is unavailable.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);
+    MessageBoxW(nullptr,L"This profile could not be opened. Its storage, initialization deadline or native profile limit is unavailable.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);
   }
  private:
-  std::string id_;bool create_;IMPLEMENT_REFCOUNTING(ProfileAction);
+  std::string id_;bool create_,started_=false,waiting_=false,prepared_=false;
+  // Context lifetime stays in the native registry, released before CefShutdown;
+  // a queued UI retry must not retain an additional context across shutdown.
+  CefRefPtr<CefWindow> owner_;std::string window_;
+  const uint64_t deadline_=GetTickCount64()+kCreationTimeoutMs;
+  IMPLEMENT_REFCOUNTING(ProfileAction);
 };
 void ShowProfilesMenu(const std::string& window) {
   CEF_REQUIRE_UI_THREAD();auto native=native_windows.find(window);if(native==native_windows.end()||!profiles)return;
@@ -955,8 +980,8 @@ void ShowProfilesMenu(const std::string& window) {
     Record(Event::profile_native_menu_return,profile_native_menu_return);
   }
   auto current=native_windows.find(window);if(current==native_windows.end()||!current->second->IsSame(owner))return;
-  if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);const bool posted=CefPostTask(TID_UI,new ProfileAction({},true));if(profile_test)Record(Event::profile_action_posted,posted?1:0);return;}
-  if(selected>=100&&selected<100+ids.size()){CefPostTask(TID_UI,new ProfileAction(ids[selected-100],false));return;}
+  if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);const bool posted=CefPostTask(TID_UI,new ProfileAction({},true,owner,window));if(profile_test)Record(Event::profile_action_posted,posted?1:0);return;}
+  if(selected>=100&&selected<100+ids.size()){CefPostTask(TID_UI,new ProfileAction(ids[selected-100],false,owner,window));return;}
   if(selected>=201&&selected<200+ids.size()) {
     const auto id=ids[selected-200];if(!profiles->CanDelete(id))return;
     auto label=L"Permanently delete all browser data for native profile "+std::wstring(id.begin(),id.end())+L"? This cannot be undone.";
@@ -1377,6 +1402,9 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
     CEF_REQUIRE_UI_THREAD();
     Record(Event::context_initialized);
     if(!ProfileContext("human")||!ProfileContext("agent")){load_failed=true;CefQuitMessageLoop();return;}
+    // Restart proof compares the persisted user's settings before stage9;
+    // begin its real context initialization now and retain callback readiness.
+    if(profile_restart_test&&!ProfileContext(profile_fixture_user)){load_failed=true;CefQuitMessageLoop();return;}
     CefBrowserSettings settings;
     auto window=tabs.NewWindow();auto tab=tabs.CreateTab(window,"human",{},GetTickCount64()+kCreationTimeoutMs);
     if(tab_lifecycle_test)test_root=tab;
