@@ -143,7 +143,7 @@ $success = $false
 $cleanupRequired = $false
 $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
-$profileFailureStage=$null;$profileFailureReason=$null
+$profileFailureStage=$null;$profileFailureReason=$null;$profileSettingState=$null
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -300,6 +300,9 @@ try {
     if($ProfileProbe -and (Test-Path -LiteralPath $log)) {
         $events=@(Get-Content -LiteralPath $log | ForEach-Object {$_ | ConvertFrom-Json})
         $stages=@($events | Where-Object event -eq profile_probe_failed_stage);$reasons=@($events | Where-Object event -eq profile_probe_failed_reason)
+        $settingStates=@($events | Where-Object event -eq profile_setting_state)
+        $parsedSettingState=0
+        if($settingStates.Count -and [int]::TryParse([string]$settingStates[-1].value,[ref]$parsedSettingState) -and $parsedSettingState -ge 0 -and $parsedSettingState -le 511){$profileSettingState=$parsedSettingState}
         if($stages.Count -eq 1 -and $reasons.Count -eq 1 -and [int]$stages[0].value -ge 1 -and [int]$stages[0].value -le 9 -and [int]$reasons[0].value -ge 1 -and [int]$reasons[0].value -le 8) {
             $profileFailureStage=[int]$stages[0].value;$profileFailureReason=[int]$reasons[0].value
             [void]$hostProcess.WaitForExit(10000)
@@ -354,6 +357,7 @@ try {
         profileRestartProbe = [bool]$ProfileRestart
         profileFailureStage=$profileFailureStage
         profileFailureReason=$profileFailureReason
+        profileSettingState=$profileSettingState
         launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         navigationUiFailureStage = $navigationUiFailureStage

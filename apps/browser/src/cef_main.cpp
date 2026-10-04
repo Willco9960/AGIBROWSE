@@ -22,6 +22,7 @@
 #include "include/cef_client.h"
 #include "include/cef_permission_handler.h"
 #include "include/cef_request_context.h"
+#include "include/cef_request_context_handler.h"
 #include "include/cef_keyboard_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_frame.h"
@@ -64,6 +65,7 @@ bool profile_test=false,profile_passed=false;
 bool profile_restart_test=false;
 std::unique_ptr<agi::browser::ProfileStore> profiles;
 std::map<std::string,CefRefPtr<CefRequestContext>> profile_contexts;
+std::set<std::string> ready_profile_contexts;
 std::map<std::string,unsigned> profile_proofs;
 std::string profile_fixture_url,profile_fixture_tab;
 unsigned profile_stage=1;
@@ -114,6 +116,20 @@ void NavigateAddress(const std::string& tab, CefRefPtr<CefTextfield> field);
 void StartBrowserUiFixture();
 void ShowProfilesMenu(const std::string& window);
 void StartProfileFixture();
+class ProfileContextHandler final : public CefRequestContextHandler {
+ public:
+  explicit ProfileContextHandler(std::string id):id_(std::move(id)){}
+  void OnRequestContextInitialized(CefRefPtr<CefRequestContext> context) override {
+    CEF_REQUIRE_UI_THREAD();
+    auto found=profile_contexts.find(id_);
+    // CEF posts this callback after CreateContext returns. Readiness belongs
+    // only to the exact native registry entry, never to renderer input.
+    if(profiles&&profiles->Find(id_)&&found!=profile_contexts.end()&&found->second->IsSame(context))ready_profile_contexts.insert(id_);
+  }
+ private:
+  const std::string id_;
+  IMPLEMENT_REFCOUNTING(ProfileContextHandler);
+};
 CefRefPtr<CefRequestContext> ProfileContext(const std::string& id) {
   CEF_REQUIRE_UI_THREAD();
   if(!profiles || !profiles->Find(id))return nullptr;
@@ -121,7 +137,7 @@ CefRefPtr<CefRequestContext> ProfileContext(const std::string& id) {
   if(!profiles->MarkContextOpened(id))return nullptr;
   CefRequestContextSettings settings;CefString(&settings.cache_path)=profiles->Find(id)->cache.wstring();
   settings.persist_session_cookies=true;
-  auto context=CefRequestContext::CreateContext(settings,nullptr);if(!context)return nullptr;
+  auto context=CefRequestContext::CreateContext(settings,new ProfileContextHandler(id));if(!context)return nullptr;
   for(const auto& [other,existing]:profile_contexts)if(context->IsSame(existing)||context->IsSharingWith(existing))return nullptr;
   profile_contexts.emplace(id,context);return context;
 }
@@ -1226,14 +1242,26 @@ class ProfileFixture final : public CefTask {
     const unsigned needed=seed?3:1;
     if((profile_proofs[profile_fixture_tab]&needed)!=needed){Again();return;}
     auto human_context=profile_contexts.at("human"),agent_context=profile_contexts.at("agent");
+    const bool check_user=profile_stage>=4&&!profile_fixture_user.empty();
+    const unsigned ready=(ready_profile_contexts.contains("human")?1u:0u)|
+      (ready_profile_contexts.contains("agent")?2u:0u)|
+      (check_user&&ready_profile_contexts.contains(profile_fixture_user)?4u:0u);
+    if((ready&(check_user?7u:3u))!=(check_user?7u:3u)) {
+      SettingState(ready);Again();return;
+    }
     if(profile_stage==1) {
       // A restrictive setting, never an ALLOW grant. The engine-owned setting
       // is deliberately changed only in the human request context.
       human_context->SetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS,CEF_CONTENT_SETTING_VALUE_BLOCK);
     }
-    if(human_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)!=CEF_CONTENT_SETTING_VALUE_BLOCK||
-       agent_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)==CEF_CONTENT_SETTING_VALUE_BLOCK){Fail();return;}
-    if(profile_stage>=4&&profile_contexts.contains(profile_fixture_user)&&profile_contexts.at(profile_fixture_user)->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)==CEF_CONTENT_SETTING_VALUE_BLOCK){Fail();return;}
+    const auto human_setting=human_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS);
+    const auto agent_setting=agent_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS);
+    const auto user_setting=check_user?profile_contexts.at(profile_fixture_user)->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS):CEF_CONTENT_SETTING_VALUE_DEFAULT;
+    SettingState(ready|(SettingClass(human_setting)<<3)|(SettingClass(agent_setting)<<5)|(SettingClass(user_setting)<<7));
+    // DEFAULT is also CEF's failure fallback. Only initialized, explicitly
+    // ASK siblings prove an independent setting; a fallback cannot pass.
+    if(human_setting!=CEF_CONTENT_SETTING_VALUE_BLOCK||agent_setting!=CEF_CONTENT_SETTING_VALUE_ASK||
+       (check_user&&user_setting!=CEF_CONTENT_SETTING_VALUE_ASK)){Fail();return;}
     Record(Event::profile_probe_step,profile_stage);
     if(profile_stage==6||profile_stage==9) {
       profile_passed=true;finish_pending_=true;CefPostDelayedTask(TID_UI,this,300);return;
@@ -1270,6 +1298,20 @@ class ProfileFixture final : public CefTask {
     if(profile_fixture_tab.empty()){Fail();return;}Again();
   }
  private:
+  static unsigned SettingClass(cef_content_setting_values_t value) {
+    switch(value) {
+      case CEF_CONTENT_SETTING_VALUE_DEFAULT:return 0;
+      case CEF_CONTENT_SETTING_VALUE_BLOCK:return 1;
+      case CEF_CONTENT_SETTING_VALUE_ASK:return 2;
+      default:return 3; // Closed OTHER category, never the raw enum value.
+    }
+  }
+  void SettingState(unsigned value) {
+    if(setting_state_!=value||setting_stage_!=profile_stage) {
+      setting_state_=value;setting_stage_=profile_stage;Record(Event::profile_setting_state,value);
+    }
+  }
+  unsigned setting_state_=512,setting_stage_=0;
   void Again(){CefPostDelayedTask(TID_UI,this,150);}
   void Fail(unsigned reason=6){load_failed=true;Record(Event::profile_probe_failed_reason,reason);Record(Event::profile_probe_failed_stage,profile_stage);if(menu_window_)menu_window_->SetAlwaysOnTop(was_always_on_top_);auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();}
   bool awaiting_native_create_=false,was_always_on_top_=false,finish_pending_=false;
@@ -1442,7 +1484,7 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   Record(Event::initialized);
   CefRunMessageLoop();
   Record(Event::message_loop_exited);
-  profile_contexts.clear();
+  ready_profile_contexts.clear();profile_contexts.clear();
   CefShutdown();
   profiles.reset();
   broker_channel.Stop();

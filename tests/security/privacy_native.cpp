@@ -85,6 +85,8 @@ int main() {
     for(auto stage:{uint64_t{0},uint64_t{10},UINT64_MAX}){Check(!WriteDiagnostic(nullptr,Event::profile_probe_step,stage),"profile proof rejects arbitrary value");Check(!WriteDiagnostic(nullptr,Event::profile_probe_failed_stage,stage),"profile failure rejects arbitrary value");}
     for(uint64_t reason=1;reason<=8;++reason)Check(WriteDiagnostic(nullptr,Event::profile_probe_failed_reason,reason),"closed profile failure reason accepted");
     for(auto reason:{uint64_t{0},uint64_t{9},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_probe_failed_reason,reason),"profile failure reason rejects arbitrary value");
+    for(uint64_t state=0;state<=511;++state)Check(WriteDiagnostic(nullptr,Event::profile_setting_state,state),"closed profile readiness and setting classes accepted");
+    for(auto state:{uint64_t{512},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_setting_state,state),"profile setting state rejects arbitrary numeric content");
     Check(WriteDiagnostic(nullptr,Event::profile_menu_requested)&&WriteDiagnostic(nullptr,Event::profile_native_create_selected),"native profile menu proof accepts no content");
     Check(!WriteDiagnostic(nullptr,Event::profile_menu_requested,1)&&!WriteDiagnostic(nullptr,Event::profile_native_create_selected,1),"native profile menu proof rejects numeric content");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
