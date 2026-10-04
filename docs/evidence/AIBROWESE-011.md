@@ -26,3 +26,11 @@ The pending-expiry fixture deliberately reserves a native tab without initiating
 ## Remaining acceptance work
 
 Parent review, exact-source clean Windows build/GUI/security/privacy regressions, inspection of event/process evidence, and any focused repairs revealed by that run. Task011 must remain In Progress until those gates pass. No navigation UI012, agent tools/actions/grants, raw CDP or renderer-native API was introduced.
+
+## Focused repair1: Windows macro/link mismatch
+
+Clean Windows CI run `37169082800` for exact source `57d108d` failed at host linking with `LINK2019`: Windows-first `cef_main.cpp` expanded the internal `FindWindow` declaration/calls to `FindWindowW`, while the standalone lifecycle library defined `FindWindow`. ClCompile alone did not expose this mismatched symbol.
+
+Renamed that host-internal API to `LookupWindow` in its declaration, implementation, CEF adapter and native tests. No Win32 macro was globally undefined. The native lifecycle test now includes `windows.h` before the lifecycle header on Windows; its linked library still compiles without that include, making this include-order/link mismatch a tested regression.
+
+After repair, the native lifecycle target rebuilt **and linked**, and138 lifecycle/348 scope/46 privacy checks passed. Final CEF host ClCompile passed with `/WX`. Updated local source hashes reflect the repair. Full host linking/GUI acceptance still requires a new clean Windows CI run; no quarantined launcher was restored and no local full build was attempted.

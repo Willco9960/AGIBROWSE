@@ -30,7 +30,7 @@ class Lifecycle {
   bool RemoveWindow(const Id& window);
   const Tab* Resolve(const Id& tab) const;
   const Tab* ForEngine(int engine) const;
-  const Window* FindWindow(const Id& window) const;
+  const Window* LookupWindow(const Id& window) const;
   size_t tab_count() const { return tabs_.size(); }
  private:
   Id Next(char kind);

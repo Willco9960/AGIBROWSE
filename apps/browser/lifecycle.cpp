@@ -34,7 +34,7 @@ const Lifecycle::Tab* Lifecycle::Resolve(const Id& id) const {
 const Lifecycle::Tab* Lifecycle::ForEngine(int engine) const {
   auto e = engines_.find(engine); return e == engines_.end() ? nullptr : Resolve(e->second);
 }
-const Lifecycle::Window* Lifecycle::FindWindow(const Id& id) const {
+const Lifecycle::Window* Lifecycle::LookupWindow(const Id& id) const {
   auto w = windows_.find(id); return w == windows_.end() ? nullptr : &w->second;
 }
 bool Lifecycle::Activate(const Id& id) {

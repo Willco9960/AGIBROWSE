@@ -1,3 +1,8 @@
+#ifdef _WIN32
+// Match the CEF host include order. The linked library translation unit does
+// not include Windows, so accidental Win32 macro-renamed API symbols fail here.
+#include <windows.h>
+#endif
 #include "apps/browser/lifecycle.h"
 #include "lib/ipc/scoped_authority.h"
 #include <iostream>
@@ -16,10 +21,10 @@ int main() {
   Check(!a.empty() && a!=b,"stable distinct reservations");
   Check(life.Bind(a,1) && life.Bind(b,2),"engine bind");
   Check(!life.Bind(b,1) && !life.Bind(a,3),"duplicate bind rejected");
-  Check(life.Reorder(a,1) && life.FindWindow(w)->tabs[1]==a && life.ForEngine(1)->id==a,"reorder preserves engine identity");
+  Check(life.Reorder(a,1) && life.LookupWindow(w)->tabs[1]==a && life.ForEngine(1)->id==a,"reorder preserves engine identity");
   Check(life.Move(a,other,0) && life.Resolve(a)->window==other && life.ForEngine(1)->id==a,"window move preserves engine identity");
   Check(!life.Move(a,"missing",0) && !life.Reorder(a,7),"bad placement unchanged");
-  Check(life.Activate(b) && life.FindWindow(w)->active==b,"activation");
+  Check(life.Activate(b) && life.LookupWindow(w)->active==b,"activation");
   Check(life.CreateTab(w,"agent",b).empty(),"popup profile mismatch rejected");
   Check(scope.BindAuthenticatedSession("client","session"),"session binding");
   Destination da{"human",a,"top","doc"},db{"human",b,"top","doc"};
