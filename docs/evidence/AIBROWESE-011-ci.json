@@ -1,0 +1,79 @@
+{
+  "task": "AIBROWESE-011",
+  "acceptanceVerified": true,
+  "implementationCommit": "db0996aa51665d17778b32020d37c020a437347a",
+  "ciRunId": 37189635621,
+  "ciUrl": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37189635621",
+  "artifactId": 11299001023,
+  "artifactSha256": "c7a2dd00a8dab67f0a988937026dd02c10a1d1676b509a3b526963254e824473",
+  "artifactDigestVerified": true,
+  "nativeSuitesPassed": 9,
+  "nativeLifecycleChecks": 150,
+  "privacyChecks": 187,
+  "tabEvidenceChecks": 162,
+  "requiredActualProofs": 12,
+  "uniqueBrowserIdentities": 5,
+  "matchedBrowserCloses": 5,
+  "tabDurationSeconds": 6.9720085,
+  "tabHostExitCode": 0,
+  "tabForcedCleanup": false,
+  "tabOrphanCount": 0,
+  "tabLaunchStyle": "Normal",
+  "tabRestrictedRendererCount": 2,
+  "otherGuiScenarios": [
+    {
+      "scenario": "cef-lifecycle",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-privacy",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-security",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-transport-fallback",
+      "credentialFixture": "expired",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-transport-fallback",
+      "credentialFixture": "corrupt",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    }
+  ],
+  "privacySentinelScanPassed": true,
+  "startupRejections": 5,
+  "localGuiRun": false,
+  "localQuarantineUnchanged": true,
+  "limitations": [
+    "Pending timeout proof expires a native reservation; it does not claim stalled CEF engine creation.",
+    "Task012 navigation controls, task013 profile UI and task015 agent takeover remain future gates.",
+    "Acceptance uses clean Windows CI; local launcher remains quarantined."
+  ]
+}
