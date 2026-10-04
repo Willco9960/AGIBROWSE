@@ -53,7 +53,8 @@ enum class Event {
   tab_fixture_native_window_cloak, browser_ui_probe_step, browser_ui_probe_failed_stage,
   profile_probe_step, profile_probe_failed_stage, profile_menu_requested,
   profile_native_create_selected, profile_probe_failed_reason, profile_setting_state,
-  profile_native_menu_return, profile_action_phase, profile_action_posted, profile_cookie_flush
+  profile_native_menu_return, profile_action_phase, profile_action_posted, profile_cookie_flush,
+  profile_storage_match
 };
 // Fixture-only native branches. No OS error, coordinate, HWND, page string or
 // arbitrary numeric payload may be encoded by these diagnostic values.

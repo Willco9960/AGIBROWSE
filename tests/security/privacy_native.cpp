@@ -95,6 +95,8 @@ int main() {
     for(auto posted:{uint64_t{2},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_action_posted,posted),"native task posting rejects arbitrary numeric content");
     for(uint64_t mask=0;mask<=7;++mask)Check(WriteDiagnostic(nullptr,Event::profile_cookie_flush,mask),"closed cookie flush completion mask accepted");
     for(auto mask:{uint64_t{8},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_cookie_flush,mask),"cookie flush mask rejects arbitrary numeric content");
+    for(uint64_t stage=1;stage<=9;++stage)for(uint64_t mask=0;mask<=7;++mask)Check(WriteDiagnostic(nullptr,Event::profile_storage_match,(stage<<3)|mask),"closed independent storage observation accepted");
+    for(auto value:{uint64_t{0},uint64_t{7},uint64_t{80},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_storage_match,value),"storage observation rejects arbitrary numeric content");
     Check(WriteDiagnostic(nullptr,Event::profile_menu_requested)&&WriteDiagnostic(nullptr,Event::profile_native_create_selected),"native profile menu proof accepts no content");
     Check(!WriteDiagnostic(nullptr,Event::profile_menu_requested,1)&&!WriteDiagnostic(nullptr,Event::profile_native_create_selected,1),"native profile menu proof rejects numeric content");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");

@@ -161,6 +161,7 @@ $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
 $profileFailureStage=$null;$profileFailureReason=$null;$profileSettingState=$null
 $profileCookieFlushMask=$null
+$profileStorageMatch=$null
 $profileMenuInputDelivered=$false
 $profileOwnedDialogPresent=$null;$profileHostAliveBeforeCleanup=$null
 $failure = $null
@@ -374,6 +375,9 @@ try {
             $flushEvents=@(Get-Content -LiteralPath $log | ForEach-Object {$_ | ConvertFrom-Json} | Where-Object event -eq profile_cookie_flush)
             $parsedFlushMask=0
             if($flushEvents.Count -and [int]::TryParse([string]$flushEvents[-1].value,[ref]$parsedFlushMask) -and $parsedFlushMask -ge 0 -and $parsedFlushMask -le 7){$profileCookieFlushMask=$parsedFlushMask}
+            $storageEvents=@(Get-Content -LiteralPath $log | ForEach-Object {$_ | ConvertFrom-Json} | Where-Object event -eq profile_storage_match)
+            $parsedStorageMatch=0
+            if($storageEvents.Count -and [int]::TryParse([string]$storageEvents[-1].value,[ref]$parsedStorageMatch) -and ($parsedStorageMatch -shr 3) -in @(1..9)){$profileStorageMatch=$parsedStorageMatch}
         }
         $profileHostAliveBeforeCleanup=-not $hostProcess.HasExited
         if($profileHostAliveBeforeCleanup){try{$profileOwnedDialogPresent=[CefProfileMenu.Native]::OwnedDialogPresent([uint32]$hostProcess.Id)}catch{$profileOwnedDialogPresent=$null}}
@@ -400,6 +404,7 @@ try {
         profileFailureReason=$profileFailureReason
         profileSettingState=$profileSettingState
         profileCookieFlushMask=$profileCookieFlushMask
+        profileStorageMatch=$profileStorageMatch
         profileMenuInputDelivered=$profileMenuInputDelivered
         profileHostAliveBeforeCleanup=$profileHostAliveBeforeCleanup
         profileOwnedDialogPresent=$profileOwnedDialogPresent

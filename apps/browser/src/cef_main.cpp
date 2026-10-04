@@ -281,11 +281,17 @@ class BrowserClient final : public CefClient,
     }
     auto args=message->GetArgumentList();
     if(profile_test && tab_==profile_fixture_tab && frame->IsMain() &&
-        message->GetName()=="agi.test.profile.result.v1" && args->GetSize()==3 &&
+        message->GetName()=="agi.test.profile.result.v1" && args->GetSize()==4 &&
         args->GetType(0)==VTYPE_BOOL && args->GetType(1)==VTYPE_INT && args->GetInt(1)==static_cast<int>(profile_stage) &&
-        args->GetType(2)==VTYPE_INT && args->GetInt(2)>=0 && args->GetInt(2)<=5) {
+        args->GetType(2)==VTYPE_INT && args->GetInt(2)>=0 && args->GetInt(2)<=5 &&
+        args->GetType(3)==VTYPE_INT && args->GetInt(3)>=-1 && args->GetInt(3)<=7) {
       auto tab=tabs.Resolve(tab_);
-      if(tab&&ProfileMatches(tab->profile,browser)){if(args->GetBool(0))profile_proofs[tab_]|=1;else if(args->GetInt(2))profile_failure_reason=static_cast<unsigned>(args->GetInt(2));}
+      if(tab&&ProfileMatches(tab->profile,browser)){
+        if(args->GetInt(3)>=0&&storage_observation_stage_!=profile_stage){
+          storage_observation_stage_=profile_stage;Record(Event::profile_storage_match,(profile_stage<<3)|static_cast<unsigned>(args->GetInt(3)));
+        }
+        if(args->GetBool(0))profile_proofs[tab_]|=1;else if(args->GetInt(2))profile_failure_reason=static_cast<unsigned>(args->GetInt(2));
+      }
       return true;
     }
     if(privacy_test && frame->IsMain() && message->GetName()=="agi.test.privacy.result.v1" &&
@@ -442,6 +448,7 @@ class BrowserClient final : public CefClient,
 
  private:
   const std::string tab_;
+  unsigned storage_observation_stage_=0;
   bool console_seen_ = false;
   std::map<std::pair<int,std::string>,CefRefPtr<CefFrame>> frames_;
   std::map<std::pair<int,std::string>,unsigned> denied_;
@@ -1207,15 +1214,16 @@ class RendererApp final : public CefApp,public CefRenderProcessHandler {
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame> frame,CefProcessId source,CefRefPtr<CefProcessMessage> message) override {
     CEF_REQUIRE_RENDERER_THREAD();
     if(source==PID_BROWSER && message->GetName()=="agi.test.profile.probe.v1" && message->GetArgumentList()->GetSize()==1 && message->GetArgumentList()->GetType(0)==VTYPE_INT && message->GetArgumentList()->GetInt(0)>=1 && message->GetArgumentList()->GetInt(0)<=9) {
-      auto context=frame->GetV8Context();bool proof=false;int failure=0;
+      auto context=frame->GetV8Context();bool proof=false;int failure=0,storage=-1;
       if(context&&context->Enter()) {
         CefRefPtr<CefV8Value> value;CefRefPtr<CefV8Exception> exception;
         const auto stage=std::to_string(message->GetArgumentList()->GetInt(0));
         proof=context->Eval("globalThis.profileProofDone === true && globalThis.profileProof === true && globalThis.profileProofStage === "+stage,"agi-profile-probe",0,value,exception)&&value&&value->IsBool()&&value->GetBoolValue();
         if(context->Eval("globalThis.profileProofDone === true && globalThis.profileProofStage === "+stage+" ? globalThis.profileFailureCode : 0","agi-profile-probe",0,value,exception)&&value&&value->IsInt()&&value->GetIntValue()>=0&&value->GetIntValue()<=5)failure=value->GetIntValue();
+        if(context->Eval("globalThis.profileProofDone === true && globalThis.profileProofStage === "+stage+" ? globalThis.profileStorageMatch : -1","agi-profile-probe",0,value,exception)&&value&&value->IsInt()&&value->GetIntValue()>=0&&value->GetIntValue()<=7)storage=value->GetIntValue();
         context->Exit();
       }
-      auto result=CefProcessMessage::Create("agi.test.profile.result.v1");result->GetArgumentList()->SetBool(0,proof);result->GetArgumentList()->SetInt(1,message->GetArgumentList()->GetInt(0));result->GetArgumentList()->SetInt(2,failure);frame->SendProcessMessage(PID_BROWSER,result);return true;
+      auto result=CefProcessMessage::Create("agi.test.profile.result.v1");result->GetArgumentList()->SetBool(0,proof);result->GetArgumentList()->SetInt(1,message->GetArgumentList()->GetInt(0));result->GetArgumentList()->SetInt(2,failure);result->GetArgumentList()->SetInt(3,storage);frame->SendProcessMessage(PID_BROWSER,result);return true;
     }
     if(source==PID_BROWSER && message->GetName()=="agi.test.privacy.probe.v1" && message->GetArgumentList()->GetSize()==0) {
       auto context=frame->GetV8Context();bool proof=false;

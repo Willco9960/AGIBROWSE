@@ -5,6 +5,7 @@ globalThis.profileProofStage = Number(new URL(location.href).searchParams.get('s
 globalThis.profileProofDone = false;
 globalThis.profileProof = false;
 globalThis.profileFailureCode = 0;
+globalThis.profileStorageMatch = -1;
 const fail = code => { globalThis.profileFailureCode = code; throw Error('fixture'); };
 (async () => {
   const stage = globalThis.profileProofStage;
@@ -22,6 +23,13 @@ const fail = code => { globalThis.profileFailureCode = code; throw Error('fixtur
     localStorage.setItem('profile-fixture', expected);
     await cache.put('/storage-fixture', new Response(expected));
   } else {
+    // Observe each existing store independently before retaining the original
+    // first failure. Cloning avoids consuming the response used by its check.
+    try {
+      globalThis.profileStorageMatch = (cookie() === expected ? 1 : 0) |
+        (localStorage.getItem('profile-fixture') === expected ? 2 : 0) |
+        (priorCache && await priorCache.clone().text() === expected ? 4 : 0);
+    } catch { globalThis.profileStorageMatch = -1; }
     if (cookie() !== expected) fail(1);
     if (localStorage.getItem('profile-fixture') !== expected) fail(2);
     if (!priorCache || await priorCache.text() !== expected) fail(3);
