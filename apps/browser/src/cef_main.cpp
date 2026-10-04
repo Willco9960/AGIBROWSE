@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <set>
 #include "apps/browser/lifecycle.h"
+#include "apps/browser/popup_reservation.h"
 #include "lib/ipc/windows_channel.h"
 #include "lib/privacy/publication.h"
 #include "include/cef_jsdialog_handler.h"
@@ -66,7 +67,8 @@ agi::browser::Lifecycle tabs([](const std::string& profile, const std::string& t
 std::map<std::string, CefRefPtr<CefBrowserView>> tab_views;
 std::map<std::string, CefString> tab_titles;
 std::map<std::string, CefRefPtr<CefWindow>> native_windows;
-std::map<std::pair<int,int>, std::string> pending_popups;
+struct PendingPopup { std::string tab; CefRefPtr<CefClient> client; };
+std::map<std::pair<int,int>, PendingPopup> pending_popups;
 std::set<std::string> closing_windows;
 int browser_count = 0;
 std::string CreateTab(const std::string& window, CefRefPtr<CefRequestContext> context, const std::string& profile);
@@ -240,7 +242,7 @@ class BrowserClient final : public CefClient,
     }
     if (!tabs.Bind(tab_,browser->GetIdentifier())) { browser->GetHost()->CloseBrowser(true); return; }
     for(auto it=pending_popups.begin();it!=pending_popups.end();) {
-      if(it->second==tab_)it=pending_popups.erase(it);else ++it;
+      if(it->second.tab==tab_)it=pending_popups.erase(it);else ++it;
     }
     Record(Event::browser_created, browser->GetIdentifier());
   }
@@ -284,12 +286,13 @@ class BrowserClient final : public CefClient,
     auto window=tabs.NewWindow();if(window.empty())return true;
     auto tab=tabs.CreateTab(window,opener->profile,tab_,GetTickCount64()+kCreationTimeoutMs);
     if(tab.empty()){tabs.RemoveWindow(window);return true;}
-    if(!pending_popups.emplace(std::make_pair(browser->GetIdentifier(),popup_id),tab).second){CancelReservation(tab);return true;}
-    client=new BrowserClient(tab);return false;
+    CefRefPtr<CefClient> popup_client=new BrowserClient(tab);
+    if(!pending_popups.emplace(std::make_pair(browser->GetIdentifier(),popup_id),PendingPopup{tab,popup_client}).second){CancelReservation(tab);return true;}
+    client=popup_client;return false;
   }
   void OnBeforePopupAborted(CefRefPtr<CefBrowser> browser,int popup_id) override {
     CEF_REQUIRE_UI_THREAD();auto p=pending_popups.find({browser->GetIdentifier(),popup_id});if(p==pending_popups.end())return;
-    auto id=p->second;CancelReservation(id);
+    auto id=p->second.tab;CancelReservation(id);
   }
 
   void OnTitleChange(CefRefPtr<CefBrowser> browser, const CefString& title) override {
@@ -421,7 +424,7 @@ void CancelReservation(const std::string& id) {
   auto tab=tabs.FindTab(id);if(!tab || tab->engine)return;
   auto window=tab->window;
   if(!tabs.FinishClose(id))return;
-  std::erase_if(pending_popups,[&](const auto& entry){return entry.second==id;});
+  std::erase_if(pending_popups,[&](const auto& entry){return entry.second.tab==id;});
   auto view=tab_views.find(id);
   if(view!=tab_views.end()) {auto keep=view->second;auto native=keep->GetWindow();if(native)native->RemoveChildView(keep);tab_views.erase(view);}
   ShowActive(window);
@@ -465,6 +468,20 @@ class PendingCreationSweep final : public CefTask {
  private:
   IMPLEMENT_REFCOUNTING(PendingCreationSweep);
 };
+// Keep an unmatched popup View alive until creation callbacks unwind. Closing
+// synchronously and dropping the unparented View inside creation is unsafe.
+class RejectedPopupClose final : public CefTask {
+ public:
+  explicit RejectedPopupClose(CefRefPtr<CefBrowserView> view):view_(view){}
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    if(auto browser=view_->GetBrowser())if(auto host=browser->GetHost())host->CloseBrowser(true);
+    view_=nullptr;
+  }
+ private:
+  CefRefPtr<CefBrowserView> view_;
+  IMPLEMENT_REFCOUNTING(RejectedPopupClose);
+};
 class TabViewDelegate final : public CefBrowserViewDelegate {
  public:
   cef_runtime_style_t GetBrowserRuntimeStyle() override { return CEF_RUNTIME_STYLE_ALLOY; }
@@ -473,12 +490,29 @@ class TabViewDelegate final : public CefBrowserViewDelegate {
     tab_views[tab->id]=view;
     auto window=native_windows.find(tab->window);
     if(window!=native_windows.end() && !view->GetWindow())window->second->AddChildView(view);
-    ShowActive(tab->window);
+    if(view->GetWindow())ShowActive(tab->window);
   }
-  bool OnPopupBrowserViewCreated(CefRefPtr<CefBrowserView>,CefRefPtr<CefBrowserView> popup,bool) override {
-    CEF_REQUIRE_UI_THREAD();auto tab=tabs.ForEngine(popup->GetBrowser()->GetIdentifier());
-    if(!tab){popup->GetBrowser()->GetHost()->CloseBrowser(true);return true;}
-    CreateNativeWindow(popup,tab->window);return true;
+  bool OnPopupBrowserViewCreated(CefRefPtr<CefBrowserView> opener_view,CefRefPtr<CefBrowserView> popup,bool) override {
+    CEF_REQUIRE_UI_THREAD();
+    if(!popup)return true;
+    auto browser=popup->GetBrowser();auto opener=opener_view ? opener_view->GetBrowser() : nullptr;
+    auto host=browser ? browser->GetHost() : nullptr;
+    auto client=host ? host->GetClient() : nullptr;
+    auto id=agi::browser::ResolvePopupReservation(tabs,pending_popups,client.get(),opener ? opener->GetIdentifier() : 0,GetTickCount64());
+    auto tab=tabs.Resolve(id);
+    if(!tab || closing_windows.contains(tab->window) || native_windows.contains(tab->window)) {
+      std::vector<std::string> canceled;
+      if(client)for(const auto& [key,pending]:pending_popups)if(pending.client.get()==client.get())canceled.push_back(pending.tab);
+      for(const auto& pending:canceled)CancelReservation(pending);
+      CefPostTask(TID_UI,new RejectedPopupClose(popup));return true;
+    }
+    const auto window=tab->window;
+    // Pinned Alloy154 invokes this before OnAfterCreated, despite the public
+    // header's stated order. Parent/retain now; bind only in OnAfterCreated.
+    tab_views[id]=popup;
+    CreateNativeWindow(popup,window);
+    if(!popup->GetWindow())CefPostTask(TID_UI,new RejectedPopupClose(popup));
+    return true;
   }
  private:
   IMPLEMENT_REFCOUNTING(TabViewDelegate);

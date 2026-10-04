@@ -4,9 +4,11 @@
 #include <windows.h>
 #endif
 #include "apps/browser/lifecycle.h"
+#include "apps/browser/popup_reservation.h"
 #include "lib/ipc/scoped_authority.h"
 #include <iostream>
 #include <stdexcept>
+#include <memory>
 using agi::browser::Lifecycle;
 using namespace agi::ipc;
 unsigned checks=0;
@@ -71,6 +73,30 @@ int main() {
   Check(repeat.BeginClose(rt) && repeat.CancelClose(rt),"successful first barrier canceled");
   Check(!repeat.BeginClose(rt) && repeated==2 && !repeat.CancelClose(rt),"new attempt cannot reuse former barrier result");
   Check(repeat.BeginClose(rt) && repeated==3,"new failed barrier actually retried");
+  // Actual pinned Alloy order: popup Views callback arrives while the native
+  // reservation has no engine; binding follows successful View attachment.
+  Lifecycle popup_life;auto parent_window=popup_life.NewWindow();
+  auto parent=popup_life.CreateTab(parent_window,"human");Check(popup_life.Bind(parent,41),"popup opener bound");
+  auto popup_window=popup_life.NewWindow();auto popup=popup_life.CreateTab(popup_window,"human",parent,100);
+  struct NativeClient {};
+  struct Reservation {std::string tab;std::shared_ptr<NativeClient> client;};
+  auto popup_client=std::make_shared<NativeClient>(),wrong_client=std::make_shared<NativeClient>();
+  std::map<int,Reservation> reservations{{1,{popup,popup_client}}};
+  Check(!popup_life.ForEngine(42) && popup_life.FindTab(popup)->engine==0,"pre-creation callback has no engine binding");
+  auto resolve=[&](NativeClient* client,int engine=41,uint64_t tick=1){return agi::browser::ResolvePopupReservation(popup_life,reservations,client,engine,tick);};
+  Check(resolve(popup_client.get())==popup,"host client identifies unbound popup before engine binding");
+  Check(resolve(wrong_client.get()).empty() && resolve(nullptr).empty(),"unknown and null clients cannot borrow popup reservation");
+  Check(resolve(popup_client.get(),99).empty(),"wrong opener engine cannot borrow popup reservation");
+  Check(resolve(popup_client.get(),41,100).empty(),"expired popup cannot attach from stale native callback");
+  reservations.emplace(2,Reservation{popup,popup_client});
+  Check(resolve(popup_client.get()).empty(),"ambiguous duplicated client identity rejected");reservations.erase(2);
+  Check(popup_life.Bind(popup,42) && resolve(popup_client.get()).empty(),"real creation binds once after pre-bind popup resolution");
+  Check(popup_life.FinishClose(popup) && resolve(popup_client.get()).empty(),"canceled popup cannot be recovered by retained client");
+  reservations.clear();Check(resolve(popup_client.get()).empty(),"removed reservation cannot be recovered by client identity");
+  auto late=popup_life.CreateTab(popup_window,"human",parent,100);reservations.emplace(3,Reservation{late,popup_client});
+  Check(popup_life.FinishClose(late) && resolve(popup_client.get()).empty(),"canceled unbound popup cannot attach or bind");
+  late=popup_life.CreateTab(popup_window,"human",parent,100);reservations.at(3).tab=late;
+  Check(popup_life.BeginClose(parent) && resolve(popup_client.get()).empty(),"closing opener cannot attach a pending popup");
   std::cout<<checks<<" lifecycle checks passed\n";return 0;
  }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }
