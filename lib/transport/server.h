@@ -19,6 +19,7 @@ public:
   void InvalidateSessions() override;
   // Native lifecycle barrier, never callable from IPC/page input.
   void InvalidateNativeTab(const std::string& profile, const std::string& tab) { scopes_->InvalidateNativeTab(profile, tab); }
+  void InvalidateNativeProfile(const std::string& profile) { scopes_->InvalidateNativeProfile(profile); }
 
 private:
   friend struct HostTransportAuthorityTestAccess;

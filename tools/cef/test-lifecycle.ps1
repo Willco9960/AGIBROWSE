@@ -8,6 +8,9 @@ param(
     [switch]$PrivacyProbe,
     [switch]$TabProbe,
     [switch]$NavigationProbe,
+    [switch]$ProfileProbe,
+    [switch]$ProfileRestart,
+    [string]$ProfileFixtureRoot = '',
     [ValidateSet('healthy','expired','corrupt')][string]$TransportStoreFixture = 'healthy'
 )
 $ErrorActionPreference = 'Stop'
@@ -23,6 +26,15 @@ $log = Join-Path $run 'lifecycle.jsonl'
 $stdout = Join-Path $run 'stdout.txt'
 $stderr = Join-Path $run 'stderr.txt'
 $profile = Join-Path $run 'profile'
+if ($ProfileProbe) {
+    $isolatedRoot=[IO.Path]::GetFullPath($ProfileFixtureRoot)
+    $marker=Join-Path $evidence 'profile-fixture.marker'
+    if ((Split-Path -Parent $isolatedRoot) -ne $evidence -or (Split-Path -Leaf $isolatedRoot) -ne 'profiles' -or
+        -not (Test-Path -LiteralPath $marker) -or (Get-Content -LiteralPath $marker -Raw).Trim() -ne 'AGI-BROWSE isolated profile fixture v1') {
+        throw 'Profile probe requires the narrowly created test-profiles fixture root'
+    }
+    $profile=$isolatedRoot
+}
 if($TransportStoreFixture -ne 'healthy') {
     if($SecurityProbe){throw 'Renderer channel probe requires healthy transport; fallback test cannot claim private channel proof'}
     $fixtureTool=[IO.Path]::GetFullPath((Join-Path $BuildDirectory 'lib/transport/Release/agi-transport-tests.exe'))
@@ -36,6 +48,8 @@ if ($TabProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/tabs.html')).Abso
 if ($NavigationProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/browser-ui-a.html')).AbsoluteUri }
 if ($TabProbe -and ($SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Tab lifecycle probe requires its own healthy isolated fixture run' }
 if ($NavigationProbe -and ($TabProbe -or $SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Navigation UI probe requires its own healthy isolated fixture run' }
+if ($ProfileProbe -and ($TabProbe -or $NavigationProbe -or $SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Profile probe requires its own healthy isolated fixture run' }
+if ($ProfileRestart -and -not $ProfileProbe) { throw 'Restart is only supported by the isolated profile fixture' }
 
 if (-not ('CefLifecycle.Native' -as [type])) {
 Add-Type -TypeDefinition @'
@@ -75,6 +89,37 @@ namespace CefLifecycle {
 '@
 }
 
+if ($ProfileProbe -and -not ('CefProfileMenu.Native' -as [type])) {
+Add-Type -TypeDefinition @'
+using System;using System.Runtime.InteropServices;
+namespace CefProfileMenu {
+ public static class Native {
+  [StructLayout(LayoutKind.Sequential)] struct Rect {public int left,top,right,bottom;}
+  [StructLayout(LayoutKind.Sequential)] struct Gui {public uint size,flags;public IntPtr active,focus,capture,menuOwner,moveSize,caret;public Rect rect;}
+  [StructLayout(LayoutKind.Sequential)] struct Key {public ushort vk,scan;public uint flags,time;public UIntPtr extra;}
+  [StructLayout(LayoutKind.Sequential)] struct Mouse {public int x,y;public uint data,flags,time;public UIntPtr extra;}
+  [StructLayout(LayoutKind.Explicit)] struct Union {[FieldOffset(0)] public Key key;[FieldOffset(0)] public Mouse mouse;}
+  [StructLayout(LayoutKind.Sequential)] struct Input {public uint type;public Union value;}
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
+  [DllImport("user32.dll")] static extern bool GetGUIThreadInfo(uint thread,ref Gui info);
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hwnd,uint flags);
+  [DllImport("user32.dll")] static extern uint SendInput(uint count,Input[] input,int size);
+  public static bool MenuReady(IntPtr expected) {
+   uint process;uint thread=GetWindowThreadProcessId(expected,out process);Gui gui=new Gui();gui.size=(uint)Marshal.SizeOf<Gui>();
+   return thread!=0&&GetGUIThreadInfo(thread,ref gui)&&(gui.flags&4)!=0&&gui.menuOwner==expected&&GetAncestor(GetForegroundWindow(),2)==expected;
+  }
+  public static int SelectCreate(IntPtr expected) {
+   if(!MenuReady(expected))return 0;
+   Input[] input=new Input[4];ushort[] vk={0x24,0x24,0x0D,0x0D};
+   for(int i=0;i<4;i++){input[i].type=1;input[i].value.key.vk=vk[i];input[i].value.key.flags=(uint)(i%2==1?2:0);}
+   return SendInput(4,input,Marshal.SizeOf<Input>())==4?1:-1;
+  }
+ }
+}
+'@
+}
+
 function Get-OwnedProcesses {
     @(Get-CimInstance Win32_Process -Filter "Name='agi-browse-host.exe' OR Name='agi-browse-broker.exe'" |
         Where-Object { $_.ExecutablePath -eq $exe -or $_.ExecutablePath -eq $brokerExe })
@@ -98,6 +143,7 @@ $success = $false
 $cleanupRequired = $false
 $tabFixtureFailure = $null
 $navigationUiFailureStage = $null
+$profileFailureStage=$null;$profileFailureReason=$null
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -107,9 +153,11 @@ if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
 if ($PrivacyProbe) { $arguments += '--privacy-renderer-test' }
 if ($TabProbe) { $arguments += '--tab-lifecycle-test' }
 if ($NavigationProbe) { $arguments += '--browser-ui-test' }
+if ($ProfileProbe) { $arguments += '--profile-isolation-test' }
+if ($ProfileRestart) { $arguments += '--profile-restart-test' }
 # TabProbe requires a visible native surface for trusted physical mouse input.
 # Hidden startup can override CEF's first ShowWindow(SW_SHOWNORMAL) request.
-[System.Diagnostics.ProcessWindowStyle]$launchWindowStyle = if ($TabProbe -or $NavigationProbe) { 'Normal' } else { 'Hidden' }
+[System.Diagnostics.ProcessWindowStyle]$launchWindowStyle = if ($TabProbe -or $NavigationProbe -or $ProfileProbe) { 'Normal' } else { 'Hidden' }
 $hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle $launchWindowStyle -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -124,6 +172,7 @@ try {
         $ready = @($events | Where-Object event -eq fixture_ready).Count -gt 0
         if ($TabProbe -and (Get-TabFixtureFailure -Events $events)) { throw 'Host-native tab lifecycle fixture failed' }
         if ($NavigationProbe -and ($events | Where-Object event -eq browser_ui_probe_failed_stage)) { throw 'Native browser UI fixture failed at a closed stage' }
+        if ($ProfileProbe -and ($events | Where-Object event -eq profile_probe_failed_stage)) { throw 'Native profile fixture failed at a closed stage' }
         if ($hostProcess.HasExited) { throw "Host exited before fixture readiness: $($hostProcess.ExitCode)" }
         if (-not $ready) { Start-Sleep -Milliseconds 250 }
     } until ($ready -or (Get-Date) -gt $deadline)
@@ -170,11 +219,42 @@ try {
         if($orderedSteps){for($i=0;$i -lt $expectedSteps.Count;$i++){if($steps[$i] -ne $expectedSteps[$i]){$orderedSteps=$false;break}}}
         if (-not $orderedSteps) { throw 'Native browser UI proof steps were missing, duplicated, or out of order' }
     }
+    if ($ProfileProbe) {
+        $expectedProfileSteps=if($ProfileRestart){@(7..9)}else{@(1..6)}
+        $nativeMenuInputSent=$false
+        do {
+            foreach($process in (Get-RunProcesses)) {
+                $key=[string]$process.ProcessId
+                $processes[$key]=[ordered]@{processId=$process.ProcessId;parentProcessId=$process.ParentProcessId;commandLine=$process.CommandLine;creationDate=$process.CreationDate}
+                if($process.CommandLine -match '--type=renderer' -and -not $rendererTokens.ContainsKey($key)) {
+                    $token=[CefLifecycle.Native]::Inspect($process.ProcessId) | ConvertFrom-Json
+                    if($token.restricted -and $token.integrityRid -le 4096){$rendererTokens[$key]=$token}
+                }
+            }
+            $events=@(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+            if($events | Where-Object event -eq profile_probe_failed_stage){throw 'Native profile fixture failed at a closed stage'}
+            if(-not $ProfileRestart -and -not $nativeMenuInputSent -and ($events | Where-Object event -eq profile_menu_requested)) {
+                $owner=$events | Where-Object event -eq window_created | Select-Object -First 1
+                if(-not $owner){throw 'Native profile menu owner missing'}
+                $menuOwner=[IntPtr][long]$owner.value;$menuDeadline=(Get-Date).AddSeconds(3)
+                while(-not [CefProfileMenu.Native]::MenuReady($menuOwner)) {if($hostProcess.HasExited -or (Get-Date) -gt $menuDeadline){throw 'Native profile menu owner did not become ready'};Start-Sleep -Milliseconds 20}
+                # Dispatch exactly once. A partial/uncertain SendInput result
+                # cannot be retried because Enter may already have had effect.
+                if([CefProfileMenu.Native]::SelectCreate($menuOwner) -ne 1){throw 'Native profile keyboard delivery failed or became uncertain'}
+                $nativeMenuInputSent=$true
+            }
+            $profileSteps=@($events | Where-Object event -eq profile_probe_step | ForEach-Object {[int]$_.value})
+            if($profileSteps.Count -lt $expectedProfileSteps.Count -and -not $hostProcess.HasExited){Start-Sleep -Milliseconds 100}
+        } until($profileSteps.Count -ge $expectedProfileSteps.Count -or $hostProcess.HasExited -or (Get-Date) -gt $deadline)
+        if(($profileSteps -join ',') -ne ($expectedProfileSteps -join ',')){throw 'Profile proof steps missing, duplicated or out of order'}
+        if(-not $ProfileRestart -and (-not $nativeMenuInputSent -or @($events | Where-Object event -eq profile_menu_requested).Count -ne 1 -or @($events | Where-Object event -eq profile_native_create_selected).Count -ne 1)){throw 'Actual native profile creation selection proof missing'}
+        if($rendererTokens.Count -lt 3){throw 'Three isolated profile renderers were not positively observed after sandbox lockdown'}
+    }
     $window = $events | Where-Object event -eq window_created | Select-Object -First 1
     if (-not $window -or -not $window.value) { throw 'Native Views window handle was not recorded' }
     # Hold the real fixture window open while measuring children, then send a
     # normal OS close request. No forced process termination can count as a pass.
-    if (-not $TabProbe -and -not $NavigationProbe) {
+    if (-not $TabProbe -and -not $NavigationProbe -and -not $ProfileProbe) {
         Start-Sleep -Seconds 1
         $result = [UIntPtr]::Zero
         if ([CefLifecycle.Native]::SendMessageTimeout([IntPtr][long]$window.value, 0x10,
@@ -217,6 +297,14 @@ try {
     $success = $true
 } catch {
     $failure = $_.Exception.Message
+    if($ProfileProbe -and (Test-Path -LiteralPath $log)) {
+        $events=@(Get-Content -LiteralPath $log | ForEach-Object {$_ | ConvertFrom-Json})
+        $stages=@($events | Where-Object event -eq profile_probe_failed_stage);$reasons=@($events | Where-Object event -eq profile_probe_failed_reason)
+        if($stages.Count -eq 1 -and $reasons.Count -eq 1 -and [int]$stages[0].value -ge 1 -and [int]$stages[0].value -le 9 -and [int]$reasons[0].value -ge 1 -and [int]$reasons[0].value -le 8) {
+            $profileFailureStage=[int]$stages[0].value;$profileFailureReason=[int]$reasons[0].value
+            [void]$hostProcess.WaitForExit(10000)
+        }
+    }
     if ($NavigationProbe -and (Test-Path -LiteralPath $log)) {
         $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
         $failedSteps = @($events | Where-Object event -eq browser_ui_probe_failed_stage)
@@ -262,6 +350,10 @@ try {
         transportStoreFixture = $TransportStoreFixture
         tabLifecycleProbe = [bool]$TabProbe
         navigationUiProbe = [bool]$NavigationProbe
+        profileIsolationProbe = [bool]$ProfileProbe
+        profileRestartProbe = [bool]$ProfileRestart
+        profileFailureStage=$profileFailureStage
+        profileFailureReason=$profileFailureReason
         launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         navigationUiFailureStage = $navigationUiFailureStage

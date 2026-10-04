@@ -89,6 +89,13 @@ void ScopedAuthority::InvalidateNativeTab(const std::string& profile, const std:
   for(auto& [id,session] : sessions_) if(session.grant.profile == profile)
     std::erase(session.grant.tabs, tab);
 }
+void ScopedAuthority::InvalidateNativeProfile(const std::string& profile) {
+  std::lock_guard lock(mutex_);
+  std::erase_if(documents_,[&](const auto& entry){return std::get<0>(entry.first)==profile;});
+  std::erase_if(leases_,[&](const auto& entry){return entry.first.first==profile;});
+  std::erase_if(pending_,[&](const auto& entry){return entry.second.request.destination.profile==profile;});
+  for(auto& [id,session]:sessions_)if(session.grant.profile==profile){session.grant={};session.deadline=0;}
+}
 bool ScopedAuthority::Current(const ScopeRequest& r, uint64_t now, Pending* stamp) const {
   if (!live_ || !DestinationValid(r.destination) || !IsOperation(r.operation)) return false;
   auto s = sessions_.find(r.session);

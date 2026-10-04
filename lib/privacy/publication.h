@@ -50,7 +50,9 @@ enum class Event {
   tab_fixture_cursor_destination_unavailable,
   tab_fixture_visibility_adjusted, tab_fixture_visibility_restored,
   tab_fixture_native_window_state, tab_fixture_native_window_state_unavailable,
-  tab_fixture_native_window_cloak, browser_ui_probe_step, browser_ui_probe_failed_stage
+  tab_fixture_native_window_cloak, browser_ui_probe_step, browser_ui_probe_failed_stage,
+  profile_probe_step, profile_probe_failed_stage, profile_menu_requested,
+  profile_native_create_selected, profile_probe_failed_reason
 };
 // Fixture-only native branches. No OS error, coordinate, HWND, page string or
 // arbitrary numeric payload may be encoded by these diagnostic values.

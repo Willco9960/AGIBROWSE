@@ -81,6 +81,12 @@ int main() {
     for(uint64_t cloak=0;cloak<=2;++cloak)Check(WriteDiagnostic(nullptr,Event::tab_fixture_native_window_cloak,cloak),"closed cloak status accepted");
     for(auto cloak:{uint64_t{3},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_native_window_cloak,cloak),"cloak status refuses arbitrary numeric content");
     Check(!WriteDiagnostic(nullptr,Event::fixture_ready,0x534543524554),"text-free event rejects numeric secret encoding");
+    for(uint64_t stage=1;stage<=9;++stage){Check(WriteDiagnostic(nullptr,Event::profile_probe_step,stage),"closed profile proof stage accepted");Check(WriteDiagnostic(nullptr,Event::profile_probe_failed_stage,stage),"closed profile failure stage accepted");}
+    for(auto stage:{uint64_t{0},uint64_t{10},UINT64_MAX}){Check(!WriteDiagnostic(nullptr,Event::profile_probe_step,stage),"profile proof rejects arbitrary value");Check(!WriteDiagnostic(nullptr,Event::profile_probe_failed_stage,stage),"profile failure rejects arbitrary value");}
+    for(uint64_t reason=1;reason<=8;++reason)Check(WriteDiagnostic(nullptr,Event::profile_probe_failed_reason,reason),"closed profile failure reason accepted");
+    for(auto reason:{uint64_t{0},uint64_t{9},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::profile_probe_failed_reason,reason),"profile failure reason rejects arbitrary value");
+    Check(WriteDiagnostic(nullptr,Event::profile_menu_requested)&&WriteDiagnostic(nullptr,Event::profile_native_create_selected),"native profile menu proof accepts no content");
+    Check(!WriteDiagnostic(nullptr,Event::profile_menu_requested,1)&&!WriteDiagnostic(nullptr,Event::profile_native_create_selected,1),"native profile menu proof rejects numeric content");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
     Check(!WriteDiagnostic(nullptr,Event::browser_created,UINT64_MAX),"native browser ID values bounded");
     auto file=std::tmpfile();Check(file!=nullptr,"actual diagnostic file sink available");

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <set>
 #include "apps/browser/lifecycle.h"
+#include "apps/browser/profiles.h"
 #include "apps/browser/popup_reservation.h"
 #include "lib/ipc/windows_channel.h"
 #include "lib/privacy/publication.h"
@@ -19,6 +20,8 @@
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
+#include "include/cef_permission_handler.h"
+#include "include/cef_request_context.h"
 #include "include/cef_keyboard_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_frame.h"
@@ -57,6 +60,15 @@ bool privacy_test_passed = false;
 bool privacy_dialog_seen = false;
 bool tab_lifecycle_test = false, tab_lifecycle_passed = false;
 bool browser_ui_test=false,browser_ui_passed=false;
+bool profile_test=false,profile_passed=false;
+bool profile_restart_test=false;
+std::unique_ptr<agi::browser::ProfileStore> profiles;
+std::map<std::string,CefRefPtr<CefRequestContext>> profile_contexts;
+std::map<std::string,unsigned> profile_proofs;
+std::string profile_fixture_url,profile_fixture_tab;
+unsigned profile_stage=1;
+unsigned profile_failure_reason=0;
+std::string profile_fixture_user;
 bool browser_ui_loading_indicator_seen=false,browser_ui_idle_indicator_seen=false;
 bool test_root_loaded = false, test_button_clicked = false;
 unsigned test_unload_canceled = 0, test_unload_accepted = 0;
@@ -82,7 +94,7 @@ std::set<std::string> scheduled_chrome_refreshes;
 struct BrowserChrome {
   CefRefPtr<CefPanel> root, tabs, toolbar, content;
   CefRefPtr<CefTextfield> address;
-  CefRefPtr<CefLabelButton> back, forward, reload;
+  CefRefPtr<CefLabelButton> back, forward, reload, profile;
 };
 std::map<std::string, BrowserChrome> browser_chrome;
 struct PendingPopup { std::string tab; CefRefPtr<CefClient> client; };
@@ -100,6 +112,23 @@ void RequestCloseTab(const std::string& tab);
 void RefreshChrome(const std::string& window);
 void NavigateAddress(const std::string& tab, CefRefPtr<CefTextfield> field);
 void StartBrowserUiFixture();
+void ShowProfilesMenu(const std::string& window);
+void StartProfileFixture();
+CefRefPtr<CefRequestContext> ProfileContext(const std::string& id) {
+  CEF_REQUIRE_UI_THREAD();
+  if(!profiles || !profiles->Find(id))return nullptr;
+  if(auto item=profile_contexts.find(id);item!=profile_contexts.end())return item->second;
+  if(!profiles->MarkContextOpened(id))return nullptr;
+  CefRequestContextSettings settings;CefString(&settings.cache_path)=profiles->Find(id)->cache.wstring();
+  settings.persist_session_cookies=true;
+  auto context=CefRequestContext::CreateContext(settings,nullptr);if(!context)return nullptr;
+  for(const auto& [other,existing]:profile_contexts)if(context->IsSame(existing)||context->IsSharingWith(existing))return nullptr;
+  profile_contexts.emplace(id,context);return context;
+}
+bool ProfileMatches(const std::string& id,CefRefPtr<CefBrowser> browser) {
+  auto found=profile_contexts.find(id);
+  return profiles&&profiles->Find(id)&&found!=profile_contexts.end()&&browser&&found->second->IsSame(browser->GetHost()->GetRequestContext());
+}
 bool HandleTabShortcut(const std::string& tab,const CefKeyEvent& event,
                        CefRefPtr<CefBrowser> browser);
 void MaybeQuit();
@@ -121,6 +150,7 @@ class BrowserClient final : public CefClient,
                             public CefDisplayHandler,
                             public CefLoadHandler,
                             public CefKeyboardHandler,
+                            public CefPermissionHandler,
                             public CefJSDialogHandler,
                             public CefFrameHandler {
  public:
@@ -131,6 +161,19 @@ class BrowserClient final : public CefClient,
   CefRefPtr<CefFrameHandler> GetFrameHandler() override { return this; }
   CefRefPtr<CefKeyboardHandler> GetKeyboardHandler() override { return this; }
   CefRefPtr<CefJSDialogHandler> GetJSDialogHandler() override { return this; }
+  CefRefPtr<CefPermissionHandler> GetPermissionHandler() override { return this; }
+  bool OnShowPermissionPrompt(CefRefPtr<CefBrowser> browser,uint64_t,const CefString&,uint32_t,
+      CefRefPtr<CefPermissionPromptCallback> callback) override {
+    CEF_REQUIRE_UI_THREAD();auto tab=tabs.Resolve(tab_);
+    if(profile_test&&tab&&ProfileMatches(tab->profile,browser))profile_proofs[tab_]|=2;
+    // Task014 supplies native approval UI. Neither a profile identity, page
+    // prompt, persisted CEF setting nor agent transport grants permission.
+    callback->Continue(CEF_PERMISSION_RESULT_DENY);return true;
+  }
+  bool OnRequestMediaAccessPermission(CefRefPtr<CefBrowser>,CefRefPtr<CefFrame>,const CefString&,uint32_t,
+      CefRefPtr<CefMediaAccessCallback> callback) override {
+    CEF_REQUIRE_UI_THREAD();callback->Cancel();return true;
+  }
   bool OnConsoleMessage(CefRefPtr<CefBrowser>, cef_log_severity_t,
                         const CefString&, const CefString&, int) override {
     CEF_REQUIRE_UI_THREAD();
@@ -215,6 +258,14 @@ class BrowserClient final : public CefClient,
       Record(Event::renderer_identity_rejected);return true;
     }
     auto args=message->GetArgumentList();
+    if(profile_test && tab_==profile_fixture_tab && frame->IsMain() &&
+        message->GetName()=="agi.test.profile.result.v1" && args->GetSize()==3 &&
+        args->GetType(0)==VTYPE_BOOL && args->GetType(1)==VTYPE_INT && args->GetInt(1)==static_cast<int>(profile_stage) &&
+        args->GetType(2)==VTYPE_INT && args->GetInt(2)>=0 && args->GetInt(2)<=5) {
+      auto tab=tabs.Resolve(tab_);
+      if(tab&&ProfileMatches(tab->profile,browser)){if(args->GetBool(0))profile_proofs[tab_]|=1;else if(args->GetInt(2))profile_failure_reason=static_cast<unsigned>(args->GetInt(2));}
+      return true;
+    }
     if(privacy_test && frame->IsMain() && message->GetName()=="agi.test.privacy.result.v1" &&
        args->GetSize()==1 && args->GetType(0)==VTYPE_BOOL && args->GetBool(0) &&
        console_seen_ && privacy_dialog_seen) {
@@ -239,7 +290,7 @@ class BrowserClient final : public CefClient,
         closing_windows.contains(reserved->window) || (!reserved->opener.empty() && !tabs.Resolve(reserved->opener))) {
       CancelReservation(tab_);browser->GetHost()->CloseBrowser(true);return;
     }
-    if (!tabs.Bind(tab_,browser->GetIdentifier())) { browser->GetHost()->CloseBrowser(true); return; }
+    if (!ProfileMatches(reserved->profile,browser) || !tabs.Bind(tab_,browser->GetIdentifier())) { browser->GetHost()->CloseBrowser(true); return; }
     for(auto it=pending_popups.begin();it!=pending_popups.end();) {
       if(it->second.tab==tab_)it=pending_popups.erase(it);else ++it;
     }
@@ -281,7 +332,7 @@ class BrowserClient final : public CefClient,
       CefWindowInfo&,CefRefPtr<CefClient>& client,CefBrowserSettings&,CefRefPtr<CefDictionaryValue>&,bool*) override {
     CEF_REQUIRE_UI_THREAD();
     if(tab_lifecycle_test && tab_==test_root)Record(Event::tab_fixture_popup_requested);
-    auto opener=tabs.Resolve(tab_);if(!opener)return true;
+    auto opener=tabs.Resolve(tab_);if(!opener||!ProfileMatches(opener->profile,browser))return true;
     auto window=tabs.NewWindow();if(window.empty())return true;
     auto tab=tabs.CreateTab(window,opener->profile,tab_,GetTickCount64()+kCreationTimeoutMs);
     if(tab.empty()){tabs.RemoveWindow(window);return true;}
@@ -415,6 +466,7 @@ class ChromeButton final : public CefButtonDelegate {
   void OnButtonPressed(CefRefPtr<CefButton>) override {
     auto split=command_.find(':');const auto action=command_.substr(0,split);
     auto id=split==std::string::npos?std::string():command_.substr(split+1);
+    if(action=="profiles"){ShowProfilesMenu(id);return;}
     if(action=="back"||action=="forward"||action=="reload"||action=="new") {auto w=tabs.LookupWindow(id);if(w)id=w->active;}
     auto tab=tabs.Resolve(id);
     if(action=="select"&&tab){tabs.Activate(id);ShowActive(tab->window);RefreshChrome(tab->window);}
@@ -469,6 +521,8 @@ void RefreshChromeToolbar(const std::string& window) {
   auto item=tab_views.find(w->active);auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
   chrome.back->SetEnabled(browser&&browser->CanGoBack());chrome.forward->SetEnabled(browser&&browser->CanGoForward());chrome.reload->SetEnabled(browser!=nullptr);
   chrome.reload->SetText(browser&&browser->IsLoading()?"■":"↻");
+  auto active=tabs.Resolve(w->active);
+  if(active)chrome.profile->SetText(active->profile=="human"?"Human":active->profile=="agent"?"Agent":"Profile "+active->profile.substr(2));
   if(browser){auto address=browser->GetMainFrame()->GetURL();if(!chrome.address->HasFocus()&&chrome.address->GetText()!=address)chrome.address->SetText(address);}
   chrome.toolbar->Layout();chrome.root->Layout();
 }
@@ -510,11 +564,13 @@ class WindowDelegate final : public CefWindowDelegate {
     chrome.back=CefLabelButton::CreateLabelButton(new ChromeButton("back:"+window_),"←");
     chrome.forward=CefLabelButton::CreateLabelButton(new ChromeButton("forward:"+window_),"→");
     chrome.reload=CefLabelButton::CreateLabelButton(new ChromeButton("reload:"+window_),"↻");
+    chrome.profile=CefLabelButton::CreateLabelButton(new ChromeButton("profiles:"+window_),"Human");
     chrome.address=CefTextfield::CreateTextfield(new AddressField(window_));
     chrome.address->SetPlaceholderText("Enter address");chrome.address->SetAccessibleName("Address");
     chrome.toolbar->AddChildView(chrome.back);chrome.toolbar->AddChildView(chrome.forward);
     chrome.toolbar->AddChildView(chrome.reload);
     chrome.toolbar->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("new:"+window_),"+"));
+    chrome.toolbar->AddChildView(chrome.profile);
     chrome.toolbar->AddChildView(chrome.address);
     toolbar_layout->SetFlexForView(chrome.address,1);
     chrome.root->AddChildView(chrome.tabs);chrome.root->AddChildView(chrome.toolbar);chrome.root->AddChildView(chrome.content);
@@ -802,7 +858,8 @@ class TabViewDelegate final : public CefBrowserViewDelegate {
   IMPLEMENT_REFCOUNTING(TabViewDelegate);
 };
 std::string CreateTab(const std::string& window,CefRefPtr<CefRequestContext> context,const std::string& profile) {
-  if(closing_windows.contains(window))return {};
+  auto expected=profile_contexts.find(profile);
+  if(closing_windows.contains(window)||!profiles||!profiles->Find(profile)||!context||expected==profile_contexts.end()||!expected->second->IsSame(context))return {};
   auto tab=tabs.CreateTab(window,profile,{},GetTickCount64()+kCreationTimeoutMs);if(tab.empty())return {};
   CefBrowserSettings settings;
   auto view=CefBrowserView::CreateBrowserView(new BrowserClient(tab),"about:blank",settings,nullptr,context,new TabViewDelegate);
@@ -810,6 +867,55 @@ std::string CreateTab(const std::string& window,CefRefPtr<CefRequestContext> con
   tab_views[tab]=view;
   auto chrome=browser_chrome.find(window);if(chrome!=browser_chrome.end())chrome->second.content->AddChildView(view);
   ShowActive(window);return tab;
+}
+std::string OpenProfileWindow(const std::string& profile,const std::string& url="about:blank") {
+  auto context=ProfileContext(profile);if(!context)return {};
+  auto window=tabs.NewWindow();if(window.empty())return {};
+  auto tab=tabs.CreateTab(window,profile,{},GetTickCount64()+kCreationTimeoutMs);
+  if(tab.empty()){tabs.RemoveWindow(window);return {};}
+  CefBrowserSettings settings;
+  auto view=CefBrowserView::CreateBrowserView(new BrowserClient(tab),url,settings,nullptr,context,new TabViewDelegate);
+  if(!view){CancelReservation(tab);return {};}
+  tab_views[tab]=view;CreateNativeWindow(view,window);return tab;
+}
+void RevokeProfile(const std::string& id) {
+#ifdef AGI_TRANSPORT
+  try{if(host_transport_authority)host_transport_authority->InvalidateNativeProfile(id);}
+  catch(...){broker_channel.Stop();throw;}
+#endif
+}
+class ProfileAction final : public CefTask {
+ public:
+  ProfileAction(std::string id,bool create):id_(std::move(id)),create_(create){}
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();try{if(create_)id_=profiles->CreateHuman();if(!id_.empty()&&!OpenProfileWindow(id_).empty())return;}catch(...){}
+    MessageBoxW(nullptr,L"This profile could not be opened. Its storage or the native profile limit is unavailable.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);
+  }
+ private:
+  std::string id_;bool create_;IMPLEMENT_REFCOUNTING(ProfileAction);
+};
+void ShowProfilesMenu(const std::string& window) {
+  CEF_REQUIRE_UI_THREAD();auto native=native_windows.find(window);if(native==native_windows.end()||!profiles)return;
+  CefRefPtr<CefWindow> owner=native->second;
+  auto ids=profiles->HumanProfiles();ids.insert(ids.begin()+1,"agent");
+  HMENU menu=CreatePopupMenu(),deletion=CreatePopupMenu();if(!menu||!deletion){if(menu)DestroyMenu(menu);if(deletion)DestroyMenu(deletion);return;}
+  AppendMenuW(menu,MF_STRING,1,L"Create human profile (opens a new window)");
+  for(size_t i=0;i<ids.size();++i){std::wstring label=ids[i]=="human"?L"Human (existing Default)":ids[i]=="agent"?L"Agent (isolated)":L"Profile "+std::wstring(ids[i].begin()+2,ids[i].end());AppendMenuW(menu,MF_STRING,100+i,label.c_str());}
+  AppendMenuW(deletion,MF_STRING|MF_DISABLED,0,L"Used this run? Restart AGI-BROWSE before deleting.");
+  for(size_t i=2;i<ids.size();++i){auto label=L"Delete Profile "+std::wstring(ids[i].begin()+2,ids[i].end());AppendMenuW(deletion,MF_STRING|(profiles->CanDelete(ids[i])?0:MF_DISABLED),200+i,label.c_str());}
+  AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(deletion),L"Delete closed profile...");
+  POINT point{};if(!GetCursorPos(&point)){DestroyMenu(menu);return;}
+  if(profile_test)Record(Event::profile_menu_requested);
+  auto selected=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_NONOTIFY,point.x,point.y,0,owner->GetWindowHandle(),nullptr);DestroyMenu(menu);
+  auto current=native_windows.find(window);if(current==native_windows.end()||!current->second->IsSame(owner))return;
+  if(selected==1){if(profile_test)Record(Event::profile_native_create_selected);CefPostTask(TID_UI,new ProfileAction({},true));return;}
+  if(selected>=100&&selected<100+ids.size()){CefPostTask(TID_UI,new ProfileAction(ids[selected-100],false));return;}
+  if(selected>=201&&selected<200+ids.size()) {
+    const auto id=ids[selected-200];if(!profiles->CanDelete(id))return;
+    auto label=L"Permanently delete all browser data for native profile "+std::wstring(id.begin(),id.end())+L"? This cannot be undone.";
+    if(MessageBoxW(owner->GetWindowHandle(),label.c_str(),L"AGI-BROWSE native profile deletion",MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)!=IDYES)return;
+    if(!profiles->DeleteConfirmed(id,true,RevokeProfile))MessageBoxW(owner->GetWindowHandle(),L"Cleanup could not complete. The profile is retired if deletion started; remaining files need local recovery. No other profile was selected for deletion.",L"AGI-BROWSE",MB_OK|MB_ICONERROR);
+  }
 }
 void RequestCloseTab(const std::string& id) {
   auto tab=tabs.Resolve(id);auto item=tab_views.find(id);if(!tab || item==tab_views.end())return;
@@ -1026,6 +1132,17 @@ class RendererApp final : public CefApp,public CefRenderProcessHandler {
   CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override { return this; }
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame> frame,CefProcessId source,CefRefPtr<CefProcessMessage> message) override {
     CEF_REQUIRE_RENDERER_THREAD();
+    if(source==PID_BROWSER && message->GetName()=="agi.test.profile.probe.v1" && message->GetArgumentList()->GetSize()==1 && message->GetArgumentList()->GetType(0)==VTYPE_INT && message->GetArgumentList()->GetInt(0)>=1 && message->GetArgumentList()->GetInt(0)<=9) {
+      auto context=frame->GetV8Context();bool proof=false;int failure=0;
+      if(context&&context->Enter()) {
+        CefRefPtr<CefV8Value> value;CefRefPtr<CefV8Exception> exception;
+        const auto stage=std::to_string(message->GetArgumentList()->GetInt(0));
+        proof=context->Eval("globalThis.profileProofDone === true && globalThis.profileProof === true && globalThis.profileProofStage === "+stage,"agi-profile-probe",0,value,exception)&&value&&value->IsBool()&&value->GetBoolValue();
+        if(context->Eval("globalThis.profileProofDone === true && globalThis.profileProofStage === "+stage+" ? globalThis.profileFailureCode : 0","agi-profile-probe",0,value,exception)&&value&&value->IsInt()&&value->GetIntValue()>=0&&value->GetIntValue()<=5)failure=value->GetIntValue();
+        context->Exit();
+      }
+      auto result=CefProcessMessage::Create("agi.test.profile.result.v1");result->GetArgumentList()->SetBool(0,proof);result->GetArgumentList()->SetInt(1,message->GetArgumentList()->GetInt(0));result->GetArgumentList()->SetInt(2,failure);frame->SendProcessMessage(PID_BROWSER,result);return true;
+    }
     if(source==PID_BROWSER && message->GetName()=="agi.test.privacy.probe.v1" && message->GetArgumentList()->GetSize()==0) {
       auto context=frame->GetV8Context();bool proof=false;
       if(context && context->Enter()) {
@@ -1070,6 +1187,99 @@ class RendererApp final : public CefApp,public CefRenderProcessHandler {
  private:
   IMPLEMENT_REFCOUNTING(RendererApp);
 };
+class ProfileFixture final : public CefTask {
+ public:
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    if(finish_pending_){auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();return;}
+    if(GetTickCount64()>deadline_){Fail();return;}
+    if(profile_failure_reason){Fail(profile_failure_reason);return;}
+    if(awaiting_native_create_) {
+      if(menu_control_) {
+        auto owner=menu_control_->GetWindow();POINT cursor{};
+        if(!owner||!owner->IsSame(menu_window_)||!owner->IsActive()||!menu_control_->IsVisible()||!menu_control_->IsDrawn()||!GetCursorPos(&cursor)){Fail(6);return;}
+        auto hit=WindowFromPoint(cursor);if(!hit||GetAncestor(hit,GA_ROOT)!=menu_window_->GetWindowHandle()){Fail(6);return;}
+        menu_control_=nullptr;menu_window_->SendMouseEvents(MBT_LEFT,true,true);Again();return;
+      }
+      auto ids=profiles->HumanProfiles();if(ids.size()!=2){Again();return;}profile_fixture_user=ids[1];
+      bool found=false;
+      for(const auto& [id,item]:tab_views) {
+        auto current=tabs.Resolve(id);auto engine=item->GetBrowser();
+        if(current&&current->profile==profile_fixture_user&&engine&&ProfileMatches(profile_fixture_user,engine)) {
+          auto human=tabs.Resolve(original_human_tab_);auto original=tab_views.find(original_human_tab_);
+          if(!human||original==tab_views.end()||!original->second->GetWindow()||!original->second->GetWindow()->IsSame(menu_window_)){Fail(6);return;}
+          menu_window_->SetAlwaysOnTop(was_always_on_top_);if(menu_window_->IsAlwaysOnTop()!=was_always_on_top_){Fail(6);return;}
+          menu_window_=nullptr;awaiting_native_create_=false;profile_fixture_tab=id;
+          engine->GetMainFrame()->LoadURL(profile_fixture_url+"?stage=4");found=true;break;
+        }
+      }
+      if(!found){Again();return;}
+    }
+    auto tab=tabs.Resolve(profile_fixture_tab);auto view=tab_views.find(profile_fixture_tab);
+    if(!tab||view==tab_views.end()){Again();return;}
+    auto browser=view->second->GetBrowser();if(!browser||browser->IsLoading()||!ProfileMatches(tab->profile,browser)){Again();return;}
+    const auto expected=(profile_stage==2||profile_stage==6||profile_stage==8)?"agent":
+      (profile_stage==4||profile_stage==5||profile_stage==9)?profile_fixture_user:"human";
+    if(tab->profile!=expected){Fail();return;}
+    auto probe=CefProcessMessage::Create("agi.test.profile.probe.v1");probe->GetArgumentList()->SetInt(0,static_cast<int>(profile_stage));browser->GetMainFrame()->SendProcessMessage(PID_RENDERER,probe);
+    const bool seed=profile_stage==1||profile_stage==2||profile_stage==4;
+    const unsigned needed=seed?3:1;
+    if((profile_proofs[profile_fixture_tab]&needed)!=needed){Again();return;}
+    auto human_context=profile_contexts.at("human"),agent_context=profile_contexts.at("agent");
+    if(profile_stage==1) {
+      // A restrictive setting, never an ALLOW grant. The engine-owned setting
+      // is deliberately changed only in the human request context.
+      human_context->SetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS,CEF_CONTENT_SETTING_VALUE_BLOCK);
+    }
+    if(human_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)!=CEF_CONTENT_SETTING_VALUE_BLOCK||
+       agent_context->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)==CEF_CONTENT_SETTING_VALUE_BLOCK){Fail();return;}
+    if(profile_stage>=4&&profile_contexts.contains(profile_fixture_user)&&profile_contexts.at(profile_fixture_user)->GetContentSetting(profile_fixture_url,profile_fixture_url,CEF_CONTENT_SETTING_TYPE_NOTIFICATIONS)==CEF_CONTENT_SETTING_VALUE_BLOCK){Fail();return;}
+    Record(Event::profile_probe_step,profile_stage);
+    if(profile_stage==6||profile_stage==9) {
+      profile_passed=true;finish_pending_=true;CefPostDelayedTask(TID_UI,this,300);return;
+    }
+    ++profile_stage;
+    if(profile_stage==2)profile_fixture_tab=OpenProfileWindow("agent",profile_fixture_url+"?stage=2");
+    else if(profile_stage==4) {
+      auto unused=profiles->CreateHuman();auto path=unused.empty()?std::filesystem::path():profiles->Find(unused)->cache;
+      if(unused.empty()||!profiles->DeleteConfirmed(unused,true,RevokeProfile)||std::filesystem::exists(path)){Fail();return;}
+      original_human_tab_=profile_fixture_tab;
+      auto human=tabs.Resolve(original_human_tab_);auto chrome=human?browser_chrome.find(human->window):browser_chrome.end();
+      if(chrome==browser_chrome.end()||!chrome->second.profile->IsDrawn()){Fail(6);return;}
+      menu_control_=chrome->second.profile;menu_window_=menu_control_->GetWindow();
+      if(!menu_window_){Fail(6);return;}was_always_on_top_=menu_window_->IsAlwaysOnTop();menu_window_->SetAlwaysOnTop(true);menu_window_->Activate();
+      auto bounds=menu_control_->GetBounds();CefPoint point(bounds.width/2,bounds.height/2);
+      if(!menu_window_->IsAlwaysOnTop()||bounds.width<4||bounds.height<4||!menu_control_->ConvertPointToScreen(point)){Fail(6);return;}
+      menu_window_->SendMouseMove(point.x,point.y);awaiting_native_create_=true;Again();return;
+    }else if(profile_stage==8)profile_fixture_tab=OpenProfileWindow("agent",profile_fixture_url+"?stage=8");
+    else if(profile_stage==9)profile_fixture_tab=OpenProfileWindow(profile_fixture_user,profile_fixture_url+"?stage=9");
+    else {
+      const auto target=profile_stage==3?"human":profile_stage==5?profile_fixture_user:"agent";
+      bool found=false;
+      for(const auto& [id,item]:tab_views) {
+        auto current=tabs.Resolve(id);auto engine=item->GetBrowser();
+        if(current&&engine&&current->profile==target&&ProfileMatches(target,engine)) {
+          // Same native profile/window selection path; original human window
+          // remains live. Reload the real document in its original context.
+          profile_fixture_tab=id;profile_proofs[id]=0;tabs.Activate(id);ShowActive(current->window);
+          engine->GetMainFrame()->LoadURL(profile_fixture_url+"?stage="+std::to_string(profile_stage));found=true;break;
+        }
+      }
+      if(!found){Fail();return;}
+    }
+    if(profile_fixture_tab.empty()){Fail();return;}Again();
+  }
+ private:
+  void Again(){CefPostDelayedTask(TID_UI,this,150);}
+  void Fail(unsigned reason=6){load_failed=true;Record(Event::profile_probe_failed_reason,reason);Record(Event::profile_probe_failed_stage,profile_stage);if(menu_window_)menu_window_->SetAlwaysOnTop(was_always_on_top_);auto windows=native_windows;for(const auto& [id,window]:windows)window->Close();}
+  bool awaiting_native_create_=false,was_always_on_top_=false,finish_pending_=false;
+  std::string original_human_tab_;
+  CefRefPtr<CefView> menu_control_;
+  CefRefPtr<CefWindow> menu_window_;
+  const uint64_t deadline_=GetTickCount64()+30000;
+  IMPLEMENT_REFCOUNTING(ProfileFixture);
+};
+void StartProfileFixture(){CefPostDelayedTask(TID_UI,new ProfileFixture,150);}
 class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
  public:
   explicit BrowserApp(std::string url) : url_(std::move(url)) {}
@@ -1088,15 +1298,17 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   void OnContextInitialized() override {
     CEF_REQUIRE_UI_THREAD();
     Record(Event::context_initialized);
+    if(!ProfileContext("human")||!ProfileContext("agent")){load_failed=true;CefQuitMessageLoop();return;}
     CefBrowserSettings settings;
     auto window=tabs.NewWindow();auto tab=tabs.CreateTab(window,"human",{},GetTickCount64()+kCreationTimeoutMs);
     if(tab_lifecycle_test)test_root=tab;
     auto view = CefBrowserView::CreateBrowserView(new BrowserClient(tab), url_, settings,
-                                                 nullptr, nullptr, new TabViewDelegate);
+                                                 nullptr, ProfileContext("human"), new TabViewDelegate);
     if(!view){tabs.FinishClose(tab);tabs.RemoveWindow(window);CefQuitMessageLoop();return;}
     tab_views[tab]=view;CreateNativeWindow(view,window);
     if(tab_lifecycle_test)CefPostDelayedTask(TID_UI,new TabLifecycleFixture,100);
     if(browser_ui_test){browser_ui_tab=tab;StartBrowserUiFixture();}
+    if(profile_test){profile_fixture_tab=tab;StartProfileFixture();}
     CefPostDelayedTask(TID_UI,new PendingCreationSweep,250);
   }
 
@@ -1112,7 +1324,7 @@ bool UnsafeSwitches(CefRefPtr<CefCommandLine> args) {
                            "enable-logging", "log-file", "log-severity", "v", "vmodule",
                            "log-net-log", "net-log-capture-mode", "trace-startup",
                            "trace-startup-file", "trace-to-console", "enable-crash-reporter",
-                           "crash-dumps-dir", "js-flags"}) {
+                           "crash-dumps-dir", "js-flags", "enable-media-stream", "use-fake-ui-for-media-stream"}) {
     if (args->HasSwitch(flag)) {
       if (std::string_view(flag)=="log-severity" && args->HasSwitch("type") &&
           args->GetSwitchValue("log-severity")=="disable") continue;
@@ -1168,17 +1380,28 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   privacy_test=args->HasSwitch("privacy-renderer-test");
   tab_lifecycle_test=args->HasSwitch("tab-lifecycle-test");
   browser_ui_test=args->HasSwitch("browser-ui-test");
+  profile_test=args->HasSwitch("profile-isolation-test");
+  profile_restart_test=args->HasSwitch("profile-restart-test");
   wchar_t executable[32768]{};
   const DWORD executable_length=GetModuleFileNameW(nullptr,executable,32768);
   if(!executable_length || executable_length>=32768) return 70;
   std::wstring broker_path(executable);
   broker_path=broker_path.substr(0,broker_path.find_last_of(L"\\/"))+L"\\agi-browse-broker.exe";
+  // Validate and pin storage before protected pairing persistence or CEF can
+  // create files. Preserve --profile-dir as the entire isolated harness root.
+  std::wstring profile = args->GetSwitchValue("profile-dir").ToWString();
+  if(profile.empty()) {
+    wchar_t local[32768]{};auto length=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);
+    if(!length||length>=32768){if(lifecycle_log){std::fclose(lifecycle_log);lifecycle_log=nullptr;}return 67;}
+    profile=std::wstring(local)+L"\\AGI-BROWSE\\Profile";
+  }
+  try{profiles=std::make_unique<agi::browser::ProfileStore>(profile);}catch(...){if(lifecycle_log){std::fclose(lifecycle_log);lifecycle_log=nullptr;}return 67;}
 #ifdef AGI_TRANSPORT
   std::shared_ptr<agi::ipc::NativeTransportAuthority> transport_authority;
   try {
-    auto profile=args->GetSwitchValue("profile-dir").ToWString();
-    if(profile.empty()) {wchar_t local[32768]{};auto n=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);if(!n||n>=32768)throw std::runtime_error("protected storage unavailable");profile=std::wstring(local)+L"\\AGI-BROWSE";}
-    pairing_authority=std::make_shared<agi::transport::PairingAuthority>(profile+L"\\Transport\\authority.dpapi");host_transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);transport_authority=host_transport_authority;
+    auto pairing_root=args->GetSwitchValue("profile-dir").ToWString();
+    if(pairing_root.empty()) {wchar_t local[32768]{};auto n=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);if(!n||n>=32768)throw std::runtime_error("protected storage unavailable");pairing_root=std::wstring(local)+L"\\AGI-BROWSE";}
+    pairing_authority=std::make_shared<agi::transport::PairingAuthority>(pairing_root+L"\\Transport\\authority.dpapi");host_transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);transport_authority=host_transport_authority;
   } catch(...) {Record(Event::agent_transport_unavailable);}
   if(transport_authority&&!broker_channel.Start(broker_path,transport_authority)) {
 #else
@@ -1193,23 +1416,16 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   // stderr. This does not promise suppression of crash/OS dumps or fatal data.
   settings.log_severity = LOGSEVERITY_DISABLE;
   settings.command_line_args_disabled = true;
-  // CEF requires an absolute cache root. The caller's isolated profile is used
-  // for tests; the normal default is under the user's LocalAppData directory.
-  std::wstring profile = args->GetSwitchValue("profile-dir").ToWString();
-  if (profile.empty()) {
-    wchar_t local_app_data[32768] = {};
-    const DWORD length = ::GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data, 32768);
-    if (!length || length >= 32768) {
-      broker_channel.Stop();
-      if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
-      return 67;
-    }
-    profile = std::wstring(local_app_data) + L"\\AGI-BROWSE\\Profile";
-  }
-  CefString(&settings.root_cache_path) = profile;
-  CefString(&settings.cache_path) = profile + L"\\Default";
+  CefString(&settings.root_cache_path) = profiles->root().wstring();
+  // Never pass the global context to a browser. Legacy human storage remains
+  // Default; explicit agent/user contexts use separate descendant paths.
   std::string url = args->GetSwitchValue("url");
   if (url.empty()) { url = "about:blank"; }
+  if(profile_test){
+    profile_fixture_url=url;if(url.rfind("http://127.0.0.1:",0)!=0||url.find("/profile.html") == std::string::npos)return 71;
+    if(profile_restart_test){auto ids=profiles->HumanProfiles();if(ids.size()!=2)return 71;profile_fixture_user=ids[1];profile_stage=7;}
+    url=profile_fixture_url+"?stage="+std::to_string(profile_stage);
+  }
   if(browser_ui_test) {
     if(url.find("browser-ui-a.html")==std::string::npos)return 71;
     browser_ui_source=url;browser_ui_target=url;auto marker=browser_ui_target.rfind("browser-ui-a.html");
@@ -1226,11 +1442,13 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   Record(Event::initialized);
   CefRunMessageLoop();
   Record(Event::message_loop_exited);
+  profile_contexts.clear();
   CefShutdown();
+  profiles.reset();
   broker_channel.Stop();
   Record(Event::private_broker_stopped);
   Record(Event::shutdown_complete);
   app = nullptr;
   if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
-  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) || (tab_lifecycle_test && !tab_lifecycle_passed) || (browser_ui_test && !browser_ui_passed) ? 69 : 0;
+  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) || (tab_lifecycle_test && !tab_lifecycle_passed) || (browser_ui_test && !browser_ui_passed) || (profile_test&&!profile_passed) ? 69 : 0;
 }
