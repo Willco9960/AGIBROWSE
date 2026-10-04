@@ -2,7 +2,7 @@ name: Windows CEF build and lifecycle
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', '.github/workflows/windows-cef.yml']
+    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', 'tests/fixtures/tabs.html', '.github/workflows/windows-cef.yml']
 permissions:
   contents: read
 concurrency:
@@ -40,6 +40,10 @@ jobs:
         shell: pwsh
         timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1 -SecurityProbe -EvidenceDirectory build/cef-security
+      - name: Actual Views tab identity, popup, cancellation, moves and release
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs
       - name: Real privacy sentinels and startup logging rejection
         shell: pwsh
         timeout-minutes: 3
@@ -60,6 +64,10 @@ jobs:
             build/cef-lifecycle/**/lifecycle.jsonl
             build/cef-security/**/result.json
             build/cef-security/**/lifecycle.jsonl
+            build/cef-tabs/**/result.json
+            build/cef-tabs/**/lifecycle.jsonl
+            build/cef-tabs/**/stdout.txt
+            build/cef-tabs/**/stderr.txt
             build/cef-privacy/**/result.json
             build/cef-privacy/**/privacy-result.json
             build/cef-privacy/**/lifecycle.jsonl

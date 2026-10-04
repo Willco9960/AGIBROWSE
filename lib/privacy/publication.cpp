@@ -72,7 +72,10 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "private_broker_start_failed", "private_broker_challenge_verified",
     "initialization_failed", "initialized", "message_loop_exited",
     "private_broker_stopped", "shutdown_complete", "page_console_suppressed",
-    "privacy_fixture_paths_exercised", "privacy_dialog_suppressed", "privacy_human_title_preserved"
+    "privacy_fixture_paths_exercised", "privacy_dialog_suppressed", "privacy_human_title_preserved",
+    "tab_fixture_popup_registered", "tab_fixture_order_verified", "tab_fixture_move_verified",
+    "tab_fixture_cancel_verified", "tab_fixture_close_verified", "tab_fixture_pending_expired",
+    "tab_fixture_resources_released", "tab_fixture_failed"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;

@@ -4,6 +4,9 @@
 #include <string>
 #include <map>
 #include <array>
+#include <algorithm>
+#include <set>
+#include "apps/browser/lifecycle.h"
 #include "lib/ipc/windows_channel.h"
 #include "lib/privacy/publication.h"
 #include "include/cef_jsdialog_handler.h"
@@ -21,9 +24,12 @@
 #include "include/cef_process_message.h"
 #include "include/cef_render_process_handler.h"
 #include "include/cef_v8.h"
+#include "include/cef_task.h"
 #include "include/cef_sandbox_win.h"
 #include "include/cef_version_info.h"
 #include "include/views/cef_browser_view.h"
+#include "include/views/cef_browser_view_delegate.h"
+#include "include/views/cef_fill_layout.h"
 #include "include/views/cef_window.h"
 #include "include/views/cef_window_delegate.h"
 #include "include/wrapper/cef_helpers.h"
@@ -39,14 +45,45 @@ bool renderer_security_passed = false;
 bool privacy_test = false;
 bool privacy_test_passed = false;
 bool privacy_dialog_seen = false;
+bool tab_lifecycle_test = false, tab_lifecycle_passed = false;
+unsigned test_unload_canceled = 0, test_unload_accepted = 0;
+bool test_cancel_unload = false;
+std::string test_root;
 agi::ipc::HostChannel broker_channel;
 #ifdef AGI_TRANSPORT
 std::shared_ptr<agi::transport::PairingAuthority> pairing_authority;
+std::shared_ptr<agi::transport::HostTransportAuthority> host_transport_authority;
 #endif
+agi::browser::Lifecycle tabs([](const std::string& profile, const std::string& tab) {
+#ifdef AGI_TRANSPORT
+  try { if (host_transport_authority) host_transport_authority->InvalidateNativeTab(profile, tab); }
+  catch (...) { try { broker_channel.Stop(); } catch (...) {} throw; }
+#endif
+});
+std::map<std::string, CefRefPtr<CefBrowserView>> tab_views;
+std::map<std::string, CefString> tab_titles;
+std::map<std::string, CefRefPtr<CefWindow>> native_windows;
+std::map<std::pair<int,int>, std::string> pending_popups;
+std::set<std::string> closing_windows;
+int browser_count = 0;
+std::string CreateTab(const std::string& window, CefRefPtr<CefRequestContext> context, const std::string& profile);
+void ShowActive(const std::string& window);
+void CreateNativeWindow(CefRefPtr<CefBrowserView> view, const std::string& window);
+bool ReorderTab(const std::string& tab, size_t index);
+bool MoveTab(const std::string& tab, const std::string& window);
+void CancelReservation(const std::string& tab);
+void RequestCloseTab(const std::string& tab);
+void MaybeQuit();
+constexpr uint64_t kCreationTimeoutMs = 10000;
 
 using agi::privacy::Event;
 void Record(Event event, unsigned long long value = 0) {
   agi::privacy::WriteDiagnostic(lifecycle_log, event, value);
+}
+void MaybeQuit() {
+  if(browser_count || tabs.tab_count() || !native_windows.empty())return;
+  if(tab_lifecycle_test && tab_lifecycle_passed && tab_views.empty() && tab_titles.empty() && pending_popups.empty())Record(Event::tab_fixture_resources_released);
+  CefQuitMessageLoop();
 }
 
 class BrowserClient final : public CefClient,
@@ -57,6 +94,7 @@ class BrowserClient final : public CefClient,
                             public CefJSDialogHandler,
                             public CefFrameHandler {
  public:
+  explicit BrowserClient(std::string tab) : tab_(std::move(tab)) {}
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
@@ -79,8 +117,52 @@ class BrowserClient final : public CefClient,
     privacy_dialog_seen = true; Record(Event::privacy_dialog_suppressed);
     callback->Continue(true, CefString()); return true;
   }
+  bool OnBeforeUnloadDialog(CefRefPtr<CefBrowser> browser,const CefString&,bool is_reload,
+      CefRefPtr<CefJSDialogCallback> callback) override {
+    CEF_REQUIRE_UI_THREAD();
+    // Test decisions still require an actual CEF beforeunload callback; the
+    // harness cannot manufacture that callback or infer it from a timer.
+    const bool fixture=tab_lifecycle_test && tab_==test_root && !is_reload;
+    const bool allow=fixture ? !test_cancel_unload : MessageBoxW(browser->GetHost()->GetWindowHandle(),
+        L"This page has unsaved changes. Leave the page?",L"AGI-BROWSE",MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)==IDYES;
+    if(fixture){if(allow)++test_unload_accepted;else ++test_unload_canceled;test_cancel_unload=false;}
+    if(!allow && !is_reload) {
+      auto tab=tabs.FindTab(tab_);auto window=tab?tab->window:std::string();
+      tabs.CancelClose(tab_);closing_windows.erase(window);ShowActive(window);
+    }
+    callback->Continue(allow,CefString());return true;
+  }
   bool OnPreKeyEvent(CefRefPtr<CefBrowser> browser,const CefKeyEvent& event,CefEventHandle os_event,bool* shortcut) override {
     CEF_REQUIRE_UI_THREAD();
+    if(os_event && os_event->message==WM_KEYDOWN && os_event->wParam==event.windows_key_code && event.type==KEYEVENT_RAWKEYDOWN && (event.modifiers&EVENTFLAG_CONTROL_DOWN)) {
+      auto tab=tabs.Resolve(tab_);
+      if(tab && event.windows_key_code=='T' && !(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
+        *shortcut=true;CreateTab(tab->window,browser->GetHost()->GetRequestContext(),tab->profile);return true;
+      }
+      if(tab && event.windows_key_code=='W' && !(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
+        *shortcut=true;
+        RequestCloseTab(tab_);return true;
+      }
+      if(tab && (event.modifiers&EVENTFLAG_SHIFT_DOWN) && (event.windows_key_code==VK_PRIOR || event.windows_key_code==VK_NEXT)) {
+        *shortcut=true;const auto& order=tabs.FindWindow(tab->window)->tabs;
+        auto at=static_cast<size_t>(std::find(order.begin(),order.end(),tab_)-order.begin());
+        if(event.windows_key_code==VK_PRIOR && at)ReorderTab(tab_,at-1);
+        if(event.windows_key_code==VK_NEXT && at+1<order.size())ReorderTab(tab_,at+1);
+        return true;
+      }
+      if(tab && (event.modifiers&EVENTFLAG_SHIFT_DOWN) && event.windows_key_code=='N') {
+        *shortcut=true;auto destination=tabs.NewWindow();if(destination.empty())return true;
+        CreateNativeWindow(nullptr,destination);
+        if(!MoveTab(tab_,destination)){auto native=native_windows.find(destination);if(native!=native_windows.end())native->second->Close();}
+        return true;
+      }
+      if(tab && event.windows_key_code==VK_TAB) {
+        *shortcut=true;const auto& order=tabs.FindWindow(tab->window)->tabs;
+        auto current=std::find(order.begin(),order.end(),tab_);
+        for(size_t i=1;i<=order.size();++i) {auto id=order[(static_cast<size_t>(current-order.begin())+i)%order.size()];if(tabs.Activate(id)){ShowActive(tab->window);break;}}
+        return true;
+      }
+    }
 #ifdef AGI_TRANSPORT
     if(!os_event||os_event->message!=WM_KEYDOWN||os_event->wParam!=event.windows_key_code||event.type!=KEYEVENT_RAWKEYDOWN||(event.modifiers&(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))!=(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))return false;
     auto owner=browser->GetHost()->GetWindowHandle();
@@ -146,16 +228,62 @@ class BrowserClient final : public CefClient,
 
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
     CEF_REQUIRE_UI_THREAD();
-    ++browser_count_;
+    ++browser_count;
+    auto reserved=tabs.FindTab(tab_);
+    if(!reserved || (reserved->deadline && GetTickCount64()>=reserved->deadline) ||
+        closing_windows.contains(reserved->window) || (!reserved->opener.empty() && !tabs.Resolve(reserved->opener))) {
+      CancelReservation(tab_);browser->GetHost()->CloseBrowser(true);return;
+    }
+    if (!tabs.Bind(tab_,browser->GetIdentifier())) { browser->GetHost()->CloseBrowser(true); return; }
+    for(auto it=pending_popups.begin();it!=pending_popups.end();) {
+      if(it->second==tab_)it=pending_popups.erase(it);else ++it;
+    }
     Record(Event::browser_created, browser->GetIdentifier());
   }
 
   void OnBeforeClose(CefRefPtr<CefBrowser> browser) override {
     CEF_REQUIRE_UI_THREAD();
-    Record(Event::browser_closed, browser->GetIdentifier());
-    if (--browser_count_ == 0) {
-      CefQuitMessageLoop();
+    auto view=tab_views.find(tab_);auto tab=tabs.FindTab(tab_);auto window=tab?tab->window:std::string();
+    for(const auto& pending:tabs.PendingFrom(tab_))CancelReservation(pending);
+    tabs.BeginClose(tab_);
+    std::erase_if(frames_,[&](const auto& entry){return entry.first.first==browser->GetIdentifier();});
+    std::erase_if(denied_,[&](const auto& entry){return entry.first.first==browser->GetIdentifier();});
+    if(view!=tab_views.end()) {
+      if(view->second->GetWindow())view->second->GetWindow()->RemoveChildView(view->second);
+      tab_views.erase(view);
     }
+    tabs.FinishClose(tab_);ShowActive(window);
+    tab_titles.erase(tab_);
+    if(auto w=tabs.FindWindow(window);w && w->tabs.empty()) {
+      auto native=native_windows.find(window);if(native!=native_windows.end())native->second->Close();
+    }
+    Record(Event::browser_closed, browser->GetIdentifier());
+    --browser_count;MaybeQuit();
+  }
+
+  bool DoClose(CefRefPtr<CefBrowser>) override {
+    CEF_REQUIRE_UI_THREAD();
+    // Alloy's default would close the entire shared native window. Destruction
+    // of this BrowserView instead destroys only this tab's native child widget.
+    tabs.BeginClose(tab_);
+    auto view=tab_views.find(tab_);
+    if(view!=tab_views.end()) {auto keep=view->second;auto window=keep->GetWindow();if(window)window->RemoveChildView(keep);tab_views.erase(view);}
+    return true;
+  }
+
+  bool OnBeforePopup(CefRefPtr<CefBrowser> browser,CefRefPtr<CefFrame>,int popup_id,
+      const CefString&,const CefString&,WindowOpenDisposition,bool,const CefPopupFeatures&,
+      CefWindowInfo&,CefRefPtr<CefClient>& client,CefBrowserSettings&,CefRefPtr<CefDictionaryValue>&,bool*) override {
+    CEF_REQUIRE_UI_THREAD();auto opener=tabs.Resolve(tab_);if(!opener)return true;
+    auto window=tabs.NewWindow();if(window.empty())return true;
+    auto tab=tabs.CreateTab(window,opener->profile,tab_,GetTickCount64()+kCreationTimeoutMs);
+    if(tab.empty()){tabs.RemoveWindow(window);return true;}
+    if(!pending_popups.emplace(std::make_pair(browser->GetIdentifier(),popup_id),tab).second){CancelReservation(tab);return true;}
+    client=new BrowserClient(tab);return false;
+  }
+  void OnBeforePopupAborted(CefRefPtr<CefBrowser> browser,int popup_id) override {
+    CEF_REQUIRE_UI_THREAD();auto p=pending_popups.find({browser->GetIdentifier(),popup_id});if(p==pending_popups.end())return;
+    auto id=p->second;CancelReservation(id);
   }
 
   void OnTitleChange(CefRefPtr<CefBrowser> browser, const CefString& title) override {
@@ -164,8 +292,10 @@ class BrowserClient final : public CefClient,
       fixture_ready = true;
       Record(Event::fixture_ready);
     }
+    auto tab=tabs.Resolve(tab_);if(!tab)return;
+    tab_titles[tab_]=title.ToString().substr(0,4096);
     auto view = CefBrowserView::GetForBrowser(browser);
-    if (view && view->GetWindow()) {
+    if (view && view->GetWindow() && tabs.FindWindow(tab->window)->active==tab_) {
       view->GetWindow()->SetTitle(title);
       if(privacy_test && title!="Privacy fixture loading" && title!="AGI-BROWSE fixture ready" &&
          view->GetWindow()->GetTitle()==title) Record(Event::privacy_human_title_preserved);
@@ -206,7 +336,7 @@ class BrowserClient final : public CefClient,
   }
 
  private:
-  int browser_count_ = 0;
+  const std::string tab_;
   bool console_seen_ = false;
   std::map<std::pair<int,std::string>,CefRefPtr<CefFrame>> frames_;
   std::map<std::pair<int,std::string>,unsigned> denied_;
@@ -215,25 +345,41 @@ class BrowserClient final : public CefClient,
 
 class WindowDelegate final : public CefWindowDelegate {
  public:
-  explicit WindowDelegate(CefRefPtr<CefBrowserView> view) : view_(view) {}
+  WindowDelegate(CefRefPtr<CefBrowserView> view,std::string window) : view_(view),window_(std::move(window)) {}
 
   void OnWindowCreated(CefRefPtr<CefWindow> window) override {
-    window->AddChildView(view_);
+    native_windows[window_]=window;
+    window->SetToFillLayout();
+    if(view_)window->AddChildView(view_);
     window->SetTitle("AGI-BROWSE");
     window->Show();
-    view_->RequestFocus();
+    if(view_)view_->RequestFocus();
+    view_=nullptr;
     Record(Event::window_created, reinterpret_cast<unsigned long long>(window->GetWindowHandle()));
   }
 
   void OnWindowDestroyed(CefRefPtr<CefWindow> window) override {
     Record(Event::window_destroyed);
     view_ = nullptr;
+    native_windows.erase(window_);tabs.RemoveWindow(window_);
+    closing_windows.erase(window_);MaybeQuit();
   }
 
   bool CanClose(CefRefPtr<CefWindow> window) override {
-    auto browser = view_ ? view_->GetBrowser() : nullptr;
-    return !browser || browser->GetHost()->TryCloseBrowser();
+    auto w=tabs.FindWindow(window_);if(!w)return true;
+    closing_windows.insert(window_);
+    auto ids=w->tabs;bool ready=true;
+    for(const auto& id:ids) {
+      auto tab=tabs.FindTab(id);
+      if(tab && !tab->engine){CancelReservation(id);continue;}
+      auto view=tab_views.find(id);if(view==tab_views.end()){ready=false;continue;}
+      auto browser=view->second->GetBrowser();
+      if(browser) {if(!tabs.BeginClose(id) || !browser->GetHost()->TryCloseBrowser())ready=false;}
+      else ready=false;
+    }
+    return ready;
   }
+  cef_runtime_style_t GetWindowRuntimeStyle() override { return CEF_RUNTIME_STYLE_ALLOY; }
 
   CefSize GetPreferredSize(CefRefPtr<CefView> view) override {
     return CefSize(1100, 760);
@@ -241,7 +387,192 @@ class WindowDelegate final : public CefWindowDelegate {
 
  private:
   CefRefPtr<CefBrowserView> view_;
+  const std::string window_;
   IMPLEMENT_REFCOUNTING(WindowDelegate);
+};
+
+void ShowActive(const std::string& window) {
+  auto w=tabs.FindWindow(window);if(!w)return;
+  for(const auto& id:w->tabs) {
+    auto view=tab_views.find(id);if(view==tab_views.end())continue;
+    view->second->SetVisible(id==w->active);
+    if(id==w->active) {
+      view->second->RequestFocus();auto native=view->second->GetWindow();
+      if(native){auto title=tab_titles.find(id);native->SetTitle(title==tab_titles.end()?CefString("AGI-BROWSE"):title->second);}
+    }
+  }
+}
+void CreateNativeWindow(CefRefPtr<CefBrowserView> view,const std::string& window) {
+  CefWindow::CreateTopLevelWindow(new WindowDelegate(view,window));
+}
+void CancelReservation(const std::string& id) {
+  auto tab=tabs.FindTab(id);if(!tab || tab->engine)return;
+  auto window=tab->window;
+  if(!tabs.FinishClose(id))return;
+  std::erase_if(pending_popups,[&](const auto& entry){return entry.second==id;});
+  auto view=tab_views.find(id);
+  if(view!=tab_views.end()) {auto keep=view->second;auto native=keep->GetWindow();if(native)native->RemoveChildView(keep);tab_views.erase(view);}
+  ShowActive(window);
+  if(auto w=tabs.FindWindow(window);w && w->tabs.empty()) {
+    auto native=native_windows.find(window);
+    if(native!=native_windows.end() && !closing_windows.contains(window))native->second->Close();
+    else if(native==native_windows.end())tabs.RemoveWindow(window);
+  }
+  MaybeQuit();
+}
+bool ReorderTab(const std::string& id,size_t index) {
+  auto tab=tabs.Resolve(id);auto view=tab_views.find(id);if(!tab || view==tab_views.end())return false;
+  auto native=view->second->GetWindow();if(!native || !tabs.Reorder(id,index))return false;
+  const auto& order=tabs.FindWindow(tab->window)->tabs;
+  // Pending tabs need not have attached child Views yet.
+  int child=0;for(const auto& target:order){auto item=tab_views.find(target);if(item!=tab_views.end() && item->second->GetWindow() && item->second->GetWindow()->IsSame(native))native->ReorderChildView(item->second,child++);}
+  native->Layout();return true;
+}
+bool MoveTab(const std::string& id,const std::string& window) {
+  auto tab=tabs.Resolve(id);auto item=tab_views.find(id);auto target=native_windows.find(window);
+  if(!tab || item==tab_views.end() || target==native_windows.end() || closing_windows.contains(window))return false;
+  auto source_id=tab->window;auto keep=item->second;auto source=keep->GetWindow();
+  if(!source || source_id==window || !keep->GetBrowser())return false;
+  const int engine=keep->GetBrowser()->GetIdentifier();
+  source->RemoveChildView(keep);target->second->AddChildView(keep);
+  auto attached=keep->GetWindow();
+  if(!attached || !attached->IsSame(target->second) || !keep->GetBrowser() || keep->GetBrowser()->GetIdentifier()!=engine || !tabs.Move(id,window,tabs.FindWindow(window)->tabs.size())) {
+    if(attached)attached->RemoveChildView(keep);source->AddChildView(keep);ShowActive(source_id);return false;
+  }
+  ShowActive(source_id);ShowActive(window);source->Layout();target->second->Layout();target->second->Activate();
+  if(tabs.FindWindow(source_id)->tabs.empty())source->Close();
+  return true;
+}
+class PendingCreationSweep final : public CefTask {
+ public:
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    for(const auto& id:tabs.PendingExpired(GetTickCount64()))CancelReservation(id);
+    if(tabs.tab_count() || browser_count)CefPostDelayedTask(TID_UI,this,250);
+  }
+ private:
+  IMPLEMENT_REFCOUNTING(PendingCreationSweep);
+};
+class TabViewDelegate final : public CefBrowserViewDelegate {
+ public:
+  cef_runtime_style_t GetBrowserRuntimeStyle() override { return CEF_RUNTIME_STYLE_ALLOY; }
+  void OnBrowserCreated(CefRefPtr<CefBrowserView> view,CefRefPtr<CefBrowser> browser) override {
+    CEF_REQUIRE_UI_THREAD();auto tab=tabs.ForEngine(browser->GetIdentifier());if(!tab)return;
+    tab_views[tab->id]=view;
+    auto window=native_windows.find(tab->window);
+    if(window!=native_windows.end() && !view->GetWindow())window->second->AddChildView(view);
+    ShowActive(tab->window);
+  }
+  bool OnPopupBrowserViewCreated(CefRefPtr<CefBrowserView>,CefRefPtr<CefBrowserView> popup,bool) override {
+    CEF_REQUIRE_UI_THREAD();auto tab=tabs.ForEngine(popup->GetBrowser()->GetIdentifier());
+    if(!tab){popup->GetBrowser()->GetHost()->CloseBrowser(true);return true;}
+    CreateNativeWindow(popup,tab->window);return true;
+  }
+ private:
+  IMPLEMENT_REFCOUNTING(TabViewDelegate);
+};
+std::string CreateTab(const std::string& window,CefRefPtr<CefRequestContext> context,const std::string& profile) {
+  if(closing_windows.contains(window))return {};
+  auto tab=tabs.CreateTab(window,profile,{},GetTickCount64()+kCreationTimeoutMs);if(tab.empty())return {};
+  CefBrowserSettings settings;
+  auto view=CefBrowserView::CreateBrowserView(new BrowserClient(tab),"about:blank",settings,nullptr,context,new TabViewDelegate);
+  if(!view){CancelReservation(tab);return {};}
+  tab_views[tab]=view;
+  auto native=native_windows.find(window);if(native!=native_windows.end())native->second->AddChildView(view);
+  ShowActive(window);return tab;
+}
+void RequestCloseTab(const std::string& id) {
+  auto tab=tabs.Resolve(id);auto item=tab_views.find(id);if(!tab || item==tab_views.end())return;
+  auto browser=item->second->GetBrowser();if(!browser)return;
+  auto window=tab->window;
+  if(tabs.FindWindow(window)->tabs.size()==1 && CreateTab(window,browser->GetHost()->GetRequestContext(),tab->profile).empty())return;
+  if(tabs.BeginClose(id)){ShowActive(window);browser->GetHost()->CloseBrowser(false);}
+}
+class TabLifecycleFixture final : public CefTask {
+ public:
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    if(GetTickCount64()>deadline_){Fail();return;}
+    auto root=tabs.Resolve(test_root);auto root_view=tab_views.find(test_root);
+    if(stage_>0 && stage_<4 && (!root || root_view==tab_views.end())){Fail();return;}
+    if(stage_==0) {
+      if(!fixture_ready || !root || root_view==tab_views.end() || !root_view->second->IsDrawn()) {Again();return;}
+      auto browser=root_view->second->GetBrowser();if(!browser){Again();return;}
+      engine_=browser->GetIdentifier();context_=browser->GetHost()->GetRequestContext();source_=root->window;
+      CefMouseEvent click;click.x=60;click.y=20;
+      browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,false,1);
+      browser->GetHost()->SendMouseClickEvent(click,MBT_LEFT,true,1);
+      stage_=1;
+    } else if(stage_==1) {
+      std::string popup;
+      for(const auto& [id,view]:tab_views) {auto tab=tabs.Resolve(id);if(tab && tab->opener==test_root && tab->engine && view->GetWindow())popup=id;}
+      if(popup.empty()){Again();return;}
+      auto browser=tab_views.at(popup)->GetBrowser();auto tab=tabs.Resolve(popup);
+      if(!browser || tab->profile!=root->profile || !context_->IsSame(browser->GetHost()->GetRequestContext())){Fail();return;}
+      Record(Event::tab_fixture_popup_registered);
+      a_=CreateTab(source_,context_,root->profile);b_=CreateTab(source_,context_,root->profile);
+      if(a_.empty() || b_.empty()){Fail();return;}stage_=2;
+    } else if(stage_==2) {
+      auto a=tabs.Resolve(a_),b=tabs.Resolve(b_);if(!a || !b || !a->engine || !b->engine){Again();return;}
+      if(!ReorderTab(test_root,2) || tabs.ForEngine(engine_)->id!=test_root){Fail();return;}
+      auto native=native_windows.at(source_);
+      if(native->GetChildViewCount()!=3 || !native->GetChildViewAt(2)->IsSame(root_view->second)){Fail();return;}
+      tabs.Activate(a_);ShowActive(source_);
+      auto active_title=tab_titles.find(a_);
+      if(!tab_views.at(a_)->IsVisible() || root_view->second->IsVisible() ||
+          native->GetTitle()!=(active_title==tab_titles.end()?CefString("AGI-BROWSE"):active_title->second)){Fail();return;}
+      RequestCloseTab(b_);stage_=3;
+    } else if(stage_==3) {
+      if(tabs.FindTab(b_)){Again();return;}
+      if(!tabs.Resolve(a_) || !native_windows.contains(source_) || !tab_views.at(a_)->IsDrawn()){Fail();return;}
+      Record(Event::tab_fixture_order_verified);
+      destination_=tabs.NewWindow();if(destination_.empty()){Fail();return;}
+      CreateNativeWindow(nullptr,destination_);
+      if(!MoveTab(test_root,destination_)){Fail();return;}
+      auto browser=root_view->second->GetBrowser();auto native=root_view->second->GetWindow();
+      if(!browser || browser->GetIdentifier()!=engine_ || !context_->IsSame(browser->GetHost()->GetRequestContext()) ||
+          !native || !native->IsSame(native_windows.at(destination_)) || native->GetTitle()!=tab_titles.at(test_root) || tabs.ForEngine(engine_)->id!=test_root || tabs.Resolve(test_root)->profile!="human") {Fail();return;}
+      Record(Event::tab_fixture_move_verified);
+      test_cancel_unload=true;RequestCloseTab(test_root);stage_=4;
+    } else if(stage_==4) {
+      if(!test_unload_canceled){Again();return;}
+      root=tabs.Resolve(test_root);
+      if(!root || root_view==tab_views.end() || root->engine!=engine_ || !root_view->second->IsVisible() || tabs.FindWindow(destination_)->tabs.size()!=2){Fail();return;}
+      Record(Event::tab_fixture_cancel_verified);
+      RequestCloseTab(test_root);stage_=5;
+    } else if(stage_==5) {
+      if(tabs.FindTab(test_root)){Again();return;}
+      auto w=tabs.FindWindow(destination_);
+      if(test_unload_canceled!=1 || test_unload_accepted!=1 || tab_views.contains(test_root) || !w || w->tabs.size()!=1 || !tabs.Resolve(w->active) || !tabs.Resolve(a_)) {Fail();return;}
+      auto blank=tab_views.find(w->active);
+      if(blank==tab_views.end() || !blank->second->GetBrowser() || !blank->second->IsDrawn()){Again();return;}
+      Record(Event::tab_fixture_close_verified);
+      pending_=tabs.CreateTab(destination_,"human",{},GetTickCount64()+300);stage_=6;
+    } else if(stage_==6) {
+      if(tabs.FindTab(pending_)){Again();return;}
+      auto w=tabs.FindWindow(destination_);
+      if(!w || tab_views.contains(pending_) || !tabs.Resolve(w->active) || !tab_views.at(w->active)->IsDrawn()){Fail();return;}
+      Record(Event::tab_fixture_pending_expired);stage_=7;hold_until_=GetTickCount64()+5000;Again();return;
+    } else if(stage_==7) {
+      // Observation hold only: renderer-token inspection gets five seconds;
+      // beforeunload evidence already came from the actual callback above.
+      if(GetTickCount64()<hold_until_){Again();return;}
+      tab_lifecycle_passed=true;
+      // Final native window shutdown uses CanClose, not the final-tab shortcut.
+      std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);
+      for(const auto& window:windows)window->Close();return;
+    }
+    Again();
+  }
+ private:
+  void Again(){CefPostDelayedTask(TID_UI,this,100);}
+  void Fail(){load_failed=true;Record(Event::tab_fixture_failed);test_cancel_unload=false;std::vector<CefRefPtr<CefWindow>> windows;for(const auto& [id,window]:native_windows)windows.push_back(window);for(const auto& window:windows)window->Close();}
+  uint64_t deadline_=GetTickCount64()+30000;
+  uint64_t hold_until_=0;
+  int stage_=0,engine_=0;
+  std::string source_,destination_,a_,b_,pending_;
+  CefRefPtr<CefRequestContext> context_;
+  IMPLEMENT_REFCOUNTING(TabLifecycleFixture);
 };
 
 class RendererApp final : public CefApp,public CefRenderProcessHandler {
@@ -312,9 +643,13 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
     CEF_REQUIRE_UI_THREAD();
     Record(Event::context_initialized);
     CefBrowserSettings settings;
-    auto view = CefBrowserView::CreateBrowserView(new BrowserClient, url_, settings,
-                                                 nullptr, nullptr, nullptr);
-    CefWindow::CreateTopLevelWindow(new WindowDelegate(view));
+    auto window=tabs.NewWindow();auto tab=tabs.CreateTab(window,"human",{},GetTickCount64()+kCreationTimeoutMs);
+    auto view = CefBrowserView::CreateBrowserView(new BrowserClient(tab), url_, settings,
+                                                 nullptr, nullptr, new TabViewDelegate);
+    if(!view){tabs.FinishClose(tab);tabs.RemoveWindow(window);CefQuitMessageLoop();return;}
+    tab_views[tab]=view;CreateNativeWindow(view,window);
+    if(tab_lifecycle_test){test_root=tab;CefPostDelayedTask(TID_UI,new TabLifecycleFixture,100);}
+    CefPostDelayedTask(TID_UI,new PendingCreationSweep,250);
   }
 
  private:
@@ -383,6 +718,7 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   Record(Event::sandbox_bootstrap_verified, ::GetCurrentProcessId());
   renderer_security_test=args->HasSwitch("ipc-renderer-test");
   privacy_test=args->HasSwitch("privacy-renderer-test");
+  tab_lifecycle_test=args->HasSwitch("tab-lifecycle-test");
   wchar_t executable[32768]{};
   const DWORD executable_length=GetModuleFileNameW(nullptr,executable,32768);
   if(!executable_length || executable_length>=32768) return 70;
@@ -393,7 +729,7 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   try {
     auto profile=args->GetSwitchValue("profile-dir").ToWString();
     if(profile.empty()) {wchar_t local[32768]{};auto n=GetEnvironmentVariableW(L"LOCALAPPDATA",local,32768);if(!n||n>=32768)throw std::runtime_error("protected storage unavailable");profile=std::wstring(local)+L"\\AGI-BROWSE";}
-    pairing_authority=std::make_shared<agi::transport::PairingAuthority>(profile+L"\\Transport\\authority.dpapi");transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);
+    pairing_authority=std::make_shared<agi::transport::PairingAuthority>(profile+L"\\Transport\\authority.dpapi");host_transport_authority=std::make_shared<agi::transport::HostTransportAuthority>(pairing_authority);transport_authority=host_transport_authority;
   } catch(...) {Record(Event::agent_transport_unavailable);}
   if(transport_authority&&!broker_channel.Start(broker_path,transport_authority)) {
 #else
@@ -442,5 +778,5 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   Record(Event::shutdown_complete);
   app = nullptr;
   if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
-  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) ? 69 : 0;
+  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) || (tab_lifecycle_test && !tab_lifecycle_passed) ? 69 : 0;
 }

@@ -81,6 +81,14 @@ bool ScopedAuthority::RegisterNativeDocument(const ScopedDocument& document) {
 void ScopedAuthority::RemoveNativeDocument(const Destination& d) {
   std::lock_guard lock(mutex_); documents_.erase({d.profile, d.tab, d.frame});
 }
+void ScopedAuthority::InvalidateNativeTab(const std::string& profile, const std::string& tab) {
+  std::lock_guard lock(mutex_);
+  std::erase_if(documents_, [&](const auto& entry) { return std::get<0>(entry.first) == profile && std::get<1>(entry.first) == tab; });
+  leases_.erase({profile, tab});
+  std::erase_if(pending_, [&](const auto& entry) { const auto& d = entry.second.request.destination; return d.profile == profile && d.tab == tab; });
+  for(auto& [id,session] : sessions_) if(session.grant.profile == profile)
+    std::erase(session.grant.tabs, tab);
+}
 bool ScopedAuthority::Current(const ScopeRequest& r, uint64_t now, Pending* stamp) const {
   if (!live_ || !DestinationValid(r.destination) || !IsOperation(r.operation)) return false;
   auto s = sessions_.find(r.session);

@@ -47,6 +47,7 @@ class ScopedAuthority {
   bool ApproveNativeGrant(const ScopedGrant& grant, uint64_t now_ms);
   bool RegisterNativeDocument(const ScopedDocument& document);
   void RemoveNativeDocument(const Destination& destination);
+  void InvalidateNativeTab(const std::string& profile, const std::string& tab);
   bool AcquireNativeLease(const std::string& client, const std::string& session,
                           const std::string& tab, uint64_t now_ms);
   void ReleaseNativeLease(const std::string& client, const std::string& session,

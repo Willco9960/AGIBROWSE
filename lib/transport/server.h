@@ -17,6 +17,8 @@ public:
                         const std::string &session) override;
   bool DisconnectSession(const std::string& client,const std::string& session) override;
   void InvalidateSessions() override;
+  // Native lifecycle barrier, never callable from IPC/page input.
+  void InvalidateNativeTab(const std::string& profile, const std::string& tab) { scopes_->InvalidateNativeTab(profile, tab); }
 
 private:
   friend struct HostTransportAuthorityTestAccess;

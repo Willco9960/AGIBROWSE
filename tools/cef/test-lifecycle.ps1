@@ -6,6 +6,7 @@ param(
     [string]$FixtureUrl = '',
     [switch]$SecurityProbe,
     [switch]$PrivacyProbe,
+    [switch]$TabProbe,
     [ValidateSet('healthy','expired','corrupt')][string]$TransportStoreFixture = 'healthy'
 )
 $ErrorActionPreference = 'Stop'
@@ -29,6 +30,8 @@ if($TransportStoreFixture -ne 'healthy') {
 $url = ([Uri](Join-Path $root 'tests/fixtures/cef-lifecycle.html')).AbsoluteUri
 if ($FixtureUrl) { $url = $FixtureUrl }
 if ($PrivacyProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/privacy.html')).AbsoluteUri }
+if ($TabProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/tabs.html')).AbsoluteUri }
+if ($TabProbe -and ($SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Tab lifecycle probe requires its own healthy isolated fixture run' }
 
 if (-not ('CefLifecycle.Native' -as [type])) {
 Add-Type -TypeDefinition @'
@@ -96,6 +99,7 @@ $arguments = @(
 )
 if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
 if ($PrivacyProbe) { $arguments += '--privacy-renderer-test' }
+if ($TabProbe) { $arguments += '--tab-lifecycle-test' }
 $hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle Hidden -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -145,11 +149,13 @@ try {
     if (-not $window -or -not $window.value) { throw 'Native Views window handle was not recorded' }
     # Hold the real fixture window open while measuring children, then send a
     # normal OS close request. No forced process termination can count as a pass.
-    Start-Sleep -Seconds 1
-    $result = [UIntPtr]::Zero
-    if ([CefLifecycle.Native]::SendMessageTimeout([IntPtr][long]$window.value, 0x10,
-        [UIntPtr]::Zero, [IntPtr]::Zero, 2, 5000, [ref]$result) -eq [IntPtr]::Zero) {
-        throw 'Native WM_CLOSE request failed or timed out'
+    if (-not $TabProbe) {
+        Start-Sleep -Seconds 1
+        $result = [UIntPtr]::Zero
+        if ([CefLifecycle.Native]::SendMessageTimeout([IntPtr][long]$window.value, 0x10,
+            [UIntPtr]::Zero, [IntPtr]::Zero, 2, 5000, [ref]$result) -eq [IntPtr]::Zero) {
+            throw 'Native WM_CLOSE request failed or timed out'
+        }
     }
     if (-not $hostProcess.WaitForExit($TimeoutSeconds * 1000)) { throw 'Host did not shut down after WM_CLOSE' }
     if ($hostProcess.ExitCode -ne 0) { throw "Host exit code $($hostProcess.ExitCode)" }
@@ -168,6 +174,15 @@ try {
     }
     foreach ($required in $requiredEvents) {
         if (-not ($events | Where-Object event -eq $required)) { throw "Missing lifecycle event: $required" }
+    }
+    if ($TabProbe) {
+        if ($events | Where-Object event -eq tab_fixture_failed) { throw 'Host-native tab lifecycle fixture failed' }
+        foreach ($required in @('tab_fixture_popup_registered','tab_fixture_order_verified','tab_fixture_move_verified','tab_fixture_cancel_verified','tab_fixture_close_verified','tab_fixture_pending_expired','tab_fixture_resources_released')) {
+            if (@($events | Where-Object event -eq $required).Count -ne 1) { throw "Missing or duplicate tab fixture proof: $required" }
+        }
+        $created=@($events | Where-Object event -eq browser_created | ForEach-Object value)
+        $closed=@($events | Where-Object event -eq browser_closed | ForEach-Object value)
+        if ($created.Count -ne 5 -or $closed.Count -ne 5 -or (Compare-Object ($created | Sort-Object) ($closed | Sort-Object))) { throw 'Five actual CEF browser creations must match five graceful browser closes' }
     }
     if ($SecurityProbe) {
         foreach ($required in @('renderer_application_escape_blocked','renderer_private_handles_absent','page_native_api_absent')) {
@@ -198,6 +213,7 @@ try {
         orphanProcesses = @($remaining | Select-Object ProcessId, ParentProcessId, CommandLine)
         forcedCleanup = $cleanupRequired; failure = $failure
         transportStoreFixture = $TransportStoreFixture
+        tabLifecycleProbe = [bool]$TabProbe
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'result.json') -Encoding utf8
     $hostProcess.Dispose()
 }

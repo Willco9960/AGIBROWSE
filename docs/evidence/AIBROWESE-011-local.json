@@ -1,0 +1,29 @@
+{
+  "task": "AIBROWESE-011",
+  "status": "local-source-checks-pass-gui-unverified",
+  "baseline": "68da594",
+  "recordedUtc": "2026-10-04T01:42:00.6456954Z",
+  "nativeLifecycleChecks": 138,
+  "nativeScopeChecks": 348,
+  "nativePrivacyChecks": 46,
+  "pinnedCefClCompilePassed": true,
+  "powershellHarnessParserPassed": true,
+  "fullBuildRun": false,
+  "guiRun": false,
+  "sourceSha256": {
+    "tests/fixtures/tabs.html": "d4d07af7f758f7e00a1d647c4ff50d446305a0c85fd471837f4228b96311cb55",
+    "apps/browser/lifecycle.h": "a449229eb0d452adb2b1f789f16783d356928c0ccec9e7168d211df8922bd588",
+    "lib/transport/server.h": "d3ccb6daf149ac01bd7e8c4b30254ce72b3c965448e2a3b6cc4f460d75764834",
+    "lib/privacy/publication.h": "344ed6470e433434eb587fadb94fcee9cba84283c3e32c3e115b20a4adb5fea0",
+    "tests/security/privacy_native.cpp": "ea33f7524362f0a9c4728d536778ff3a2c4f476fc550fcbffb205106c238e660",
+    "apps/browser/lifecycle.cpp": "4ad8e802bb6eca6bde7125ba24769d3996522b07713f65ed66031ecfdf52ac21",
+    ".github/workflows/windows-cef.yml": "4c69679325e7595f10b24ed62762d5910917b3958e8dd18fe86afcae5e5daa0e",
+    "lib/privacy/publication.cpp": "69604e2fd955b19c7973b1741df2a24d0a393d6d2c188770c795e273540491fa",
+    "lib/ipc/scoped_authority.cpp": "e4883983e4a61bd302bc5e7409032daff6a5fb4e69b538b04da19b8e0a974d0d",
+    "lib/ipc/scoped_authority.h": "5edfbbadb818f388a17e7cba2c4e0e06905518020d951a4a6d25a38f4bfc1afd",
+    "apps/browser/CMakeLists.txt": "629bc7fc4892a7b02c7a6c620b34710e46e5a6f62b1dd2af34b8149794f921bb",
+    "tools/cef/test-lifecycle.ps1": "dd173d978e37344c7cc688722825680012c90de24eb861d8cdca97995f1bd9dc",
+    "tests/security/browser_lifecycle_native.cpp": "e7ad2f082940fbdeee6b73c05743cfe0b81390edc1ae32173d71e0a2b32dd8f4",
+    "apps/browser/src/cef_main.cpp": "93fbb9ceecf2aae4f1a7114b5d1a654ede8eebaa4909839c3a5dfa3ea648b257"
+  }
+}

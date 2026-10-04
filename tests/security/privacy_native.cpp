@@ -51,6 +51,12 @@ int main() {
     Check(Bytes(*Redact(draft))=="{\"fields\":[{\"name\":\"quote\\\"slash\\\\\",\"value\":\"value\"}]}","closed JSON escaping");
     Check(Bytes(*Redact({} ))=="{\"fields\":[]}","empty bounded state serializes without metadata");
     Check(!WriteDiagnostic(nullptr,static_cast<Event>(999)),"unknown diagnostic event fails closed");
+    for(auto event:{Event::tab_fixture_popup_registered,Event::tab_fixture_order_verified,Event::tab_fixture_move_verified,
+        Event::tab_fixture_cancel_verified,Event::tab_fixture_close_verified,Event::tab_fixture_pending_expired,
+        Event::tab_fixture_resources_released,Event::tab_fixture_failed}) {
+      Check(WriteDiagnostic(nullptr,event),"lifecycle proof is a closed content-free diagnostic");
+      Check(!WriteDiagnostic(nullptr,event,1),"lifecycle diagnostic refuses numeric payload");
+    }
     Check(!WriteDiagnostic(nullptr,Event::fixture_ready,0x534543524554),"text-free event rejects numeric secret encoding");
     Check(!WriteDiagnostic(nullptr,Event::main_frame_loaded,600),"HTTP diagnostic values bounded");
     Check(!WriteDiagnostic(nullptr,Event::browser_created,UINT64_MAX),"native browser ID values bounded");
