@@ -7,6 +7,7 @@ param(
     [switch]$SecurityProbe,
     [switch]$PrivacyProbe,
     [switch]$TabProbe,
+    [switch]$NavigationProbe,
     [ValidateSet('healthy','expired','corrupt')][string]$TransportStoreFixture = 'healthy'
 )
 $ErrorActionPreference = 'Stop'
@@ -32,7 +33,9 @@ $url = ([Uri](Join-Path $root 'tests/fixtures/cef-lifecycle.html')).AbsoluteUri
 if ($FixtureUrl) { $url = $FixtureUrl }
 if ($PrivacyProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/privacy.html')).AbsoluteUri }
 if ($TabProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/tabs.html')).AbsoluteUri }
+if ($NavigationProbe) { $url = ([Uri](Join-Path $root 'tests/fixtures/browser-ui-a.html')).AbsoluteUri }
 if ($TabProbe -and ($SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Tab lifecycle probe requires its own healthy isolated fixture run' }
+if ($NavigationProbe -and ($TabProbe -or $SecurityProbe -or $PrivacyProbe -or $TransportStoreFixture -ne 'healthy')) { throw 'Navigation UI probe requires its own healthy isolated fixture run' }
 
 if (-not ('CefLifecycle.Native' -as [type])) {
 Add-Type -TypeDefinition @'
@@ -94,6 +97,7 @@ $rendererTokens = @{}
 $success = $false
 $cleanupRequired = $false
 $tabFixtureFailure = $null
+$navigationUiFailureStage = $null
 $failure = $null
 $started = Get-Date
 $arguments = @(
@@ -102,9 +106,10 @@ $arguments = @(
 if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
 if ($PrivacyProbe) { $arguments += '--privacy-renderer-test' }
 if ($TabProbe) { $arguments += '--tab-lifecycle-test' }
+if ($NavigationProbe) { $arguments += '--browser-ui-test' }
 # TabProbe requires a visible native surface for trusted physical mouse input.
 # Hidden startup can override CEF's first ShowWindow(SW_SHOWNORMAL) request.
-[System.Diagnostics.ProcessWindowStyle]$launchWindowStyle = if ($TabProbe) { 'Normal' } else { 'Hidden' }
+[System.Diagnostics.ProcessWindowStyle]$launchWindowStyle = if ($TabProbe -or $NavigationProbe) { 'Normal' } else { 'Hidden' }
 $hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle $launchWindowStyle -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -118,6 +123,7 @@ try {
         $events = if (Test-Path -LiteralPath $log) { @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json }) } else { @() }
         $ready = @($events | Where-Object event -eq fixture_ready).Count -gt 0
         if ($TabProbe -and (Get-TabFixtureFailure -Events $events)) { throw 'Host-native tab lifecycle fixture failed' }
+        if ($NavigationProbe -and ($events | Where-Object event -eq browser_ui_probe_failed_stage)) { throw 'Native browser UI fixture failed at a closed stage' }
         if ($hostProcess.HasExited) { throw "Host exited before fixture readiness: $($hostProcess.ExitCode)" }
         if (-not $ready) { Start-Sleep -Milliseconds 250 }
     } until ($ready -or (Get-Date) -gt $deadline)
@@ -151,11 +157,24 @@ try {
             throw "Renderer $($token.processId) lacks restricted low-integrity sandbox token"
         }
     }
+    if ($NavigationProbe) {
+        $expectedSteps = @(1..9)
+        do {
+            $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+            $failedStep = @($events | Where-Object event -eq browser_ui_probe_failed_stage)
+            if ($failedStep.Count) { throw 'Native browser UI probe failed at a closed stage' }
+            $steps = @($events | Where-Object event -eq browser_ui_probe_step | ForEach-Object { [int]$_.value })
+            if ($steps.Count -lt 9 -and -not $hostProcess.HasExited) { Start-Sleep -Milliseconds 150 }
+        } until ($steps.Count -ge 9 -or $hostProcess.HasExited -or (Get-Date) -gt $deadline)
+        $orderedSteps=$steps.Count -eq $expectedSteps.Count
+        if($orderedSteps){for($i=0;$i -lt $expectedSteps.Count;$i++){if($steps[$i] -ne $expectedSteps[$i]){$orderedSteps=$false;break}}}
+        if (-not $orderedSteps) { throw 'Native browser UI proof steps were missing, duplicated, or out of order' }
+    }
     $window = $events | Where-Object event -eq window_created | Select-Object -First 1
     if (-not $window -or -not $window.value) { throw 'Native Views window handle was not recorded' }
     # Hold the real fixture window open while measuring children, then send a
     # normal OS close request. No forced process termination can count as a pass.
-    if (-not $TabProbe) {
+    if (-not $TabProbe -and -not $NavigationProbe) {
         Start-Sleep -Seconds 1
         $result = [UIntPtr]::Zero
         if ([CefLifecycle.Native]::SendMessageTimeout([IntPtr][long]$window.value, 0x10,
@@ -198,6 +217,18 @@ try {
     $success = $true
 } catch {
     $failure = $_.Exception.Message
+    if ($NavigationProbe -and (Test-Path -LiteralPath $log)) {
+        $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
+        $failedSteps = @($events | Where-Object event -eq browser_ui_probe_failed_stage)
+        $parsedUiStage = 0
+        if ($failedSteps.Count -eq 1 -and [int]::TryParse([string]$failedSteps[0].value,[ref]$parsedUiStage) -and $parsedUiStage -ge 1 -and $parsedUiStage -le 9) {
+            $navigationUiFailureStage=$parsedUiStage
+            [void]$hostProcess.WaitForExit(10000)
+            $uiFailureDeadline=(Get-Date).AddSeconds(10)
+            do { $uiFailureRemaining=@(Get-RunProcesses); if($uiFailureRemaining.Count){Start-Sleep -Milliseconds 250} }
+            until (-not $uiFailureRemaining.Count -or (Get-Date) -gt $uiFailureDeadline)
+        }
+    }
     if ($TabProbe -and (Test-Path -LiteralPath $log)) {
         $events = @(Get-Content -LiteralPath $log | ForEach-Object { $_ | ConvertFrom-Json })
         $tabFixtureFailure = Get-TabFixtureFailure -Events $events
@@ -230,8 +261,10 @@ try {
         forcedCleanup = $cleanupRequired; failure = $failure
         transportStoreFixture = $TransportStoreFixture
         tabLifecycleProbe = [bool]$TabProbe
+        navigationUiProbe = [bool]$NavigationProbe
         launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
+        navigationUiFailureStage = $navigationUiFailureStage
         tabFailureReason = $(if ($tabFixtureFailure) { $tabFixtureFailure.reason } else { $null })
         tabCursorRelation = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorRelation } else { $null })
         tabCursorDestination = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorDestination } else { $null })

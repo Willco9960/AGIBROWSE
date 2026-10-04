@@ -63,6 +63,9 @@ int main() {
     Check(WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,7),"native failed stage upper bound allowed");
     Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,8),"unknown lifecycle stage rejected");
     Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_stage,UINT64_MAX),"failed stage cannot encode arbitrary numeric content");
+    for(uint64_t step=1;step<=9;++step)Check(WriteDiagnostic(nullptr,Event::browser_ui_probe_step,step),"browser UI proof accepts only its closed ordered steps");
+    Check(!WriteDiagnostic(nullptr,Event::browser_ui_probe_step,0),"browser UI proof has no unreported zero step");
+    for(auto step:{uint64_t{0},uint64_t{10},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::browser_ui_probe_failed_stage,step),"browser UI failure stage refuses unknown payloads");
     for(uint64_t reason=1;reason<=13;++reason)Check(WriteDiagnostic(nullptr,Event::tab_fixture_failed_reason,reason),"closed native failure reason accepted");
     for(auto reason:{uint64_t{0},uint64_t{14},UINT64_MAX})Check(!WriteDiagnostic(nullptr,Event::tab_fixture_failed_reason,reason),"failure reason refuses arbitrary numeric content");
     for(uint64_t relation=0;relation<=7;++relation)Check(WriteDiagnostic(nullptr,Event::tab_fixture_cursor_relation,relation),"closed native cursor relation accepted");
@@ -91,8 +94,9 @@ int main() {
     Check(WriteDiagnostic(file,Event::tab_fixture_native_window_state,43),"native state writes closed mask to actual sink");
     Check(WriteDiagnostic(file,Event::tab_fixture_native_window_state_unavailable),"native state unavailable writes content-free marker");
     Check(WriteDiagnostic(file,Event::tab_fixture_native_window_cloak,0),"cloak unavailable writes closed status");
+    Check(WriteDiagnostic(file,Event::browser_ui_probe_step,1),"browser UI proof writes closed step");
     std::rewind(file);char buffer[1024]{};auto n=std::fread(buffer,1,sizeof(buffer),file);std::fclose(file);
-    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n{\"event\":\"tab_fixture_visibility_adjusted\",\"value\":0}\n{\"event\":\"tab_fixture_visibility_restored\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_state\",\"value\":43}\n{\"event\":\"tab_fixture_native_window_state_unavailable\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_cloak\",\"value\":0}\n","actual diagnostic file contains fixed schema only");
+    Check(std::string(buffer,n)=="{\"event\":\"fixture_ready\",\"value\":0}\n{\"event\":\"main_frame_loaded\",\"value\":200}\n{\"event\":\"tab_fixture_failed_reason\",\"value\":13}\n{\"event\":\"tab_fixture_cursor_relation\",\"value\":5}\n{\"event\":\"tab_fixture_cursor_destination\",\"value\":3}\n{\"event\":\"tab_fixture_visibility_adjusted\",\"value\":0}\n{\"event\":\"tab_fixture_visibility_restored\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_state\",\"value\":43}\n{\"event\":\"tab_fixture_native_window_state_unavailable\",\"value\":0}\n{\"event\":\"tab_fixture_native_window_cloak\",\"value\":0}\n{\"event\":\"browser_ui_probe_step\",\"value\":1}\n","actual diagnostic file contains fixed schema only");
     std::cout << "PASS privacy contract checks=" << checks << '\n';return 0;
   } catch(const std::exception& e) {std::cerr<<"FAIL privacy contract case: "<<e.what()<<'\n';return 1;}
 }

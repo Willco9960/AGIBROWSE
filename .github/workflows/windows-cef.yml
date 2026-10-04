@@ -2,7 +2,7 @@ name: Windows CEF build and lifecycle
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', 'tests/fixtures/tabs.html', '.github/workflows/windows-cef.yml']
+    paths: ['CMakeLists.txt', 'apps/browser/**', 'apps/broker/**', 'lib/ipc/**', 'lib/transport/**', 'lib/privacy/**', 'tests/security/**', 'tools/cef/**', 'tools/transport/**', 'tests/fixtures/cef-lifecycle.html', 'tests/fixtures/privacy.html', 'tests/fixtures/tabs.html', 'tests/fixtures/browser-ui-*.html', '.github/workflows/windows-cef.yml']
 permissions:
   contents: read
 concurrency:
@@ -54,6 +54,10 @@ jobs:
         shell: pwsh
         timeout-minutes: 2
         run: ./tools/cef/test-lifecycle.ps1 -TabProbe -EvidenceDirectory build/cef-tabs
+      - name: Actual native address entry, history, reload and tab controls
+        shell: pwsh
+        timeout-minutes: 2
+        run: ./tools/cef/test-lifecycle.ps1 -NavigationProbe -EvidenceDirectory build/cef-navigation-ui
       - name: Preserve lifecycle evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -68,6 +72,10 @@ jobs:
             build/cef-tabs/**/lifecycle.jsonl
             build/cef-tabs/**/stdout.txt
             build/cef-tabs/**/stderr.txt
+            build/cef-navigation-ui/**/result.json
+            build/cef-navigation-ui/**/lifecycle.jsonl
+            build/cef-navigation-ui/**/stdout.txt
+            build/cef-navigation-ui/**/stderr.txt
             build/cef-privacy/**/result.json
             build/cef-privacy/**/privacy-result.json
             build/cef-privacy/**/lifecycle.jsonl

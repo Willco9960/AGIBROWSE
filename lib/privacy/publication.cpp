@@ -82,12 +82,13 @@ bool WriteDiagnostic(FILE* file, Event event, uint64_t value) {
     "tab_fixture_cursor_destination_unavailable",
     "tab_fixture_visibility_adjusted", "tab_fixture_visibility_restored",
     "tab_fixture_native_window_state", "tab_fixture_native_window_state_unavailable",
-    "tab_fixture_native_window_cloak"
+    "tab_fixture_native_window_cloak", "browser_ui_probe_step", "browser_ui_probe_failed_stage"
   };
   auto index = static_cast<size_t>(event);
   if (index >= names.size()) return false;
   switch (event) {
     case Event::tab_fixture_failed_stage: if(value>7)return false;break;
+    case Event::browser_ui_probe_step: case Event::browser_ui_probe_failed_stage: if(value<1||value>9)return false;break;
     case Event::tab_fixture_cursor_relation: if(value>7)return false;break;
     case Event::tab_fixture_cursor_destination: if(value>15)return false;break;
     case Event::tab_fixture_native_window_state: if(value>63)return false;break;

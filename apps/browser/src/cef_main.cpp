@@ -33,6 +33,13 @@
 #include "include/views/cef_browser_view_delegate.h"
 #include "include/views/cef_display.h"
 #include "include/views/cef_fill_layout.h"
+#include "include/views/cef_box_layout.h"
+#include "include/views/cef_button.h"
+#include "include/views/cef_button_delegate.h"
+#include "include/views/cef_label_button.h"
+#include "include/views/cef_panel.h"
+#include "include/views/cef_textfield.h"
+#include "include/views/cef_textfield_delegate.h"
 #include "include/views/cef_window.h"
 #include "include/views/cef_window_delegate.h"
 #include "include/wrapper/cef_helpers.h"
@@ -49,10 +56,14 @@ bool privacy_test = false;
 bool privacy_test_passed = false;
 bool privacy_dialog_seen = false;
 bool tab_lifecycle_test = false, tab_lifecycle_passed = false;
+bool browser_ui_test=false,browser_ui_passed=false;
+bool browser_ui_loading_indicator_seen=false,browser_ui_idle_indicator_seen=false;
 bool test_root_loaded = false, test_button_clicked = false;
 unsigned test_unload_canceled = 0, test_unload_accepted = 0;
 bool test_cancel_unload = false;
 std::string test_root;
+std::string browser_ui_tab,browser_ui_source,browser_ui_target;
+unsigned browser_ui_loads=0;
 agi::ipc::HostChannel broker_channel;
 #ifdef AGI_TRANSPORT
 std::shared_ptr<agi::transport::PairingAuthority> pairing_authority;
@@ -67,6 +78,12 @@ agi::browser::Lifecycle tabs([](const std::string& profile, const std::string& t
 std::map<std::string, CefRefPtr<CefBrowserView>> tab_views;
 std::map<std::string, CefString> tab_titles;
 std::map<std::string, CefRefPtr<CefWindow>> native_windows;
+struct BrowserChrome {
+  CefRefPtr<CefPanel> root, tabs, toolbar, content;
+  CefRefPtr<CefTextfield> address;
+  CefRefPtr<CefLabelButton> back, forward, reload;
+};
+std::map<std::string, BrowserChrome> browser_chrome;
 struct PendingPopup { std::string tab; CefRefPtr<CefClient> client; };
 std::map<std::pair<int,int>, PendingPopup> pending_popups;
 std::set<std::string> closing_windows;
@@ -76,8 +93,14 @@ void ShowActive(const std::string& window);
 void CreateNativeWindow(CefRefPtr<CefBrowserView> view, const std::string& window);
 bool ReorderTab(const std::string& tab, size_t index);
 bool MoveTab(const std::string& tab, const std::string& window);
+void DetachBrowserView(CefRefPtr<CefBrowserView> view);
 void CancelReservation(const std::string& tab);
 void RequestCloseTab(const std::string& tab);
+void RefreshChrome(const std::string& window);
+void NavigateAddress(const std::string& tab, CefRefPtr<CefTextfield> field);
+void StartBrowserUiFixture();
+bool HandleTabShortcut(const std::string& tab,const CefKeyEvent& event,
+                       CefRefPtr<CefBrowser> browser);
 void MaybeQuit();
 constexpr uint64_t kCreationTimeoutMs = 10000;
 
@@ -140,34 +163,9 @@ class BrowserClient final : public CefClient,
   }
   bool OnPreKeyEvent(CefRefPtr<CefBrowser> browser,const CefKeyEvent& event,CefEventHandle os_event,bool* shortcut) override {
     CEF_REQUIRE_UI_THREAD();
-    if(os_event && os_event->message==WM_KEYDOWN && os_event->wParam==event.windows_key_code && event.type==KEYEVENT_RAWKEYDOWN && (event.modifiers&EVENTFLAG_CONTROL_DOWN)) {
-      auto tab=tabs.Resolve(tab_);
-      if(tab && event.windows_key_code=='T' && !(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
-        *shortcut=true;CreateTab(tab->window,browser->GetHost()->GetRequestContext(),tab->profile);return true;
-      }
-      if(tab && event.windows_key_code=='W' && !(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
-        *shortcut=true;
-        RequestCloseTab(tab_);return true;
-      }
-      if(tab && (event.modifiers&EVENTFLAG_SHIFT_DOWN) && (event.windows_key_code==VK_PRIOR || event.windows_key_code==VK_NEXT)) {
-        *shortcut=true;const auto& order=tabs.LookupWindow(tab->window)->tabs;
-        auto at=static_cast<size_t>(std::find(order.begin(),order.end(),tab_)-order.begin());
-        if(event.windows_key_code==VK_PRIOR && at)ReorderTab(tab_,at-1);
-        if(event.windows_key_code==VK_NEXT && at+1<order.size())ReorderTab(tab_,at+1);
-        return true;
-      }
-      if(tab && (event.modifiers&EVENTFLAG_SHIFT_DOWN) && event.windows_key_code=='N') {
-        *shortcut=true;auto destination=tabs.NewWindow();if(destination.empty())return true;
-        CreateNativeWindow(nullptr,destination);
-        if(!MoveTab(tab_,destination)){auto native=native_windows.find(destination);if(native!=native_windows.end())native->second->Close();}
-        return true;
-      }
-      if(tab && event.windows_key_code==VK_TAB) {
-        *shortcut=true;const auto& order=tabs.LookupWindow(tab->window)->tabs;
-        auto current=std::find(order.begin(),order.end(),tab_);
-        for(size_t i=1;i<=order.size();++i) {auto id=order[(static_cast<size_t>(current-order.begin())+i)%order.size()];if(tabs.Activate(id)){ShowActive(tab->window);break;}}
-        return true;
-      }
+    if(os_event && os_event->message==WM_KEYDOWN && os_event->wParam==event.windows_key_code &&
+       event.type==KEYEVENT_RAWKEYDOWN && HandleTabShortcut(tab_,event,browser)) {
+      *shortcut=true;return true;
     }
 #ifdef AGI_TRANSPORT
     if(!os_event||os_event->message!=WM_KEYDOWN||os_event->wParam!=event.windows_key_code||event.type!=KEYEVENT_RAWKEYDOWN||(event.modifiers&(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))!=(EVENTFLAG_CONTROL_DOWN|EVENTFLAG_SHIFT_DOWN))return false;
@@ -255,7 +253,7 @@ class BrowserClient final : public CefClient,
     std::erase_if(frames_,[&](const auto& entry){return entry.first.first==browser->GetIdentifier();});
     std::erase_if(denied_,[&](const auto& entry){return entry.first.first==browser->GetIdentifier();});
     if(view!=tab_views.end()) {
-      if(view->second->GetWindow())view->second->GetWindow()->RemoveChildView(view->second);
+      DetachBrowserView(view->second);
       tab_views.erase(view);
     }
     tabs.FinishClose(tab_);ShowActive(window);
@@ -273,7 +271,7 @@ class BrowserClient final : public CefClient,
     // of this BrowserView instead destroys only this tab's native child widget.
     tabs.BeginClose(tab_);
     auto view=tab_views.find(tab_);
-    if(view!=tab_views.end()) {auto keep=view->second;auto window=keep->GetWindow();if(window)window->RemoveChildView(keep);tab_views.erase(view);}
+    if(view!=tab_views.end()) {DetachBrowserView(view->second);tab_views.erase(view);}
     return true;
   }
 
@@ -308,6 +306,7 @@ class BrowserClient final : public CefClient,
     }
     auto tab=tabs.Resolve(tab_);if(!tab)return;
     tab_titles[tab_]=title.ToString().substr(0,4096);
+    RefreshChrome(tab->window);
     auto view = CefBrowserView::GetForBrowser(browser);
     if (view && view->GetWindow() && tabs.LookupWindow(tab->window)->active==tab_) {
       view->GetWindow()->SetTitle(title);
@@ -321,6 +320,7 @@ class BrowserClient final : public CefClient,
                  int http_status_code) override {
     CEF_REQUIRE_UI_THREAD();
     if (frame->IsMain()) {
+      ++browser_ui_loads;
       if(tab_lifecycle_test && tab_==test_root)test_root_loaded=true;
       Record(Event::main_frame_loaded, http_status_code);
       if(privacy_test) frame->SendProcessMessage(PID_RENDERER,CefProcessMessage::Create("agi.test.privacy.probe.v1"));
@@ -349,6 +349,22 @@ class BrowserClient final : public CefClient,
       Record(Event::main_frame_load_failed);
     }
   }
+  void OnLoadingStateChange(CefRefPtr<CefBrowser> browser,bool is_loading,
+                            bool can_go_back,bool can_go_forward) override {
+    CEF_REQUIRE_UI_THREAD();
+    auto tab=tabs.Resolve(tab_);if(!tab)return;
+    auto chrome=browser_chrome.find(tab->window);
+    if(!is_loading&&chrome!=browser_chrome.end()&&tabs.LookupWindow(tab->window)->active==tab_&&!chrome->second.address->HasFocus()) {
+      chrome->second.address->SetText(browser->GetMainFrame()->GetURL());
+    }
+    RefreshChrome(tab->window);
+    if(browser_ui_test&&tab_==browser_ui_tab&&tabs.LookupWindow(tab->window)->active==tab_&&chrome!=browser_chrome.end()) {
+      const bool loading_state=is_loading&&browser->IsLoading()&&chrome->second.reload->GetText()=="■";
+      const bool idle_state=!is_loading&&!browser->IsLoading()&&chrome->second.reload->GetText()=="↻";
+      browser_ui_loading_indicator_seen=browser_ui_loading_indicator_seen||loading_state;
+      browser_ui_idle_indicator_seen=browser_ui_idle_indicator_seen||idle_state;
+    }
+  }
 
  private:
   const std::string tab_;
@@ -358,14 +374,126 @@ class BrowserClient final : public CefClient,
   IMPLEMENT_REFCOUNTING(BrowserClient);
 };
 
+bool HandleTabShortcut(const std::string& id,const CefKeyEvent& event,CefRefPtr<CefBrowser> browser) {
+  if(event.type!=KEYEVENT_RAWKEYDOWN || !(event.modifiers&EVENTFLAG_CONTROL_DOWN))return false;
+  auto tab=tabs.Resolve(id);if(!tab)return false;
+  if(event.windows_key_code=='T'&&!(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
+    if(browser)CreateTab(tab->window,browser->GetHost()->GetRequestContext(),tab->profile);
+    return true;
+  }
+  if(event.windows_key_code=='L'&&!(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
+    auto chrome=browser_chrome.find(tab->window);
+    if(chrome!=browser_chrome.end()){chrome->second.address->RequestFocus();chrome->second.address->SelectAll(false);}
+    return true;
+  }
+  if(event.windows_key_code=='W'&&!(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {RequestCloseTab(id);return true;}
+  if(event.windows_key_code==VK_TAB&&!(event.modifiers&EVENTFLAG_SHIFT_DOWN)) {
+    auto w=tabs.LookupWindow(tab->window);if(!w||w->tabs.empty())return true;
+    auto current=std::find(w->tabs.begin(),w->tabs.end(),id);
+    for(size_t i=1;i<=w->tabs.size();++i) {auto next=w->tabs[(static_cast<size_t>(current-w->tabs.begin())+i)%w->tabs.size()];if(tabs.Activate(next)){ShowActive(tab->window);break;}}
+    return true;
+  }
+  if((event.modifiers&EVENTFLAG_SHIFT_DOWN)&&(event.windows_key_code==VK_PRIOR||event.windows_key_code==VK_NEXT)) {
+    const auto& order=tabs.LookupWindow(tab->window)->tabs;auto at=static_cast<size_t>(std::find(order.begin(),order.end(),id)-order.begin());
+    if(event.windows_key_code==VK_PRIOR&&at)ReorderTab(id,at-1);
+    if(event.windows_key_code==VK_NEXT&&at+1<order.size())ReorderTab(id,at+1);
+    return true;
+  }
+  if((event.modifiers&EVENTFLAG_SHIFT_DOWN)&&event.windows_key_code=='N') {
+    auto destination=tabs.NewWindow();if(destination.empty())return true;
+    CreateNativeWindow(nullptr,destination);
+    if(!MoveTab(id,destination)){auto native=native_windows.find(destination);if(native!=native_windows.end())native->second->Close();}
+    return true;
+  }
+  return false;
+}
+
+class ChromeButton final : public CefButtonDelegate {
+ public:
+  explicit ChromeButton(std::string command):command_(std::move(command)){}
+  void OnButtonPressed(CefRefPtr<CefButton>) override {
+    auto split=command_.find(':');const auto action=command_.substr(0,split);
+    auto id=split==std::string::npos?std::string():command_.substr(split+1);
+    if(action=="back"||action=="forward"||action=="reload"||action=="new") {auto w=tabs.LookupWindow(id);if(w)id=w->active;}
+    auto tab=tabs.Resolve(id);
+    if(action=="select"&&tab){tabs.Activate(id);ShowActive(tab->window);RefreshChrome(tab->window);}
+    else if(action=="close"&&tab)RequestCloseTab(id);
+    else if(action=="back"&&tab){auto item=tab_views.find(id);auto b=item==tab_views.end()?nullptr:item->second->GetBrowser();if(b&&b->CanGoBack())b->GoBack();}
+    else if(action=="forward"&&tab){auto item=tab_views.find(id);auto b=item==tab_views.end()?nullptr:item->second->GetBrowser();if(b&&b->CanGoForward())b->GoForward();}
+    else if(action=="reload"&&tab){auto item=tab_views.find(id);auto b=item==tab_views.end()?nullptr:item->second->GetBrowser();if(b){if(b->IsLoading())b->StopLoad();else b->Reload();}}
+    else if(action=="new"&&tab){auto item=tab_views.find(id);auto b=item==tab_views.end()?nullptr:item->second->GetBrowser();if(b)CreateTab(tab->window,b->GetHost()->GetRequestContext(),tab->profile);}
+    if(tab)RefreshChrome(tab->window);
+  }
+ private:
+  const std::string command_;
+  IMPLEMENT_REFCOUNTING(ChromeButton);
+};
+class AddressField final : public CefTextfieldDelegate {
+ public:
+  explicit AddressField(std::string tab):tab_(std::move(tab)){}
+  bool OnKeyEvent(CefRefPtr<CefTextfield>,const CefKeyEvent& event) override {
+    if(event.type!=KEYEVENT_KEYUP||event.windows_key_code!=VK_RETURN)return false;
+    auto w=tabs.LookupWindow(tab_);auto chrome=w?browser_chrome.find(tab_):browser_chrome.end();
+    if(chrome!=browser_chrome.end())NavigateAddress(w->active,chrome->second.address);
+    return true;
+  }
+ private:
+  const std::string tab_;
+  IMPLEMENT_REFCOUNTING(AddressField);
+};
+void RefreshChrome(const std::string& window) {
+  auto found=browser_chrome.find(window);auto w=tabs.LookupWindow(window);
+  if(found==browser_chrome.end()||!w)return;
+  auto& chrome=found->second;
+  chrome.tabs->RemoveAllChildViews();
+  for(const auto& id:w->tabs) {
+    auto title=tab_titles.find(id);std::string label=title==tab_titles.end()?"New tab":title->second.ToString();
+    if(label.size()>32)label=label.substr(0,29)+"...";
+    if(id==w->active)label="[ "+label+" ]";
+    chrome.tabs->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("select:"+id),label));
+    chrome.tabs->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("close:"+id),"x"));
+  }
+  auto item=tab_views.find(w->active);auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
+  chrome.back->SetEnabled(browser&&browser->CanGoBack());chrome.forward->SetEnabled(browser&&browser->CanGoForward());chrome.reload->SetEnabled(browser!=nullptr);
+  chrome.reload->SetText(browser&&browser->IsLoading()?"■":"↻");
+  if(browser){auto address=browser->GetMainFrame()->GetURL();if(!chrome.address->HasFocus()&&chrome.address->GetText()!=address)chrome.address->SetText(address);}
+  chrome.root->Layout();
+}
+void NavigateAddress(const std::string& id,CefRefPtr<CefTextfield> field) {
+  auto item=tab_views.find(id);if(!tabs.Resolve(id)||item==tab_views.end())return;
+  auto browser=item->second->GetBrowser();if(!browser)return;
+  std::string value=field->GetText().ToString();if(value.empty())return;
+  if(value.find("://")==std::string::npos&&value.rfind("about:",0)!=0)value="https://"+value;
+  browser->GetMainFrame()->LoadURL(value);
+}
+
 class WindowDelegate final : public CefWindowDelegate {
  public:
   WindowDelegate(CefRefPtr<CefBrowserView> view,std::string window) : view_(view),window_(std::move(window)) {}
 
   void OnWindowCreated(CefRefPtr<CefWindow> window) override {
     native_windows[window_]=window;
-    window->SetToFillLayout();
-    if(view_)window->AddChildView(view_);
+    BrowserChrome chrome;
+    CefBoxLayoutSettings vertical;vertical.horizontal=false;
+    CefBoxLayoutSettings horizontal;horizontal.horizontal=true;
+    chrome.root=CefPanel::CreatePanel(nullptr);auto root_layout=chrome.root->SetToBoxLayout(vertical);
+    chrome.tabs=CefPanel::CreatePanel(nullptr);chrome.tabs->SetToBoxLayout(horizontal);
+    chrome.toolbar=CefPanel::CreatePanel(nullptr);auto toolbar_layout=chrome.toolbar->SetToBoxLayout(horizontal);
+    chrome.content=CefPanel::CreatePanel(nullptr);chrome.content->SetToFillLayout();
+    chrome.back=CefLabelButton::CreateLabelButton(new ChromeButton("back:"+window_),"←");
+    chrome.forward=CefLabelButton::CreateLabelButton(new ChromeButton("forward:"+window_),"→");
+    chrome.reload=CefLabelButton::CreateLabelButton(new ChromeButton("reload:"+window_),"↻");
+    chrome.address=CefTextfield::CreateTextfield(new AddressField(window_));
+    chrome.address->SetPlaceholderText("Enter address");chrome.address->SetAccessibleName("Address");
+    chrome.toolbar->AddChildView(chrome.back);chrome.toolbar->AddChildView(chrome.forward);
+    chrome.toolbar->AddChildView(chrome.reload);
+    chrome.toolbar->AddChildView(CefLabelButton::CreateLabelButton(new ChromeButton("new:"+window_),"+"));
+    chrome.toolbar->AddChildView(chrome.address);
+    toolbar_layout->SetFlexForView(chrome.address,1);
+    chrome.root->AddChildView(chrome.tabs);chrome.root->AddChildView(chrome.toolbar);chrome.root->AddChildView(chrome.content);
+    root_layout->SetFlexForView(chrome.content,1);browser_chrome[window_]=chrome;
+    window->SetToFillLayout();window->AddChildView(chrome.root);
+    if(view_)chrome.content->AddChildView(view_);
     window->SetTitle("AGI-BROWSE");
     window->Show();
     if(view_)view_->RequestFocus();
@@ -376,7 +504,7 @@ class WindowDelegate final : public CefWindowDelegate {
   void OnWindowDestroyed(CefRefPtr<CefWindow> window) override {
     Record(Event::window_destroyed);
     view_ = nullptr;
-    native_windows.erase(window_);tabs.RemoveWindow(window_);
+    native_windows.erase(window_);browser_chrome.erase(window_);tabs.RemoveWindow(window_);
     closing_windows.erase(window_);MaybeQuit();
   }
 
@@ -393,6 +521,11 @@ class WindowDelegate final : public CefWindowDelegate {
       else ready=false;
     }
     return ready;
+  }
+  bool OnKeyEvent(CefRefPtr<CefWindow>,const CefKeyEvent& event) override {
+    auto model=tabs.LookupWindow(window_);if(!model)return false;
+    auto item=tab_views.find(model->active);auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
+    return HandleTabShortcut(model->active,event,browser);
   }
   cef_runtime_style_t GetWindowRuntimeStyle() override { return CEF_RUNTIME_STYLE_ALLOY; }
 
@@ -416,6 +549,12 @@ void ShowActive(const std::string& window) {
       if(native){auto title=tab_titles.find(id);native->SetTitle(title==tab_titles.end()?CefString("AGI-BROWSE"):title->second);}
     }
   }
+  RefreshChrome(window);
+}
+void DetachBrowserView(CefRefPtr<CefBrowserView> view) {
+  if(!view)return;
+  auto parent=view->GetParentView();auto panel=parent?parent->AsPanel():nullptr;
+  if(panel)panel->RemoveChildView(view);
 }
 void CreateNativeWindow(CefRefPtr<CefBrowserView> view,const std::string& window) {
   CefWindow::CreateTopLevelWindow(new WindowDelegate(view,window));
@@ -426,7 +565,7 @@ void CancelReservation(const std::string& id) {
   if(!tabs.FinishClose(id))return;
   std::erase_if(pending_popups,[&](const auto& entry){return entry.second.tab==id;});
   auto view=tab_views.find(id);
-  if(view!=tab_views.end()) {auto keep=view->second;auto native=keep->GetWindow();if(native)native->RemoveChildView(keep);tab_views.erase(view);}
+  if(view!=tab_views.end()) {DetachBrowserView(view->second);tab_views.erase(view);}
   ShowActive(window);
   if(auto w=tabs.LookupWindow(window);w && w->tabs.empty()) {
     auto native=native_windows.find(window);
@@ -440,7 +579,7 @@ bool ReorderTab(const std::string& id,size_t index) {
   auto native=view->second->GetWindow();if(!native || !tabs.Reorder(id,index))return false;
   const auto& order=tabs.LookupWindow(tab->window)->tabs;
   // Pending tabs need not have attached child Views yet.
-  int child=0;for(const auto& target:order){auto item=tab_views.find(target);if(item!=tab_views.end() && item->second->GetWindow() && item->second->GetWindow()->IsSame(native))native->ReorderChildView(item->second,child++);}
+  int child=0;auto chrome=browser_chrome.find(tab->window);if(chrome!=browser_chrome.end())for(const auto& target:order){auto item=tab_views.find(target);if(item!=tab_views.end() && item->second->GetWindow() && item->second->GetWindow()->IsSame(native))chrome->second.content->ReorderChildView(item->second,child++);}
   native->Layout();return true;
 }
 bool MoveTab(const std::string& id,const std::string& window) {
@@ -449,10 +588,12 @@ bool MoveTab(const std::string& id,const std::string& window) {
   auto source_id=tab->window;auto keep=item->second;auto source=keep->GetWindow();
   if(!source || source_id==window || !keep->GetBrowser())return false;
   const int engine=keep->GetBrowser()->GetIdentifier();
-  source->RemoveChildView(keep);target->second->AddChildView(keep);
+  auto source_chrome=browser_chrome.find(source_id),target_chrome=browser_chrome.find(window);
+  if(source_chrome==browser_chrome.end()||target_chrome==browser_chrome.end())return false;
+  source_chrome->second.content->RemoveChildView(keep);target_chrome->second.content->AddChildView(keep);
   auto attached=keep->GetWindow();
   if(!attached || !attached->IsSame(target->second) || !keep->GetBrowser() || keep->GetBrowser()->GetIdentifier()!=engine || !tabs.Move(id,window,tabs.LookupWindow(window)->tabs.size())) {
-    if(attached)attached->RemoveChildView(keep);source->AddChildView(keep);ShowActive(source_id);return false;
+    if(attached)target_chrome->second.content->RemoveChildView(keep);source_chrome->second.content->AddChildView(keep);ShowActive(source_id);return false;
   }
   ShowActive(source_id);ShowActive(window);source->Layout();target->second->Layout();target->second->Activate();
   if(tabs.LookupWindow(source_id)->tabs.empty())source->Close();
@@ -468,6 +609,121 @@ class PendingCreationSweep final : public CefTask {
  private:
   IMPLEMENT_REFCOUNTING(PendingCreationSweep);
 };
+class BrowserUiFixture final : public CefTask {
+ public:
+  void Execute() override {
+    CEF_REQUIRE_UI_THREAD();
+    auto fail=[&](){Record(Event::browser_ui_probe_failed_stage,std::max(1u,stage_));auto original=native_windows.find(browser_ui_window_);if(original!=native_windows.end())original->second->SetAlwaysOnTop(was_always_on_top_);std::vector<CefRefPtr<CefWindow>> owned;for(const auto& entry:native_windows)owned.push_back(entry.second);for(const auto& w:owned)w->Close();};
+    if(GetTickCount64()>=deadline_){fail();return;}
+    if(pending_control_) {
+      auto owner=pending_control_->GetWindow();POINT cursor{};
+      auto model=tabs.Resolve(browser_ui_tab);auto item=tab_views.find(browser_ui_tab);
+      if(!model||model->engine!=browser_id_||item==tab_views.end()||!item->second->GetBrowser()||
+          item->second->GetBrowser()->GetIdentifier()!=browser_id_||!pending_control_->IsVisible()||
+          !pending_control_->IsDrawn()||!pending_control_->IsEnabled()||!owner||!owner->IsSame(pending_window_)||
+          !pending_window_->IsActive()||!GetCursorPos(&cursor)) {fail();return;}
+      auto hit=WindowFromPoint(cursor);auto hit_root=hit?GetAncestor(hit,GA_ROOT):nullptr;
+      if(!hit_root||hit_root!=pending_expected_hwnd_){fail();return;}
+      pending_window_->SendMouseEvents(MBT_LEFT,true,true);pending_control_=nullptr;pending_window_=nullptr;Again();return;
+    }
+    auto tab=tabs.Resolve(browser_ui_tab);auto item=tab_views.find(browser_ui_tab);
+    auto chrome=tab?browser_chrome.find(tab->window):browser_chrome.end();
+    auto window=tab?native_windows.find(tab->window):native_windows.end();
+    auto browser=item==tab_views.end()?nullptr:item->second->GetBrowser();
+    if(!fixture_ready||!tab||chrome==browser_chrome.end()||window==native_windows.end()||!browser) {Again();return;}
+    if(!window_prepared_) {
+      browser_id_=browser->GetIdentifier();browser_ui_window_=tab->window;
+      was_always_on_top_=window->second->IsAlwaysOnTop();window->second->SetAlwaysOnTop(true);
+      if(!window->second->IsAlwaysOnTop()){fail();return;}
+      window->second->Activate();window_prepared_=true;
+    }
+    if(!window->second->IsActive()){window->second->Activate();Again();return;}
+    const auto url=browser->GetMainFrame()->GetURL().ToString();
+    switch(stage_) {
+      case 0:
+        if(url!=browser_ui_source){Again();return;}
+        chrome->second.address->RequestFocus();chrome->second.address->SelectAll(false);chrome->second.address->SetText(browser_ui_target);
+        window->second->SendKeyPress(VK_RETURN,0);stage_=1;break;
+      case 1:
+        if(url!=browser_ui_target||browser->IsLoading()){Again();return;}
+        Record(Event::browser_ui_probe_step,1);
+        if(!browser->CanGoBack()||!chrome->second.back->IsEnabled()||chrome->second.forward->IsEnabled()||!PrepareClick(tab->window,chrome->second.back)){fail();return;}
+        stage_=2;break;
+      case 2:
+        if(url!=browser_ui_source||browser->IsLoading()){Again();return;}
+        Record(Event::browser_ui_probe_step,2);
+        if(browser->CanGoBack()||!browser->CanGoForward()||chrome->second.back->IsEnabled()||!chrome->second.forward->IsEnabled()||!PrepareClick(tab->window,chrome->second.forward)){fail();return;}
+        stage_=3;break;
+      case 3:
+        if(url!=browser_ui_target||browser->IsLoading()){Again();return;}
+        Record(Event::browser_ui_probe_step,3);loads_before_reload_=browser_ui_loads;
+        if(!chrome->second.back->IsEnabled()||chrome->second.forward->IsEnabled()||chrome->second.reload->GetText()!="↻"||!PrepareClick(tab->window,chrome->second.reload)){fail();return;}
+        stage_=4;break;
+      case 4:
+        if(browser_ui_loads<=loads_before_reload_||url!=browser_ui_target||browser->IsLoading()){Again();return;}
+        Record(Event::browser_ui_probe_step,4);
+        window->second->SendKeyPress('L',EVENTFLAG_CONTROL_DOWN);stage_=5;break;
+      case 5:
+        if(!chrome->second.address->HasFocus()||!chrome->second.address->HasSelection()){Again();return;}
+        Record(Event::browser_ui_probe_step,5);
+        chrome->second.address->SelectAll(false);chrome->second.address->SetText(browser_ui_source);
+        window->second->SendKeyPress(VK_RETURN,0);stage_=6;break;
+      case 6:
+        if(url!=browser_ui_source||browser->IsLoading()){Again();return;}
+        Record(Event::browser_ui_probe_step,6);
+        window->second->SendKeyPress('T',EVENTFLAG_CONTROL_DOWN);stage_=7;break;
+      case 7: {
+        auto model=tabs.LookupWindow(tab->window);
+        if(!model||model->tabs.size()!=2||model->active==browser_ui_tab||chrome->second.back->IsEnabled()||chrome->second.forward->IsEnabled()){Again();return;}
+        Record(Event::browser_ui_probe_step,7);
+        int source_index=-1;for(size_t i=0;i<model->tabs.size();++i)if(model->tabs[i]==browser_ui_tab)source_index=static_cast<int>(i);
+        if(source_index<0||chrome->second.tabs->GetChildViewCount()!=4||!PrepareClick(tab->window,chrome->second.tabs->GetChildViewAt(source_index*2))){fail();return;}
+        stage_=8;break;
+      }
+      case 8: {
+        auto model=tabs.LookupWindow(tab->window);
+        if(!model||model->active!=browser_ui_tab||!chrome->second.back->IsEnabled()||!browser->CanGoBack()||
+            chrome->second.forward->IsEnabled()!=browser->CanGoForward()||chrome->second.address->GetText()!=browser_ui_source){Again();return;}
+        Record(Event::browser_ui_probe_step,8);
+        const auto count=model->tabs.size();int new_index=-1;
+        for(size_t i=0;i<count;++i)if(model->tabs[i]!=browser_ui_tab)new_index=static_cast<int>(i);
+        if(count!=2||new_index<0||chrome->second.tabs->GetChildViewCount()!=4||!PrepareClick(tab->window,chrome->second.tabs->GetChildViewAt(new_index*2+1))){fail();return;}
+        stage_=9;break;
+      }
+      case 9: {
+        auto model=tabs.LookupWindow(tab->window);
+        if(!model||model->tabs.size()!=1||model->active!=browser_ui_tab||
+            !browser_ui_loading_indicator_seen||!browser_ui_idle_indicator_seen){Again();return;}
+        Record(Event::browser_ui_probe_step,9);browser_ui_passed=true;
+        window->second->SetAlwaysOnTop(was_always_on_top_);if(window->second->IsAlwaysOnTop()!=was_always_on_top_){fail();return;}
+        window->second->Close();return;
+      }
+    }
+    Again();
+  }
+ private:
+  bool PrepareClick(const std::string& window_id,CefRefPtr<CefView> control) {
+    auto native=native_windows.find(window_id);if(native==native_windows.end()||!control||!control->IsVisible()||!control->IsDrawn()||!control->IsEnabled())return false;
+    auto owner=control->GetWindow();if(!owner||!owner->IsSame(native->second))return false;
+    auto bounds=control->GetBounds();if(bounds.width<4||bounds.height<4)return false;
+    CefPoint point(bounds.width/2,bounds.height/2);if(!control->ConvertPointToScreen(point))return false;
+    native->second->Activate();native->second->SendMouseMove(point.x,point.y);
+    pending_control_=control;pending_window_=native->second;pending_expected_hwnd_=native->second->GetWindowHandle();
+    return pending_expected_hwnd_!=nullptr;
+  }
+  void Again(){CefPostDelayedTask(TID_UI,this,150);}
+  uint64_t deadline_=GetTickCount64()+25000;
+  unsigned stage_=0,loads_before_reload_=0;
+  int browser_id_=0;
+  std::string browser_ui_window_;
+  CefRefPtr<CefView> pending_control_;
+  CefRefPtr<CefWindow> pending_window_;
+  HWND pending_expected_hwnd_=nullptr;
+  bool was_always_on_top_=false;
+  bool window_prepared_=false;
+  IMPLEMENT_REFCOUNTING(BrowserUiFixture);
+};
+void StartBrowserUiFixture(){CefPostDelayedTask(TID_UI,new BrowserUiFixture,250);}
 // Keep an unmatched popup View alive until creation callbacks unwind. Closing
 // synchronously and dropping the unparented View inside creation is unsafe.
 class RejectedPopupClose final : public CefTask {
@@ -489,7 +745,8 @@ class TabViewDelegate final : public CefBrowserViewDelegate {
     CEF_REQUIRE_UI_THREAD();auto tab=tabs.ForEngine(browser->GetIdentifier());if(!tab)return;
     tab_views[tab->id]=view;
     auto window=native_windows.find(tab->window);
-    if(window!=native_windows.end() && !view->GetWindow())window->second->AddChildView(view);
+    auto chrome=browser_chrome.find(tab->window);
+    if(chrome!=browser_chrome.end() && !view->GetWindow())chrome->second.content->AddChildView(view);
     if(view->GetWindow())ShowActive(tab->window);
   }
   bool OnPopupBrowserViewCreated(CefRefPtr<CefBrowserView> opener_view,CefRefPtr<CefBrowserView> popup,bool) override {
@@ -524,7 +781,7 @@ std::string CreateTab(const std::string& window,CefRefPtr<CefRequestContext> con
   auto view=CefBrowserView::CreateBrowserView(new BrowserClient(tab),"about:blank",settings,nullptr,context,new TabViewDelegate);
   if(!view){CancelReservation(tab);return {};}
   tab_views[tab]=view;
-  auto native=native_windows.find(window);if(native!=native_windows.end())native->second->AddChildView(view);
+  auto chrome=browser_chrome.find(window);if(chrome!=browser_chrome.end())chrome->second.content->AddChildView(view);
   ShowActive(window);return tab;
 }
 void RequestCloseTab(const std::string& id) {
@@ -627,7 +884,10 @@ class TabLifecycleFixture final : public CefTask {
       auto a=tabs.Resolve(a_),b=tabs.Resolve(b_);if(!a || !b || !a->engine || !b->engine){Again();return;}
       if(!ReorderTab(test_root,2) || tabs.ForEngine(engine_)->id!=test_root){Fail();return;}
       auto native=native_windows.at(source_);
-      if(native->GetChildViewCount()!=3 || !native->GetChildViewAt(2)->IsSame(root_view->second)){Fail();return;}
+      auto chrome=browser_chrome.find(source_);auto attached=root_view->second->GetWindow();
+      if(chrome==browser_chrome.end() || !attached || !attached->IsSame(native) ||
+          chrome->second.content->GetChildViewCount()!=3 ||
+          !chrome->second.content->GetChildViewAt(2)->IsSame(root_view->second)){Fail();return;}
       tabs.Activate(a_);ShowActive(source_);
       auto active_title=tab_titles.find(a_);
       if(!tab_views.at(a_)->IsVisible() || root_view->second->IsVisible() ||
@@ -809,6 +1069,7 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
     if(!view){tabs.FinishClose(tab);tabs.RemoveWindow(window);CefQuitMessageLoop();return;}
     tab_views[tab]=view;CreateNativeWindow(view,window);
     if(tab_lifecycle_test)CefPostDelayedTask(TID_UI,new TabLifecycleFixture,100);
+    if(browser_ui_test){browser_ui_tab=tab;StartBrowserUiFixture();}
     CefPostDelayedTask(TID_UI,new PendingCreationSweep,250);
   }
 
@@ -879,6 +1140,7 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   renderer_security_test=args->HasSwitch("ipc-renderer-test");
   privacy_test=args->HasSwitch("privacy-renderer-test");
   tab_lifecycle_test=args->HasSwitch("tab-lifecycle-test");
+  browser_ui_test=args->HasSwitch("browser-ui-test");
   wchar_t executable[32768]{};
   const DWORD executable_length=GetModuleFileNameW(nullptr,executable,32768);
   if(!executable_length || executable_length>=32768) return 70;
@@ -921,6 +1183,11 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   CefString(&settings.cache_path) = profile + L"\\Default";
   std::string url = args->GetSwitchValue("url");
   if (url.empty()) { url = "about:blank"; }
+  if(browser_ui_test) {
+    if(url.find("browser-ui-a.html")==std::string::npos)return 71;
+    browser_ui_source=url;browser_ui_target=url;auto marker=browser_ui_target.rfind("browser-ui-a.html");
+    browser_ui_target.replace(marker,std::string("browser-ui-a.html").size(),"browser-ui-b.html");
+  }
   auto app = CefRefPtr<BrowserApp>(new BrowserApp(url));
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
     broker_channel.Stop();
@@ -938,5 +1205,5 @@ CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
   Record(Event::shutdown_complete);
   app = nullptr;
   if (lifecycle_log) { std::fclose(lifecycle_log); lifecycle_log = nullptr; }
-  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) || (tab_lifecycle_test && !tab_lifecycle_passed) ? 69 : 0;
+  return load_failed || (args->HasSwitch("require-fixture") && !fixture_ready) || (renderer_security_test && !renderer_security_passed) || (privacy_test && !privacy_test_passed) || (tab_lifecycle_test && !tab_lifecycle_passed) || (browser_ui_test && !browser_ui_passed) ? 69 : 0;
 }
