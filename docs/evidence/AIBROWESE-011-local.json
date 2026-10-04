@@ -1,8 +1,8 @@
 {
   "task": "AIBROWESE-011",
-  "status": "native-window-state-diagnostic-source-ready-gui-unverified",
-  "baseline": "c60641400794c1911d15e08fafaf3117288238a1",
-  "recordedUtc": "2026-10-04T07:47:32.0515991Z",
+  "status": "tabprobe-visible-launch-repair-source-ready-gui-unverified",
+  "baseline": "7d0559be274f4ad299cff0d6e4d8d9334f1b32ea",
+  "recordedUtc": "2026-10-04T08:08:48.6078276Z",
   "nativeLifecycleChecks": 138,
   "nativeScopeChecks": 348,
   "nativePrivacyChecks": 187,
@@ -22,23 +22,23 @@
     "lib/ipc/scoped_authority.cpp": "e4883983e4a61bd302bc5e7409032daff6a5fb4e69b538b04da19b8e0a974d0d",
     "lib/ipc/scoped_authority.h": "5edfbbadb818f388a17e7cba2c4e0e06905518020d951a4a6d25a38f4bfc1afd",
     "apps/browser/CMakeLists.txt": "fa471134357806c277d514a31877cde066fe586afeab5f6c4d050855ff7c2712",
-    "tools/cef/test-lifecycle.ps1": "e62b57b7336eff0628906ed0782188570e5b0b9e0b8f15e05d026c17284ce2b1",
+    "tools/cef/test-lifecycle.ps1": "58475024b3138b5529646bb4fe89625a514bb16484189ed27e5f96aa2180d32e",
     "tests/security/browser_lifecycle_native.cpp": "654c8b526127fdc0941aada2ed95cf048a68d7af76be093bf4a395ee04c562f4",
     "apps/browser/src/cef_main.cpp": "646e8463681cd2686b4bf35429891847ab3cfdaa6739cefd15796dc8cf3f2462",
     "tools/cef/assert-tab-evidence.ps1": "eef51197546346339987ddd63117868ae347801f2d82ced626a0c7a6b8596d22",
     "tests/security/tab_fixture_evidence.ps1": "4713043e37fbcf1ac004cd9043d808c1f39f0f2395692e5e7349fc9219044ff6",
-    "docs/evidence/AIBROWESE-011.md": "3ccc23b0f86c5a4ce93dc9c1ce7d41578cbb1246c183976aa5daf7f50e3c1484",
-    "docs/decisions/004-native-tab-lifecycle.md": "f05e6c0fa2918d7c899a99490f2ef12a763c11aebdcc2bb50635587c8946dc56"
+    "docs/evidence/AIBROWESE-011.md": "6906c10d8ce1ad3be47d8c7dad7bf04cff6c79c0656c29578cb099c38c4d976e",
+    "docs/decisions/004-native-tab-lifecycle.md": "abad055b2ecf1478533901823a291f74e1c172037aa3b9e1d4db8219c01a8a6c"
   },
-  "repairNumber": 4,
-  "failedCiRun": "37185510032",
-  "failure": "Stage0 reason13 unchanged despite checked topmost adjustment/restoration; destination11 and relation1; native eligibility/hit ownership unknown; host69 after1.2512416s; noorphans/forcedcleanup; two restrictedRID0 renderer tokens",
-  "repair": "TabProbe-only temporary checked topmost; save/retain prior state, restore/check after trusted handler acknowledgment before later lifecycle stages and before failure Close; cursor root guard unchanged",
+  "repairNumber": 5,
+  "failedCiRun": "37186906388",
+  "failure": "Stage0 reason13; native42 observed hidden/enabled/noniconic/topmost/foreground expected, target external, not_cloaked; destination11/relation1; host69 after0.7491145s; noorphans/forcedcleanup; two restrictedRID0 renderer tokens",
+  "repair": "Harness-only Normal launch for explicitly interactive TabProbe; other scenarios Hidden; closed launchWindowStyle result; native production/input/root/topmost-restoration and twelve proof gates unchanged",
   "windowsIncludeOrderNativeLinkPassed": true,
   "requiredTabProofEvents": 12,
-  "failedArtifactId": "11297256197",
-  "failedArtifactDigest": "add5c5c126a854043492597da3625d2775557001f0ddf745b3510fdaca84a260",
-  "nextGuiVerification": "parent-exact-source-clean-Windows-CI-for-native-state-diagnostic-observation; failure remains failed",
+  "failedArtifactId": "11297850858",
+  "failedArtifactDigest": "1d13ac84da09ea7d23c86f7c71ea9539c5e1a6f624134566787fa13b96585c4b",
+  "nextGuiVerification": "parent-exact-source-full-clean-Windows-CI-for-actual-visible-launch/trusted-click/lifecycle-acceptance",
   "tabEvidenceChecks": 162,
   "windowsCTestCount": 9,
   "nativeInputSourceRevision": "a03e7146331fc5bd72784591e82df01e8007e17b",
@@ -57,25 +57,29 @@
     "ui_controls_aurawin.cc": "5bc7bb8ac3eb9ecf1bb56c6ee2b7dc96ac6c9be9baa4f011856513d091744ae5",
     "ui_controls_internal_win.cc": "e4ae9140b2fd5eb9b9a01f254d23e41214dfd6a8864250c160cc7fcbd772dee9",
     "ui_controls.h": "21696f36637f5de3bd89a952bc60b832f1bd0e66c6a29d3f84e66b8e50c35022",
-    "event_creation_utils.cc": "5a5e53ec7bde0a0739e3cedbf1a9db4795ed51308c5a82242852592199f119b9"
+    "event_creation_utils.cc": "5a5e53ec7bde0a0739e3cedbf1a9db4795ed51308c5a82242852592199f119b9",
+    "widget.cc": "19ff4081b56c5fff42768b67e02fee24bc11a4e98f7e38932387368d21d9cfb5",
+    "desktop_native_widget_aura.cc": "ddf0b643593abc3b6380a6202d5d19a1b276eed96a4b12ccc5c23494cbc7140b",
+    "desktop_window_tree_host_win.cc": "552f8b6f9db5243e8cfbf8599225c82173c99b2baba8bf1735f2e3f120388d43",
+    "hwnd_message_handler.cc": "c7e26e5de8ffa876a3846b2559dcb79376ce3d725da849bf5af25a3636ba545c"
   },
   "diagnosticCycle": 4,
-  "diagnosticOnly": true,
+  "diagnosticOnly": false,
   "diagnostic": "Existing failure13-only native state0..63 mask or unavailable; independent cloak0/1/2 using already-loaded DWM only; all input/root/visibility/success decisions unchanged",
   "reasonCodeBounds": {
     "minimum": 1,
     "maximum": 13
   },
-  "historicalFocusedRepairAttempts": 4,
+  "historicalFocusedRepairAttempts": 5,
   "lastCi": {
     "tabForcedCleanup": false,
     "privacySentinelScanPassed": true,
     "tabOrphans": 0,
     "tabAccepted": false,
     "restrictedRendererTokens": 2,
-    "tabDurationSeconds": 1.2512416,
+    "tabDurationSeconds": 0.7491145,
     "nativeSuitesPassed": 9,
-    "run": "37185510032",
+    "run": "37186906388",
     "cursorDestination": {
       "requestedPointInVirtualDesktop": true,
       "requestedPointInExpectedWindow": true,
@@ -88,7 +92,17 @@
       "expectedIsRoot": true
     },
     "otherGuiScenariosPassed": 5,
-    "tabHostExitCode": 69
+    "tabHostExitCode": 69,
+    "nativeWindowState": {
+      "expectedNativeTopmost": true,
+      "foregroundRootIsExpected": true,
+      "targetProcessIsHost": false,
+      "expectedNativeVisible": false,
+      "expectedNativeIconic": false,
+      "expectedNativeEnabled": true
+    },
+    "nativeWindowCloak": "not_cloaked",
+    "nativeWindowStateAvailability": "observed"
   },
   "cursorRelationMaskBounds": {
     "maximum": 7,
@@ -102,11 +116,11 @@
   "nativeLifecycleChecksRerun": false,
   "nativeScopeChecksRerun": false,
   "unchangedSuiteEvidence": {
-    "exactSource": "c60641400794c1911d15e08fafaf3117288238a1",
+    "exactSource": "7d0559be274f4ad299cff0d6e4d8d9334f1b32ea",
     "lifecycleChecks": 138,
-    "ciRun": "37185510032",
+    "ciRun": "37186906388",
     "scopeChecks": 348,
-    "note": "lifecycle and scoped-authority source unchanged"
+    "note": "native lifecycle/scoped-authority/privacy and CEF host source unchanged by harness-only repair"
   },
   "cursorDestinationMaskBounds": {
     "minimum": 0,
@@ -125,7 +139,7 @@
     "unknown"
   ],
   "chromiumInputSourceVersion": "154.0.8037.94",
-  "resumedCycleRepairNumber": 1,
+  "resumedCycleRepairNumber": 2,
   "clCompileCommand": "MSBuild.exe build/windows-cef-normalized/apps/browser/agi-browse-host.vcxproj /t:ClCompile /p:Configuration=Release /p:Platform=x64 /p:TreatWarningAsError=true /v:minimal /nologo",
   "nativeWindowStateMaskBounds": {
     "minimum": 0,
@@ -160,5 +174,21 @@
   "diagnosticLogs": [
     "build/task011-native-state-clcompile.log",
     "build/task011-native-state-privacy-build.log"
-  ]
+  ],
+  "pinnedCefClCompileRerun": false,
+  "nativePrivacyChecksRerun": false,
+  "launchWindowStylePolicy": {
+    "resultField": "launchWindowStyle",
+    "TabProbe": "Normal",
+    "OtherScenarios": "Hidden"
+  },
+  "currentChecks": [
+    "162 evidence checks",
+    "three PowerShell parsers",
+    "diff --check",
+    "18 working-source hash verification"
+  ],
+  "visibilityHeaderSourceSha256": {
+    "build/cef-research/cef_binary_154.0.33+ga03e714+chromium-154.0.8037.94_windows64_minimal/include/views/cef_view.h": "dbffd5c1b95e98aaf589156840249ff73db973f4647af14b4f79e9d725375cc5"
+  }
 }

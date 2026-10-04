@@ -102,7 +102,10 @@ $arguments = @(
 if ($SecurityProbe) { $arguments += '--ipc-renderer-test' }
 if ($PrivacyProbe) { $arguments += '--privacy-renderer-test' }
 if ($TabProbe) { $arguments += '--tab-lifecycle-test' }
-$hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle Hidden -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+# TabProbe requires a visible native surface for trusted physical mouse input.
+# Hidden startup can override CEF's first ShowWindow(SW_SHOWNORMAL) request.
+[System.Diagnostics.ProcessWindowStyle]$launchWindowStyle = if ($TabProbe) { 'Normal' } else { 'Hidden' }
+$hostProcess = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -WindowStyle $launchWindowStyle -WorkingDirectory $run -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 try {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
@@ -227,6 +230,7 @@ try {
         forcedCleanup = $cleanupRequired; failure = $failure
         transportStoreFixture = $TransportStoreFixture
         tabLifecycleProbe = [bool]$TabProbe
+        launchWindowStyle = $launchWindowStyle.ToString()
         tabFailureStage = $(if ($tabFixtureFailure) { $tabFixtureFailure.stage } else { $null })
         tabFailureReason = $(if ($tabFixtureFailure) { $tabFixtureFailure.reason } else { $null })
         tabCursorRelation = $(if ($tabFixtureFailure) { $tabFixtureFailure.cursorRelation } else { $null })
