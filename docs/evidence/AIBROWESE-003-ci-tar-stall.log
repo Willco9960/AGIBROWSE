@@ -1,0 +1,39 @@
+2026-10-02T20:03:40.6145683Z CEF bootstrap: start version=154.0.33+ga03e714+chromium-154.0.8037.94; cache=D:\a\AGIBROWSE\AGIBROWSE\build\cef-sdk
+2026-10-02T20:03:40.6325421Z CEF bootstrap: download start: connect=20s; attempt=150s; retry=1; retryBudget=300s; processLimit=330s; idleRate=32768B/s for45s
+2026-10-02T20:03:41.7000024Z CEF bootstrap: download running: elapsed=1s; archiveBytes=93806592/172788468
+2026-10-02T20:03:42.1239408Z CEF bootstrap: download completed in 1s
+2026-10-02T20:03:42.1277519Z CEF bootstrap: download SHA256 verification start
+2026-10-02T20:03:42.3059695Z CEF bootstrap: archive size/SHA256/upstreamSHA1 verification start
+2026-10-02T20:03:42.7337713Z CEF bootstrap: archive checksums verified
+2026-10-02T20:03:42.7405245Z CEF bootstrap: extraction start: processLimit=300s
+2026-10-02T20:03:43.7636118Z CEF bootstrap: extraction running: elapsed=1s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:03:53.7766272Z CEF bootstrap: extraction running: elapsed=11s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:03.8098601Z CEF bootstrap: extraction running: elapsed=21s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:13.8873062Z CEF bootstrap: extraction running: elapsed=31s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:23.9723769Z CEF bootstrap: extraction running: elapsed=41s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:34.0106312Z CEF bootstrap: extraction running: elapsed=51s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:44.1009110Z CEF bootstrap: extraction running: elapsed=61s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:04:54.1917902Z CEF bootstrap: extraction running: elapsed=71s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:04.2694113Z CEF bootstrap: extraction running: elapsed=82s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:14.3672859Z CEF bootstrap: extraction running: elapsed=92s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:24.4327406Z CEF bootstrap: extraction running: elapsed=102s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:34.4724936Z CEF bootstrap: extraction running: elapsed=112s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:44.5355750Z CEF bootstrap: extraction running: elapsed=122s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:05:54.5416660Z CEF bootstrap: extraction running: elapsed=132s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:04.6054732Z CEF bootstrap: extraction running: elapsed=142s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:14.6607738Z CEF bootstrap: extraction running: elapsed=152s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:24.7432374Z CEF bootstrap: extraction running: elapsed=162s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:34.8110741Z CEF bootstrap: extraction running: elapsed=172s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:44.9170481Z CEF bootstrap: extraction running: elapsed=182s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:06:54.9731739Z CEF bootstrap: extraction running: elapsed=192s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:05.0616324Z CEF bootstrap: extraction running: elapsed=202s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:15.1287512Z CEF bootstrap: extraction running: elapsed=212s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:25.2026925Z CEF bootstrap: extraction running: elapsed=222s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:35.2666465Z CEF bootstrap: extraction running: elapsed=233s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:45.4292160Z CEF bootstrap: extraction running: elapsed=243s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:07:55.5224193Z CEF bootstrap: extraction running: elapsed=253s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:08:05.6085526Z CEF bootstrap: extraction running: elapsed=263s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:08:15.6805010Z CEF bootstrap: extraction running: elapsed=273s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:08:25.7675008Z CEF bootstrap: extraction running: elapsed=283s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:08:35.8154886Z CEF bootstrap: extraction running: elapsed=293s; extractedFiles=0; extractedBytes=0; processCpuSeconds=0
+2026-10-02T20:08:42.8656581Z CEF bootstrap: extraction failed: extraction exceeded its 300s process limit

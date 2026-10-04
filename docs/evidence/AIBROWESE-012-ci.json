@@ -1,0 +1,98 @@
+{
+  "task": "AIBROWESE-012",
+  "acceptanceVerified": true,
+  "implementationCommit": "aa05f28ca56d7f1c75a6ffd86ddf17d9096fef3e",
+  "ciRunId": 37213120748,
+  "ciUrl": "https://github.com/Willco9960/AGIBROWSE/actions/runs/37213120748",
+  "artifactId": 11307244468,
+  "artifactSha256": "3f403ac6fc5960f97815704be9c9003b1c79e87ac387e5056ee5fd41c9d8dc14",
+  "artifactDigestVerified": true,
+  "nativeSuitesPassed": 9,
+  "navigationProofs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "navigationDurationSeconds": 3.2331489,
+  "priorTabProofCount": 12,
+  "guiScenarios": [
+    {
+      "scenario": "cef-lifecycle",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-navigation-ui",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-privacy",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-security",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-tabs",
+      "credentialFixture": "healthy",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-transport-fallback",
+      "credentialFixture": "expired",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    },
+    {
+      "scenario": "cef-transport-fallback",
+      "credentialFixture": "corrupt",
+      "passed": true,
+      "hostExitCode": 0,
+      "forcedCleanup": false,
+      "orphanCount": 0,
+      "restrictedRendererCount": 2
+    }
+  ],
+  "assignedModel": "gpt-6-luna",
+  "reasoning": "medium",
+  "providerConfirmedModel": null,
+  "focusedRepairAttempts": 1,
+  "limitations": [
+    "Slow-load Stop click is not exercised.",
+    "Local launcher remains quarantined; CI does not establish a Defender false positive.",
+    "Acceptance covers task012 fixture workflows, not full browser 1.0 readiness."
+  ]
+}

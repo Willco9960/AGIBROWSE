@@ -1,0 +1,29 @@
+{
+  "seed004": {
+    "seed": "004",
+    "code": "9c1850fcaa63",
+    "items": [
+      { "id": 1, "label": "Item 9c1850" },
+      { "id": 2, "label": "Item fcaa63" },
+      { "id": 3, "label": "Item 2f2189" }
+    ]
+  },
+  "browserAssertions": [
+    "empty required form invalid",
+    "invalid email rejected",
+    "native submit blocked by validation",
+    "valid form accepted",
+    "native POST and redirect receipt",
+    "anchor navigation",
+    "HTTP redirect",
+    "dynamic step 1",
+    "dynamic step 2",
+    "dynamic step 3",
+    "dynamic exhaustion",
+    "cross origin redirect and checked message",
+    "same origin policy denies frame DOM",
+    "cross origin fetch denied without CORS"
+  ],
+  "submission": { "id": 1, "name": "Ada", "email": "ada@example.test", "choice": "alpha" },
+  "steps": [1, 2, 3]
+}

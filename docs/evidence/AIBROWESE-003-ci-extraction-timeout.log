@@ -1,0 +1,18 @@
+2026-10-02T19:55:55.8342843Z CEF bootstrap: start version=154.0.33+ga03e714+chromium-154.0.8037.94; cache=D:\a\AGIBROWSE\AGIBROWSE\build\cef-sdk
+2026-10-02T19:55:55.8505915Z CEF bootstrap: download start: connect=20s; attempt=300s; retry=1; retryBudget=600s; idleRate=32768B/s for45s
+2026-10-02T19:55:56.9416242Z CEF bootstrap: download running: elapsed=1s; archiveBytes=6291456/172788468
+2026-10-02T19:56:06.5145449Z CEF bootstrap: download completed in 11s
+2026-10-02T19:56:06.5189871Z CEF bootstrap: download SHA256 verification start
+2026-10-02T19:56:06.7375407Z CEF bootstrap: archive size/SHA256/upstreamSHA1 verification start
+2026-10-02T19:56:07.3033848Z CEF bootstrap: archive checksums verified
+2026-10-02T19:56:07.3104586Z CEF bootstrap: extraction start: processLimit=90s
+2026-10-02T19:56:08.3063112Z CEF bootstrap: extraction running: elapsed=1s
+2026-10-02T19:56:18.3144403Z CEF bootstrap: extraction running: elapsed=11s
+2026-10-02T19:56:28.3984759Z CEF bootstrap: extraction running: elapsed=21s
+2026-10-02T19:56:38.4745027Z CEF bootstrap: extraction running: elapsed=31s
+2026-10-02T19:56:48.5327233Z CEF bootstrap: extraction running: elapsed=41s
+2026-10-02T19:56:58.5841708Z CEF bootstrap: extraction running: elapsed=51s
+2026-10-02T19:57:08.6567008Z CEF bootstrap: extraction running: elapsed=61s
+2026-10-02T19:57:18.7162294Z CEF bootstrap: extraction running: elapsed=71s
+2026-10-02T19:57:28.7761477Z CEF bootstrap: extraction running: elapsed=81s
+2026-10-02T19:57:37.8571044Z CEF bootstrap: extraction failed: extraction exceeded its 90s process limit

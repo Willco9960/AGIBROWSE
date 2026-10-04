@@ -1,0 +1,46 @@
+{
+  "environment": "Actual Windows user context; rebuilt pinned CEF transport enabled",
+  "taskId": "AIBROWESE-009",
+  "lifecycles": [
+    {
+      "scenario": "healthy",
+      "hostExitCode": 0,
+      "rendererTokens": [
+        {
+          "processId": 7824,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 26792,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0,
+      "passed": true,
+      "forcedCleanup": false,
+      "durationSeconds": 2.3574739
+    },
+    {
+      "scenario": "renderer-security",
+      "hostExitCode": 0,
+      "rendererTokens": [
+        {
+          "processId": 31236,
+          "restricted": true,
+          "integrityRid": 0
+        },
+        {
+          "processId": 32428,
+          "restricted": true,
+          "integrityRid": 0
+        }
+      ],
+      "orphanCount": 0,
+      "passed": true,
+      "forcedCleanup": false,
+      "durationSeconds": 1.9980064
+    }
+  ]
+}

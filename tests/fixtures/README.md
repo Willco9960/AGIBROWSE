@@ -1,3 +1,28 @@
 # Fixtures
 
-Deterministic browser fixtures are assigned to later acceptance and fixture tasks. This directory is intentionally empty at the scaffold stage.
+Run `npm run fixtures:serve -- 004`, then open `http://127.0.0.1:43110/`.
+
+1. `/forms` has required name/email controls, native constraint validation, a real POST, server validation and a 303 receipt redirect.
+2. `/navigation` supplies anchors/fragments, `/redirect` changes the primary page, and `/cross-redirect` navigates to the secondary origin.
+3. `/dynamic` loads exactly three seeded items through explicit button steps; a fourth step reports Complete. No random timers drive fixture content.
+4. The secondary origin is `http://127.0.0.1:43111`; `/foreign` supports an origin-checked postMessage. It deliberately has no CORS headers. Browser same-origin restrictions stay enabled.
+5. `/proof` runs 14 browser conformance assertions in page scripts, records results to `/api/report`, and sets the lifecycle readiness title only when all pass. It proves browser fixture semantics, not agent APIs, trusted input events or future host permission enforcement.
+6. `browser-ui-a.html` and `browser-ui-b.html` are static local pages for the separate native navigation probe. `./tools/cef/test-lifecycle.ps1 -NavigationProbe` checks address entry/Enter, Back, Forward, Reload, Ctrl+L, tab creation, tab selection and tab close using actual CEF window input. It leaves AIBROWESE-011's TabProbe fixture and proof stream unchanged. Its event log contains only closed ordered stage numbers, never the fixture URL or page title.
+
+Node 24 built-ins suffice; no install or network dependency is needed. `npm run test:fixtures` tests HTTP behavior and golden seed data; `npm run test:fixtures:browser -- 004` uses the existing pinned Windows CEF build at `build/windows-cef-normalized` and its lifecycle harness. The latter requires Windows process/token inspection permissions. It preserves the upstream sandbox, uses an isolated profile, requests normal native window close and fails if forced cleanup is needed. Evidence is written under `build/fixture-browser`.
+
+`POST /api/reset` clears submissions, dynamic steps and proof reports without changing the seed. Restart with the same seed reproduces identical data and starts empty. A different 1–64 character seed changes item labels and receipt code. `expected.json` fixes the `004` golden dataset and all assertion names/outcomes. Its SHA-256 oracle was independently checked with .NET SHA256. Ephemeral port numbers and lifecycle run/profile IDs are diagnostic identities, not deterministic dataset outputs.
+
+`GET /api/state` returns the dataset and current submissions/steps/reports. Only the primary origin exposes state and mutations. Both HTTP servers bind only `127.0.0.1`; unexpected Host and cross-origin Origin headers are rejected. The fixtures are local disposable test content; the primary test-control endpoints are not production authorization APIs. Use one fixture run per workflow because state is intentionally shared within a run. Fixed-port startup fails visibly when occupied; it never stops another process. Programmatic `startFixtures()` uses two distinct ephemeral ports and returns an explicit `close()` owner.
+
+`npm run package:fixtures` packages pages, expected outcomes, fixture tools and the existing lifecycle harness under `build/packages/fixtures`. From that package, run `node tools/fixtures/server.mjs 004`. Native CEF binaries are not part of the fixture package. `cef-lifecycle.html` remains the task-003 default file fixture.
+
+`profiles.html` is served only by `tools/cef/profile-fixture-server.mjs` on an ephemeral loopback port. Run `tools/cef/test-profiles.ps1` from a clean pinned Windows build to check actual native menu creation, Human/Agent/new-profile cookies, localStorage, CacheStorage, real HTTP cache and restrictive permission isolation across full host restart. Exactly three HTTP-cache requests across nine closed stages are mandatory. The harness creates a fresh marked storage root, preserves sandbox checks, and rejects forced cleanup. It does not delete real user profiles or automate the native deletion confirmation dialog.
+
+Persistent CEF profiles are direct children of that marked root: Default, Agent and the native p-ID. Nested Profiles paths are unsupported by pinned ChromeBrowserContext and remain untouched if encountered. Stage1 records initialized notification settings before and after the Human-only BLOCK; ASK siblings and real geolocation denial remain required. The real restart stages must prove persistence rather than accepting an off-the-record fallback.
+
+The cookie has an explicit one-day Max-Age. Each short-lived fixture host requires engine backing-store flush callbacks for all three exact native contexts before closing, with a 10-second deadline and closed completion mask. Restart cookie checks remain mandatory. This fixture barrier does not prove ordinary human-window shutdown durability.
+
+Evidence-only storage match bits retain the original first failure and add no HTTP requests. After shutdown/restart the existing fixture-result.json contains only marker-verified fixture database presence and capped SQLite metadata counts (0/1/2+), plus Local State existence. Python/sqlite/read failures are closed unavailable categories; no values, origins, paths, native IDs, keys or databases are exported. Python is supplied by the clean Windows runner; no dependency installation is added.
+
+After stage6/9 cookie flush, the fixture observes only Local State existence while retaining real windows for a whole12-second writer interval, with a15-second cap and asynchronous UI tasks. Closed events distinguish absent/present/window timeout; early presence does not shorten the interval. Ordinary shutdown is unchanged, and this diagnostic timing does not establish a persistence fix. Existing45-second host and120-second server bounds remain.

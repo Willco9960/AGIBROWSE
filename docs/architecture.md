@@ -31,7 +31,7 @@ The GUI and engine stay in the host; the broker runs as a separate C++ executabl
 | Human → agent | Native input revokes affected leases and cancels undispatched work; no two agents mutate one tab. Native UI alone approves sensitive actions. |
 | Release → installation | Authenticated artifacts and sandbox preservation; signing/rotation/recovery decisions belong to task 076. |
 
-Task 006 defines attacker/capability policy, pairing/certificate/IPC mechanisms, revocation races and negative vectors. This document fixes enforcement locations, not cryptographic choices.
+Task 006 specifies the [security policy and planned negative vectors](security/policy.md), including pairing/certificate/IPC constraints and revocation races. Its implementation contract requires coordinator acceptance; runtime enforcement remains with the assigned tasks. This document fixes enforcement locations.
 
 ## Data and control flow
 
@@ -50,7 +50,7 @@ flowchart LR
   Host -->|receipt + events| Broker
 ```
 
-1. Native pairing grants explicit profile/tab/origin/operation scope; connect defaults to isolated agent profile and observe mode. Credentials stay outside model context.
+1. Native pairing authenticates client identity; separate native approval grants explicit profile/tab/origin/operation scope. Connect defaults to isolated agent profile and observe mode with zero grants. Credentials stay outside model context.
 2. Host combines accessibility and constrained DOM enrichment, assigns opaque identity and redacts before broker handoff. Backend DOM identifiers are never public references.
 3. Broker sends projection snapshots and ordered atomic deltas. SDK applies and acknowledges them; DOM mutations alone never trigger model calls.
 4. Commands carry session/request/tab/observation identity. Host revalidates authority, document, target, actionability, origin/redirect policy and lease at dispatch, then emits an honest receipt.
@@ -67,6 +67,8 @@ Default model-facing budget is 4,096 configured-tokenizer tokens, public range 5
 Identical live-session request-ID retries recover recorded receipts; changed-payload reuse fails. Outcomes: completed/rejected/failed/unknown. Dispatch: not_sent/sent/unknown. Browser completion does not certify a business transaction. Crash-after-dispatch uncertainty stays unknown: no automatic replay or exactly-once promise. Host owns authoritative execution receipts; broker retains redacted copies.
 
 ## Handoff and acceptance
+
+The user-authorized [two-tier agent contract](contracts/two-tier-agent.md) and [ADR-002](decisions/002-two-tier-agent-runtime.md) add an external smartLLM strategy tier with pluggable local typed decisions and deterministic execution. Architecture is accepted; runtime integration remains unimplemented and follows task 003 onward. Laya checkpoint adoption is conditional on pinned artifact/license review and held-out domain/calibration evidence. Native permissions, human control and unknown-outcome semantics remain authoritative. General browser workflows stay the goal; later virtual trading grants no live-finance authority.
 
 [Module map](module-map.json) assigns one primary owner to every task, plus collaborators. Reserved paths guide task 002; they do not call for placeholder implementations. Task 031 makes schemas/ the canonical implementation source for bridge/SDK contracts.
 

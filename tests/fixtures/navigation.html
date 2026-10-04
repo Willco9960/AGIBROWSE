@@ -1,0 +1,3 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Fixture navigation</title><h1>Navigation</h1>
+<output id="arrival"></output><a id="next" href="/navigation?arrived=link">Next page</a><a href="/redirect">Same origin redirect</a><a href="/cross-redirect">Cross origin redirect</a><a href="#section">Fragment</a><h2 id="section">Section</h2>
+<script>document.querySelector('#arrival').textContent = new URL(location.href).searchParams.get('arrived') ?? 'start';</script></html>

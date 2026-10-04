@@ -1,0 +1,20 @@
+Start testing: Oct 02 19:11 Eastern Daylight Time
+----------------------------------------------------------
+1/1 Testing: private-ipc-negative
+1/1 Test: private-ipc-negative
+Command: "<repo>/build/windows-cef-normalized/lib/ipc/Release/agi-ipc-tests.exe"
+Directory: <repo>/build/windows-cef-normalized/lib/ipc
+"private-ipc-negative" start time: Oct 02 19:11 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS 193 native IPC security checks
+<end of output>
+Test time =   1.67 sec
+----------------------------------------------------------
+Test Passed.
+"private-ipc-negative" end time: Oct 02 19:11 Eastern Daylight Time
+"private-ipc-negative" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 02 19:11 Eastern Daylight Time
+

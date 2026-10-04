@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Lifecycle fixture loading</title>
+<style>html,body{margin:0}button{width:160px;height:40px}</style>
+<button id="open">Open popup</button>
+<script>
+if (location.hash !== '#popup') {
+  document.querySelector('#open').onclick = event => {
+    if (!event.isTrusted || !navigator.userActivation.isActive) {
+      document.title='AGI-BROWSE tab fixture untrusted click';
+      return;
+    }
+    document.title='AGI-BROWSE tab fixture clicked';
+    window.addEventListener('beforeunload', event => {event.preventDefault();event.returnValue='';});
+    window.open(location.href + '#popup', '_blank', 'width=500,height=400');
+  };
+}
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const bounds=document.querySelector('#open').getBoundingClientRect();
+    if (bounds.left===0 && bounds.top===0 && bounds.width===160 && bounds.height===40) {
+      document.title='AGI-BROWSE fixture ready';
+    }
+  }));
+});
+</script>

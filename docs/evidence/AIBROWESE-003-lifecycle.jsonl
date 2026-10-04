@@ -1,0 +1,12 @@
+{"event":"sandbox_bootstrap_verified","value":10936}
+{"event":"context_initialized","value":0}
+{"event":"browser_created","value":1}
+{"event":"window_created","value":133010}
+{"event":"initialized","value":0}
+{"event":"fixture_ready","value":0}
+{"event":"main_frame_loaded","value":200}
+{"event":"fixture_ready","value":0}
+{"event":"browser_closed","value":1}
+{"event":"window_destroyed","value":0}
+{"event":"message_loop_exited","value":0}
+{"event":"shutdown_complete","value":0}

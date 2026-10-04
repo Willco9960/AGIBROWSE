@@ -1,0 +1,14 @@
+{"event":"sandbox_bootstrap_verified","value":26472}
+{"event":"agent_transport_unavailable","value":0}
+{"event":"context_initialized","value":0}
+{"event":"browser_created","value":1}
+{"event":"window_created","value":787262}
+{"event":"initialized","value":0}
+{"event":"fixture_ready","value":0}
+{"event":"main_frame_loaded","value":200}
+{"event":"fixture_ready","value":0}
+{"event":"browser_closed","value":1}
+{"event":"window_destroyed","value":0}
+{"event":"message_loop_exited","value":0}
+{"event":"private_broker_stopped","value":0}
+{"event":"shutdown_complete","value":0}

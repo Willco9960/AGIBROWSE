@@ -1,0 +1,51 @@
+{
+  "task": "AIBROWESE-012",
+  "status": "focused-repair-1-source-ready-exact-ci-rerun-required",
+  "baseline": "3e9fed7e716688ed9e589e376c5d218cd9d42c08",
+  "recordedUtc": "2026-10-04T15:27:20.1408729Z",
+  "pinnedCefClCompilePassed": true,
+  "clCompileCommand": "MSBuild.exe build/windows-cef-normalized/apps/browser/agi-browse-host.vcxproj /t:ClCompile /p:Configuration=Release /p:Platform=x64 /p:TreatWarningAsError=true /v:minimal /nologo",
+  "privacyPublicationContractPassed": true,
+  "threePowerShellParsersPassed": true,
+  "gitDiffCheckPassed": true,
+  "fullBuildRun": false,
+  "guiRun": false,
+  "tabProbeModified": true,
+  "tabProbeProofGatesChanged": false,
+  "navigationProbeAdded": true,
+  "navigationProbeProofSteps": 9,
+  "navigationProbeStopWhileLoadingCovered": false,
+  "notes": [
+    "Separate clean-CI NavigationProbe exercises address Enter, native Back/Forward/Reload clicks, Ctrl+L focus, Ctrl+T tab creation, tab selection and close.",
+    "The browser Views content-panel migration updates the existing TabProbe child-order assertion while retaining native window identity.",
+    "Local launcher remains quarantined; no GUI or full packaging was run.",
+    "Stop-while-loading click remains explicitly untested; navigation probe requires loading and idle callbacks to match native labels.",
+    "Repair attempt 1 now updates toolbar state immediately from active CefBrowser state, while coalescing only tab-strip child removal/recreation to a queued CEF UI task; failed task posting clears the queued marker."
+  ],
+  "sourceSha256": {
+    "apps/browser/src/cef_main.cpp": "75cf6993e47dfd33b37c56e103d4b81cb041bfc9957e277aa321f5321de37229",
+    "lib/privacy/publication.h": "21f6d871c2583f585ec32887c3d09ebb9153a8fdb13f059d7cdf446cdd9fb536",
+    "lib/privacy/publication.cpp": "0037218e0911b312f069660ce196dc30b49956c317c65f32fa4147be18b2a13c",
+    "tests/security/privacy_native.cpp": "8d274e417061eb149ad02371b5d4a52d4112e8ad7b1e6feb84447d13ce1545be",
+    "tools/cef/test-lifecycle.ps1": "750d751ae3143e842e7c3c667d39ea89da4d467238115f6d6d4dd56ece3a90c8",
+    "tests/fixtures/browser-ui-a.html": "16c9a473754723a62e6caf859ae8169056b11ba7af7fd5a8afd2fb713038d330",
+    "tests/fixtures/browser-ui-b.html": "4c7f2ea21262e59603fea07f6a7e593b3906f8c5367a33c847a8811d159fe4c1",
+    ".github/workflows/windows-cef.yml": "04a1442463eafd79f089a8db03cc22302bd42e978fd0425b1cd2c9a0634e6f95",
+    "tests/fixtures/README.md": "e1f14c45c2958ae7b330f689406e078423370ee250ccb4c6fbecf3487884fe0a",
+    "docs/evidence/AIBROWESE-012.md": "09e5683be8d7c39cc1a79394675ca1def9b42050eb24b9aaf2a90ed82b6778b1"
+  },
+  "failedCi": {
+    "run": "37192143326",
+    "artifact": "11299532993",
+    "sha256": "dac573460bdb1bd76ac55515f571101d2a2b3e487b09063506fd46ac61f67e5e",
+    "source": "d65c33d706aa6bb21a54bc4c43ef3a2009f5598c",
+    "navigationStepsPassed": 7,
+    "hostExitCode": -36861,
+    "failureStageRecorded": false,
+    "gracefulBrowserCloseRecorded": false,
+    "orphans": 0,
+    "forcedCleanup": false
+  },
+  "repairAttempt": 1,
+  "repair": "Keep toolbar/loading-label refresh synchronous from active browser state; defer and coalesce only destructive tab-strip child-view rebuilding after input dispatch, and clear the scheduled marker when CefPostTask fails. Exact-source clean CI must determine whether this resolves the exit."
+}

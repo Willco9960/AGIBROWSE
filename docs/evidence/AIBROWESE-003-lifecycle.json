@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "startedUtc": "2026-10-02T14:22:40.8102076Z",
+  "durationSeconds": 2.1430413,
+  "executable": "C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe",
+  "fixture": "file:///C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/tests/fixtures/cef-lifecycle.html",
+  "hostExitCode": 0,
+  "observedProcesses": [
+    {
+      "processId": 21140,
+      "parentProcessId": 10936,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-pre-read-main-dll --user-data-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --metrics-shmem-handle=2600,i,2331678519474235949,1538878792103960805,524288 --field-trial-handle=1988,i,7014591252243861485,1686113572041153776,262144 --enable-features=SingleAxisScrollContainers --disable-features=AutofillActorMode,GlicActorUi,KillOnInvalidNavigationHeaders,LensOverlay --variations-seed-version --pseudonymization-salt-handle=1992,i,6572037648231396895,17026455195775584880,4 --trace-process-track-uuid=3190708990060038890 --enable-logging=handle --log-file=2608 --mojo-platform-channel-handle=2316 /prefetch:13",
+      "creationDate": "2026-10-02T10:22:41.307747-04:00"
+    },
+    {
+      "processId": 452,
+      "parentProcessId": 10936,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --type=renderer --no-pre-read-main-dll --user-data-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --launch-time-ticks=48409802746 --metrics-shmem-handle=3520,i,4863570178138656385,9545701664106607762,1572864 --field-trial-handle=1988,i,7014591252243861485,1686113572041153776,262144 --enable-features=SingleAxisScrollContainers --disable-features=AutofillActorMode,GlicActorUi,KillOnInvalidNavigationHeaders,LensOverlay --variations-seed-version --pseudonymization-salt-handle=1992,i,6572037648231396895,17026455195775584880,4 --trace-process-track-uuid=3190708990997080739 --enable-logging=handle --log-file=3532 --mojo-platform-channel-handle=3528 /prefetch:1",
+      "creationDate": "2026-10-02T10:22:41.371858-04:00"
+    },
+    {
+      "processId": 22112,
+      "parentProcessId": 10936,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --type=renderer --no-pre-read-main-dll --user-data-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=48409802343 --metrics-shmem-handle=3476,i,5492655052665146257,1144828922614079527,1572864 --field-trial-handle=1988,i,7014591252243861485,1686113572041153776,262144 --enable-features=SingleAxisScrollContainers --disable-features=AutofillActorMode,GlicActorUi,KillOnInvalidNavigationHeaders,LensOverlay --variations-seed-version --pseudonymization-salt-handle=1992,i,6572037648231396895,17026455195775584880,4 --trace-process-track-uuid=3190708991934122588 --enable-logging=handle --log-file=3492 --mojo-platform-channel-handle=3488 /prefetch:1",
+      "creationDate": "2026-10-02T10:22:41.371677-04:00"
+    },
+    {
+      "processId": 10796,
+      "parentProcessId": 10936,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --type=gpu-process --gpu-recent-crash-count=0 --no-pre-read-main-dll --start-stack-profiler --user-data-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --metrics-shmem-handle=1932,i,17269712412423699964,11844754672337573432,262144 --field-trial-handle=1988,i,7014591252243861485,1686113572041153776,262144 --enable-features=SingleAxisScrollContainers --disable-features=AutofillActorMode,GlicActorUi,KillOnInvalidNavigationHeaders,LensOverlay --variations-seed-version --pseudonymization-salt-handle=1992,i,6572037648231396895,17026455195775584880,4 --trace-process-track-uuid=3190708988185955192 --enable-logging=handle --log-file=2060 --mojo-platform-channel-handle=2004 /prefetch:2",
+      "creationDate": "2026-10-02T10:22:41.284163-04:00"
+    },
+    {
+      "processId": 10936,
+      "parentProcessId": 25812,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --url=file:///C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/tests/fixtures/cef-lifecycle.html --profile-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --lifecycle-log=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\lifecycle.jsonl\" --require-fixture",
+      "creationDate": "2026-10-02T10:22:41.057799-04:00"
+    },
+    {
+      "processId": 25372,
+      "parentProcessId": 10936,
+      "commandLine": "\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\windows-cef-normalized\\browser\\Release\\agi-browse-host.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-pre-read-main-dll --start-stack-profiler --user-data-dir=\"C:\\Users\\conne\\Documents\\Codex\\2026-09-25\\new-chat\\work\\agi-browse-dev\\build\\cef-lifecycle\\a2e98beb17c44f0d8f0b8c1956714b9f\\profile\" --metrics-shmem-handle=2200,i,2518911930622493078,15724307073003918628,524288 --field-trial-handle=1988,i,7014591252243861485,1686113572041153776,262144 --enable-features=SingleAxisScrollContainers --disable-features=AutofillActorMode,GlicActorUi,KillOnInvalidNavigationHeaders,LensOverlay --variations-seed-version --pseudonymization-salt-handle=1992,i,6572037648231396895,17026455195775584880,4 --trace-process-track-uuid=3190708989122997041 --enable-logging=handle --log-file=2208 --mojo-platform-channel-handle=2204 /prefetch:11",
+      "creationDate": "2026-10-02T10:22:41.287945-04:00"
+    }
+  ],
+  "rendererTokens": [
+    {
+      "processId": 22112,
+      "restricted": true,
+      "integrityRid": 0
+    },
+    {
+      "processId": 452,
+      "restricted": true,
+      "integrityRid": 0
+    }
+  ],
+  "orphanProcesses": [],
+  "forcedCleanup": false,
+  "failure": null
+}

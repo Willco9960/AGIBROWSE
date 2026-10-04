@@ -1,0 +1,460 @@
+Start testing: Oct 03 11:03 Eastern Daylight Time
+----------------------------------------------------------
+2/5 Testing: scoped-session-authority
+2/5 Test: scoped-session-authority
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/ipc/Release/agi-scope-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/ipc
+"scoped-session-authority" start time: Oct 03 11:03 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS authenticated native binding
+PASS native document
+PASS pairing alone grants zero access
+PASS native grant installed
+PASS approved observation delivered
+PASS approved wait delivered
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS cross identity or destination read rejected
+PASS cross identity or destination write rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS observe mode and unknown operations rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS invalid native grant rejected
+PASS monotonic grant expiration exact boundary
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS other canonical context registered
+PASS exact origin equality denies alternate origin
+PASS same origin child registered
+PASS top only excludes descendant
+PASS native grant installed
+PASS explicit same origin descendants allowed
+PASS cross origin child registered
+PASS parent grant excludes cross origin child
+PASS native grant installed
+PASS explicit exact child origin allowed
+PASS opaque frame denied
+PASS authenticated native binding
+PASS native document
+PASS host blank native marker
+PASS native grant installed
+PASS blank control lease
+PASS approved blank observe
+PASS approved blank focus
+PASS blank exposes no DOM actions
+PASS blank forbids origin
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS control needs lease
+PASS native lease acquired
+PASS leased control handoff
+PASS second native session
+PASS second session grant
+PASS exclusive tab lease
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS lease reacquired
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS native grant installed
+PASS changed authority blocks actual handoff
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS native grant installed
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS revoked grant blocks subsequent observation
+PASS native grant installed
+PASS lease after fresh native approval
+PASS ticket admitted
+PASS changed authority blocks actual handoff
+PASS client revocation tombstones session
+PASS client revoke blocks observations
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS queue bounded at 128
+PASS ticket consumed at handoff
+PASS ticket replay denied
+PASS wrong client disconnect rejected
+PASS own authenticated disconnect
+PASS closed session reuse denied within transport window
+PASS disconnect purges queued delivery
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS more than 64 sequential sessions supported
+PASS churn session closed
+PASS fresh reconnect binds
+PASS reconnect has zero grants
+PASS expired live binding rejected
+PASS expired live and tombstone entries pruned
+PASS channel invalidation cannot rebind
+PASS missing trusted clock fails closed
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS throwing handoff still consumes ticket
+PASS throwing callback releases mutex
+PASS original transport deadline installed
+PASS binding cannot extend original transport deadline
+PASS extended transport deadline denied
+PASS overlapping unequal transport lifetimes
+PASS grants outlast original transport bindings
+PASS lease expiry native document
+PASS older live transport initially owns lease
+PASS younger live session acquires expired transport owner lease without new binding
+PASS expired transport owner cannot act despite unexpired grant
+PASS younger current leased ticket admitted
+PASS younger current lease handoff allowed
+PASS authenticated native binding
+PASS native document
+PASS native grant installed
+PASS revocation serializes after synchronous handoff
+PASS actual bounded synchronous handoff returns
+PASS completed revoke prevents next delivery
+scoped session authority: 348 checks passed
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"scoped-session-authority" end time: Oct 03 11:03 Eastern Daylight Time
+"scoped-session-authority" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/5 Testing: scoped-authenticated-host-lifecycle
+4/5 Test: scoped-authenticated-host-lifecycle
+Command: "C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/transport/Release/agi-scoped-transport-tests.exe"
+Directory: C:/Users/conne/Documents/Codex/2026-09-25/new-chat/work/agi-browse-dev/build/windows-cef-normalized/lib/transport
+"scoped-authenticated-host-lifecycle" start time: Oct 03 11:03 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+PASS closed IPCv2 close schema roundtrip
+PASS legacy IPCv1 cannot close session
+PASS duplicate close tags rejected
+PASS close disallows certificate or scope payload
+PASS close wildcard rejected
+PASS close zero sequence rejected
+PASS two native host owners bind paired sessions
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS throwing revoke listener still removes credential and propagates native failure
+PASS all live host owners revoke despite throwing listener
+PASS throwing listener does not resurrect disk pairing
+PASS fresh credential after failed callback binds zero grants
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS failed protected marker write removes runtime pairing
+PASS persistence failure cannot deliver queued or subsequent observation
+PASS host authority destruction invalidates retained scope handles
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS actual launched hostile private close peer starts
+PASS invalid close client/session/epoch/sequence/shape closes actual host channel
+PASS invalid close trust loss invalidates native session authority
+PASS real inherited host and TLS broker started
+PASS real mTLS pin checked probe has zero grants
+PASS probe socket close reaches host without stranded reply
+PASS exact host authenticated live binding
+PASS real authenticated host session starts at zero authority
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS actual host scope rejects cross profile read
+PASS actual host scope rejects cross profile write
+PASS authorized native observation handoff executes
+PASS read and command queued before native revoke
+PASS real native pairing revoke blocks queued observation delivery
+PASS real native pairing revoke blocks queued command handoff
+PASS native revoke blocks subsequent observations
+PASS revoked identity actually closes active TLS socket
+PASS exact host authenticated live binding
+PASS same key reenrollment uses fresh session
+PASS reconnect and reenrollment restore zero grants
+PASS new credential generation cannot revive revoked binding
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS foreign client cannot disconnect host binding
+PASS real socket close propagates private session_closed
+PASS socket disconnect blocks already queued observation
+PASS socket disconnect blocks subsequent observation
+PASS known duplicate close idempotently stays revoked
+PASS duplicate known close preserves healthy host channel
+PASS exact host authenticated live binding
+PASS test native document provenance
+PASS test native approval only
+PASS test native control lease
+PASS host channel stop invalidates queued observation before teardown
+PASS host channel loss blocks subsequent observation
+PASS actual channel stop closes TLS socket within bound
+scoped authenticated host lifecycle: 77 checks passed
+<end of output>
+Test time =   4.67 sec
+----------------------------------------------------------
+Test Passed.
+"scoped-authenticated-host-lifecycle" end time: Oct 03 11:03 Eastern Daylight Time
+"scoped-authenticated-host-lifecycle" time elapsed: 00:00:04
+----------------------------------------------------------
+
+End testing: Oct 03 11:03 Eastern Daylight Time

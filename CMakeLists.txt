@@ -1,10 +1,13 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 project(agi_browse LANGUAGES CXX)
 
 option(AGI_BROWSE_WITH_CEF "Build the browser host against the pinned CEF SDK (task 003)" OFF)
-if(AGI_BROWSE_WITH_CEF)
-  message(FATAL_ERROR "CEF integration is owned by AIBROWESE-003; scaffold builds use -DAGI_BROWSE_WITH_CEF=OFF")
+include(CTest)
+add_subdirectory(lib/ipc)
+option(AGI_BROWSE_WITH_TRANSPORT "Build authenticated Windows loopback TLS transport" ${WIN32})
+if(AGI_BROWSE_WITH_TRANSPORT)
+  add_subdirectory(lib/transport)
 endif()
-
+add_subdirectory(lib/privacy)
 add_subdirectory(apps/browser)
 add_subdirectory(apps/broker)
